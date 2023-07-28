@@ -1,0 +1,11 @@
+Flask==2.3.2
+python-dotenv==1.0.0
+flask-wtf==1.1.1
+flask-sqlalchemy==3.0.5
+flask-migrate==4.0.4
+flask-login==0.6.2
+email-validator==2.0.0
+flask-mail==0.9.1
+flask-moment==1.0.5
+flask-babel==3.1.0
+psycopg2-binary

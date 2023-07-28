@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    {% block head %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="Content-Language" content="en" />
+        <meta name="msapplication-TileColor" content="#007BBF">
+        <meta name="theme-color" content="#007BBF">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="HandheldFriendly" content="True">
+        <meta name="MobileOptimized" content="320">
+        {% block styles %}
+            <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" type="text/css" rel="stylesheet" />
+            <link href="{{ url_for('static', filename='structure.css', changed=getmtime('structure.css')) }}" type="text/css" rel="stylesheet" />
+            <link href="{{ url_for('static', filename='styles.css', changed=getmtime('styles.css')) }}" type="text/css" rel="stylesheet" />
+        {% endblock %}
+        <title>{% if title %}{{ title }} - {{ _('PyFedi') }}{% else %}{{ _('PyFedi') }}{% endif %}</title>
+        <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+        <link rel="manifest" href="/static/site.webmanifest">
+        <link rel="shortcut icon" type="image/png" href="/static/favicon-32x32.png">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="msapplication-config" content="/static/browserconfig.xml">
+        <meta name="theme-color" content="#ffffff">
+    {% endblock %}
+  </head>
+  <body class="d-flex flex-column" style="padding-top: 43px;">
+    <!-- Page content -->
+    {% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="https://www.chorebuster.net/" target="_blank">Logo</a>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent" role="navigation">
+                    <ul class="nav navbar-nav ml-md-4">
+                        {% if current_user.is_anonymous %}
+                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/">{{ _('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/how-it-works.php">{{ _('How it works') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/news.php">{{ _('News') }}</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/">{{ _('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/how-it-works.php">{{ _('How it works') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/news.php">{{ _('News') }}</a></li>
+                        {% endif %}
+                    </ul>
+            </div>
+
+        </div>
+    </nav>
+    {% endblock %}
+
+    {% block content %}
+        <div id="outer_container" class="container-fluid flex-shrink-0">
+            {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {# application content needs to be provided in the app_content block #}
+            {% block app_content %}{% endblock %}
+        </div>
+        <footer class="footer mt-auto">
+
+        </footer>
+    {% endblock %}
+
+    {% block scripts %}
+        {{ moment.include_moment() }}
+        {{ moment.lang(g.locale) }}
+    {% endblock %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
+
+    {% block end_scripts %}
+
+    {% endblock %}
+  </body>
+</html>

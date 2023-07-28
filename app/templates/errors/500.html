@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ _('An unexpected error has occurred') }}</h3>
+                </div>
+                <div class="card-body">
+                    <p>{{ _('Sorry for the inconvenience! Please let us know about this, so we can repair it and make ChoreBuster better for everyone.') }}</p>
+                    <p><a href="#">{{ _('Back') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
