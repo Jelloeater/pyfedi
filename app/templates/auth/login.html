@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6">
+                    {{ render_form(form) }}
+                    <br>
+                    <hr />
+                    <br>
+                    <p>{{ _('New User?') }} <a href="{{ url_for('auth.register') }}">{{ _('Register new account') }}</a></p>
+                    <p class="mb-0">
+                        {{ _('Forgot Your Password?') }}
+                        <a href="{{ url_for('auth.reset_password_request') }}">{{ _('Reset it') }}</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
