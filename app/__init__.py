@@ -13,9 +13,9 @@ from config import Config
 
 db = SQLAlchemy(session_options={"autoflush": False})
 migrate = Migrate()
-#login = LoginManager()
-#login.login_view = 'auth.login'
-#login.login_message = _l('Please log in to access this page.')
+login = LoginManager()
+login.login_view = 'auth.login'
+login.login_message = _l('Please log in to access this page.')
 mail = Mail()
 moment = Moment()
 babel = Babel()
@@ -27,7 +27,7 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     migrate.init_app(app, db, render_as_batch=True)
-    #login.init_app(app)
+    login.init_app(app)
     mail.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
@@ -40,6 +40,9 @@ def create_app(config_class=Config):
 
     from app.admin import bp as admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    from app.activitypub import bp as activitypub_bp
+    app.register_blueprint(activitypub_bp)
 
     def get_resource_as_string(name, charset='utf-8'):
         with app.open_resource(name) as f:
