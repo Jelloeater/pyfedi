@@ -13,3 +13,4 @@ requests==2.31.0
 pyjwt==2.8.0
 SQLAlchemy-Searchable==1.4.1
 SQLAlchemy-Utils==0.41.1
+cryptography==41.0.3

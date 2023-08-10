@@ -4,7 +4,8 @@ from app import db
 from app.activitypub import bp
 from flask import request, Response, render_template, current_app, abort, jsonify
 from app.models import User, Community
-from app.activitypub.util import public_key
+from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
+    post_to_activity
 
 INBOX = []
 
@@ -65,11 +66,6 @@ def nodeinfo():
 
 @bp.route('/nodeinfo/2.0')
 def nodeinfo2():
-    users_total = db.session.execute(text('SELECT COUNT(id) as c FROM "user" WHERE ap_id is null AND verified is true AND banned is false AND deleted is false')).scalar()
-    active_half_year = db.session.execute(text("SELECT COUNT(id) as c FROM \"user\" WHERE last_seen >= CURRENT_DATE - INTERVAL '6 months' AND ap_id is null AND verified is true AND banned is false AND deleted is false")).scalar()
-    active_month     = db.session.execute(text("SELECT COUNT(id) as c FROM \"user\" WHERE last_seen >= CURRENT_DATE - INTERVAL '1 month' AND ap_id is null AND verified is true AND banned is false AND deleted is false")).scalar()
-    local_posts = db.session.execute(text('SELECT COUNT(id) as c FROM "post" WHERE ap_id is null')).scalar()
-    local_comments = db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE ap_id is null')).scalar()
 
     nodeinfo_data = {
                 "version": "2.0",
@@ -82,30 +78,160 @@ def nodeinfo2():
                 ],
                 "usage": {
                     "users": {
-                        "total": users_total,
-                        "activeHalfyear": active_half_year,
-                        "activeMonth": active_month
+                        "total": users_total(),
+                        "activeHalfyear": active_half_year(),
+                        "activeMonth": active_month()
                     },
-                    "localPosts": local_posts,
-                    "localComments": local_comments
+                    "localPosts": local_posts(),
+                    "localComments": local_comments()
                 },
                 "openRegistrations": True
             }
     return jsonify(nodeinfo_data)
 
 
-@bp.route('/users/<actor>', methods=['GET'])
-def return_actor(actor):
-    """ This returns the actor.json object when somebody in the
-    Fediverse searches for this user. It returns the paths of
-    this user's inbox, its preferred username, the user's public key
-    and a profile image """
+@bp.route('/u/<actor>', methods=['GET'])
+def user_profile(actor):
+    """ Requests to this endpoint can be for a JSON representation of the user, or a HTML rendering of their profile.
+    The two types of requests are differentiated by the header """
+    actor = actor.strip()
+    user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
+    if user is not None:
+        if 'application/ld+json' in request.headers.get('Accept', '') or request.accept_mimetypes.accept_json:
+            server = current_app.config['SERVER_NAME']
+            actor_data = {  "@context": [
+                                "https://www.w3.org/ns/activitystreams",
+                                "https://w3id.org/security/v1",
+                                {
+                                    "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+                                    "schema": "http://schema.org#",
+                                    "PropertyValue": "schema:PropertyValue",
+                                    "value": "schema:value"
+                                }
+                            ],
+                            "type": "Person",
+                            "id": f"https://{server}/u/{actor}",
+                            "preferredUsername": actor,
+                            "inbox": f"https://{server}/u/{actor}/inbox",
+                            "outbox": f"https://{server}/u/{actor}/outbox",
+                            "publicKey": {
+                                "id": f"https://{server}/u/{actor}#main-key",
+                                "owner": f"https://{server}/u/{actor}",
+                                "publicKeyPem": user.public_key.replace("\n", "\\n")
+                            },
+                            "endpoints": {
+                                "sharedInbox": f"https://{server}/inbox"
+                            },
+                            "published": user.created.isoformat()
+                        }
+            if user.avatar_id is not None:
+                actor_data["icon"] = {
+                    "type": "Image",
+                    "url": f"https://{server}/avatars/{user.avatar.file_path}"
+                }
+            resp = jsonify(actor_data)
+            resp.content_type = 'application/activity+json'
+            return resp
+        else:
+            return render_template('user_profile.html', user=user)
 
-    preferredUsername = actor  # but could become a custom username, set by the user, stored in the database this preferredUsername doesn't show up yet in Mastodon ...
-    json = render_template('actor.json', actor=actor, preferredUsername=preferredUsername, publicKey=public_key(),
-                           domain=current_app.config['SERVER_NAME'])  # actor = alice
-    resp = Response(json, status=200, mimetype='application/json')
-    return resp
+
+@bp.route('/c/<actor>', methods=['GET'])
+def community_profile(actor):
+    """ Requests to this endpoint can be for a JSON representation of the community, or a HTML rendering of it.
+        The two types of requests are differentiated by the header """
+    actor = actor.strip()
+    community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    if community is not None:
+        if 'application/ld+json' in request.headers.get('Accept', '') or request.accept_mimetypes.accept_json:
+            server = current_app.config['SERVER_NAME']
+            actor_data = {"@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1",
+                {
+                    "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+                    "schema": "http://schema.org#",
+                    "PropertyValue": "schema:PropertyValue",
+                    "value": "schema:value"
+                }
+                ],
+                "type": "Group",
+                "id": f"https://{server}/c/{actor}",
+                "name": actor.title,
+                "summary": actor.description,
+                "sensitive": True if actor.nsfw or actor.nsfl else False,
+                "preferredUsername": actor,
+                "inbox": f"https://{server}/c/{actor}/inbox",
+                "outbox": f"https://{server}/c/{actor}/outbox",
+                "followers": f"https://{server}/c/{actor}/followers",
+                "moderators": f"https://{server}/c/{actor}/moderators",
+                "featured": f"https://{server}/c/{actor}/featured",
+                "attributedTo": f"https://{server}/c/{actor}/moderators",
+                "postingRestrictedToMods": actor.restricted_to_mods,
+                "url": f"https://{server}/c/{actor}",
+                "publicKey": {
+                    "id": f"https://{server}/c/{actor}#main-key",
+                    "owner": f"https://{server}/c/{actor}",
+                    "publicKeyPem": community.public_key.replace("\n", "\\n")
+                },
+                "endpoints": {
+                    "sharedInbox": f"https://{server}/inbox"
+                },
+                "published": community.created.isoformat(),
+                "updated": community.last_active.isoformat(),
+            }
+            if community.avatar_id is not None:
+                actor_data["icon"] = {
+                    "type": "Image",
+                    "url": f"https://{server}/avatars/{community.avatar.file_path}"
+                }
+            resp = jsonify(actor_data)
+            resp.content_type = 'application/activity+json'
+            return resp
+        else:
+            return render_template('user_profile.html', user=community)
+
+
+@bp.route('/c/<actor>/outbox', methods=['GET'])
+def community_outbox(actor):
+    actor = actor.strip()
+    community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    if community is not None:
+        posts = community.posts.limit(50).all()
+
+        community_data = {
+            "@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1",
+                {
+                    "lemmy": "https://join-lemmy.org/ns#",
+                    "pt": "https://joinpeertube.org/ns#",
+                    "sc": "http://schema.org/",
+                    "commentsEnabled": "pt:commentsEnabled",
+                    "sensitive": "as:sensitive",
+                    "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
+                    "removeData": "lemmy:removeData",
+                    "stickied": "lemmy:stickied",
+                    "moderators": {
+                        "@type": "@id",
+                        "@id": "lemmy:moderators"
+                    },
+                    "expires": "as:endTime",
+                    "distinguished": "lemmy:distinguished",
+                    "language": "sc:inLanguage",
+                    "identifier": "sc:identifier"
+                }
+            ],
+            "type": "OrderedCollection",
+            "id": f"https://{current_app.config['SERVER_NAME']}/c/{actor}/outbox",
+            "totalItems": len(posts),
+            "orderedItems": []
+        }
+
+        for post in posts:
+            community_data['orderedItems'].append(post_to_activity(post, community))
+
+        return jsonify(community_data)
 
 
 @bp.route('/inspect')

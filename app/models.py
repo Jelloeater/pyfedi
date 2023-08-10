@@ -50,9 +50,13 @@ class Community(db.Model):
     ap_domain = db.Column(db.String(255))
 
     banned = db.Column(db.Boolean, default=False)
+    restricted_to_mods = db.Column(db.Boolean, default=False)
     searchable = db.Column(db.Boolean, default=True)
 
     search_vector = db.Column(TSVectorType('name', 'title', 'description'))
+
+    posts = db.relationship('Post', backref='community', lazy='dynamic', cascade="all, delete-orphan")
+    replies = db.relationship('PostReply', backref='community', lazy='dynamic', cascade="all, delete-orphan")
 
 
 class User(UserMixin, db.Model):
@@ -94,6 +98,9 @@ class User(UserMixin, db.Model):
 
     search_vector = db.Column(TSVectorType('user_name', 'bio', 'keywords'))
     activity = db.relationship('ActivityLog', backref='account', lazy='dynamic', cascade="all, delete-orphan")
+    avatar = db.relationship(File, foreign_keys=[avatar_id], cascade="all, delete-orphan")
+    posts = db.relationship('Post', backref='author', lazy='dynamic', cascade="all, delete-orphan")
+    post_replies = db.relationship('PostReply', backref='author', lazy='dynamic', cascade="all, delete-orphan")
 
     def __repr__(self):
         return '<User {}>'.format(self.user_name)
@@ -166,6 +173,7 @@ class Post(db.Model):
     title = db.Column(db.String(255))
     url = db.Column(db.String(2048))
     body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
     type = db.Column(db.Integer)
     has_embed = db.Column(db.Boolean, default=False)
     reply_count = db.Column(db.Integer, default=0)
@@ -184,8 +192,12 @@ class Post(db.Model):
     edited_at = db.Column(db.DateTime)
 
     ap_id = db.Column(db.String(255), index=True)
+    ap_create_id = db.Column(db.String(100))
+    ap_announce_id = db.Column(db.String(100))
 
     search_vector = db.Column(TSVectorType('title', 'body'))
+
+    image = db.relationship(File, foreign_keys=[image_id], cascade="all, delete")
 
 
 class PostReply(db.Model):
@@ -197,6 +209,7 @@ class PostReply(db.Model):
     parent_id = db.Column(db.Integer)
     root_id = db.Column(db.Integer)
     body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
     score = db.Column(db.Integer, default=0, index=True)
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
@@ -258,10 +271,18 @@ class UserBlock(db.Model):
 
 class BannedInstances(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(256))
+    domain = db.Column(db.String(256), index=True)
     reason = db.Column(db.String(256))
     initiator = db.Column(db.String(256))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Instance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(256))
+    inbox = db.Column(db.String(256))
+    shared_inbox = db.Column(db.String(256))
+    outbox = db.Column(db.String(256))
 
 
 class Settings(db.Model):
