@@ -14,3 +14,7 @@ pyjwt==2.8.0
 SQLAlchemy-Searchable==1.4.1
 SQLAlchemy-Utils==0.41.1
 cryptography==41.0.3
+Bootstrap-Flask==2.3.0
+pycryptodome==3.18.0
+arrow==1.2.3
+pyld==2.0.3

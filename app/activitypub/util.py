@@ -1,14 +1,17 @@
+import json
 import os
 from flask import current_app
 from sqlalchemy import text
 from app import db
-from app.models import User, Post, Community
+from app.models import User, Post, Community, BannedInstances
 import time
 import base64
 import requests
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
+import functools
+from urllib.parse import urlparse
 
 
 def public_key():
@@ -134,3 +137,53 @@ def post_to_activity(post: Post, community: Community):
     if post.image_id is not None:
         activity_data["object"]["object"]["image"] = {"href": post.image.source_url, "type": "Image"}
     return activity_data
+
+
+def validate_headers(headers, body):
+    if headers['content-type'] != 'application/activity+json' and headers['content-type'] != 'application/ld+json':
+        return False
+
+    if headers['user-agent'] in banned_user_agents():
+        return False
+
+    if instance_blocked(headers['host']):
+        return False
+
+    return validate_header_signature(body, headers['host'], headers['date'], headers['signature'])
+
+
+def validate_header_signature(body: str, host: str, date: str, signature: str) -> bool:
+    body = json.loads(body)
+    signature = parse_signature_header(signature)
+
+    key_domain = urlparse(signature['key_id']).hostname
+    id_domain = urlparse(body['id']).hostname
+
+    if urlparse(body['object']['attributedTo']).hostname != key_domain:
+        raise Exception('Invalid host url.')
+
+    if key_domain != id_domain:
+        raise Exception('Wrong domain.')
+
+    user = find_actor_or_create(body['actor'])
+    return verify_signature(user.private_key, signature, headers)
+
+def banned_user_agents():
+    return []   # todo: finish this function
+
+
+@functools.lru_cache(maxsize=100)
+def instance_blocked(host):
+    instance = BannedInstances.query.filter_by(domain=host.strip()).first()
+    return instance is not None
+
+
+def find_actor_or_create(actor):
+    if current_app.config['SERVER_NAME'] + '/c/' in actor:
+        return Community.query.filter_by(name=actor).first()  # finds communities formatted like https://localhost/c/*
+
+    user = User.query.filter_by(ap_profile_id=actor).first() # finds users formatted like https://kbin.social/u/tables
+    if user is None:
+        # todo: retrieve user details via webfinger, etc
+    else:
+        return user

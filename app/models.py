@@ -39,7 +39,7 @@ class Community(db.Model):
     private_key = db.Column(db.Text)
 
     ap_id = db.Column(db.String(255), index=True)
-    ap_profile_id = db.Column(db.String(255))
+    ap_profile_id = db.Column(db.String(255), index=True)
     ap_followers_url = db.Column(db.String(255))
     ap_preferred_username = db.Column(db.String(255))
     ap_discoverable = db.Column(db.Boolean, default=False)

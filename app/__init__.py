@@ -1,3 +1,6 @@
+# This file is part of pyfedi, which is licensed under the GNU General Public License (GPL) version 3.0.
+# You should have received a copy of the GPL along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import logging
 from logging.handlers import SMTPHandler, RotatingFileHandler
 import os
@@ -5,6 +8,7 @@ from flask import Flask, request, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_bootstrap import Bootstrap5
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel, lazy_gettext as _l
@@ -17,6 +21,7 @@ login = LoginManager()
 login.login_view = 'auth.login'
 login.login_message = _l('Please log in to access this page.')
 mail = Mail()
+bootstrap = Bootstrap5()
 moment = Moment()
 babel = Babel()
 
@@ -29,6 +34,7 @@ def create_app(config_class=Config):
     migrate.init_app(app, db, render_as_batch=True)
     login.init_app(app)
     mail.init_app(app)
+    bootstrap.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
 

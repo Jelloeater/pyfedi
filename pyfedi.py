@@ -1,3 +1,7 @@
+# This file is part of pyfedi, which is licensed under the GNU General Public License (GPL) version 3.0.
+# You should have received a copy of the GPL along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
 from app import create_app, db, cli
 import os
 

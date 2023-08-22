@@ -13,7 +13,7 @@
         <meta name="HandheldFriendly" content="True">
         <meta name="MobileOptimized" content="320">
         {% block styles %}
-            <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" type="text/css" rel="stylesheet" />
+            {{ bootstrap.load_css() }}
             <link href="{{ url_for('static', filename='structure.css', changed=getmtime('structure.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='styles.css', changed=getmtime('styles.css')) }}" type="text/css" rel="stylesheet" />
         {% endblock %}
@@ -33,7 +33,7 @@
     {% block navbar %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="https://www.chorebuster.net/" target="_blank">Logo</a>
+            <a class="navbar-brand" href="/" target="_blank">Logo</a>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -42,13 +42,11 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent" role="navigation">
                     <ul class="nav navbar-nav ml-md-4">
                         {% if current_user.is_anonymous %}
-                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/">{{ _('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/how-it-works.php">{{ _('How it works') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/news.php">{{ _('News') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/news">{{ _('News') }}</a></li>
                         {% else %}
-                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/">{{ _('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/how-it-works.php">{{ _('How it works') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="https://www.chorebuster.net/news.php">{{ _('News') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/news">{{ _('News') }}</a></li>
                         {% endif %}
                     </ul>
             </div>
@@ -58,7 +56,7 @@
     {% endblock %}
 
     {% block content %}
-        <div id="outer_container" class="container-fluid flex-shrink-0">
+        <div id="outer_container" class="container-fluid flex-shrink-0 mt-4">
             {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -79,7 +77,7 @@
         {{ moment.include_moment() }}
         {{ moment.lang(g.locale) }}
     {% endblock %}
-    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    {{ bootstrap.load_js() }}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
 
