@@ -185,5 +185,6 @@ def find_actor_or_create(actor):
     user = User.query.filter_by(ap_profile_id=actor).first() # finds users formatted like https://kbin.social/u/tables
     if user is None:
         # todo: retrieve user details via webfinger, etc
+        ...
     else:
         return user

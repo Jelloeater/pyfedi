@@ -1,0 +1,68 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1",
+    {
+      "lemmy": "https://join-lemmy.org/ns#",
+      "litepub": "http://litepub.social/ns#",
+      "pt": "https://joinpeertube.org/ns#",
+      "sc": "http://schema.org/",
+      "ChatMessage": "litepub:ChatMessage",
+      "commentsEnabled": "pt:commentsEnabled",
+      "sensitive": "as:sensitive",
+      "matrixUserId": "lemmy:matrixUserId",
+      "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
+      "removeData": "lemmy:removeData",
+      "stickied": "lemmy:stickied",
+      "moderators": {
+        "@type": "@id",
+        "@id": "lemmy:moderators"
+      },
+      "expires": "as:endTime",
+      "distinguished": "lemmy:distinguished",
+      "language": "sc:inLanguage",
+      "identifier": "sc:identifier"
+    }
+  ],
+  "actor": "https://lemmy.ml/c/memes",
+  "to": [
+    "https://www.w3.org/ns/activitystreams#Public"
+  ],
+  "object": {
+    "id": "https://lemmy.blahaj.zone/activities/like/41bed132-3cb9-4571-bdb8-a8c42782b461",
+    "actor": "https://lemmy.blahaj.zone/u/RenegadeRangerX",
+    "@context": [
+      "https://www.w3.org/ns/activitystreams",
+      "https://w3id.org/security/v1",
+      {
+        "lemmy": "https://join-lemmy.org/ns#",
+        "litepub": "http://litepub.social/ns#",
+        "pt": "https://joinpeertube.org/ns#",
+        "sc": "http://schema.org/",
+        "ChatMessage": "litepub:ChatMessage",
+        "commentsEnabled": "pt:commentsEnabled",
+        "sensitive": "as:sensitive",
+        "matrixUserId": "lemmy:matrixUserId",
+        "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
+        "removeData": "lemmy:removeData",
+        "stickied": "lemmy:stickied",
+        "moderators": {
+          "@type": "@id",
+          "@id": "lemmy:moderators"
+        },
+        "expires": "as:endTime",
+        "distinguished": "lemmy:distinguished",
+        "language": "sc:inLanguage",
+        "identifier": "sc:identifier"
+      }
+    ],
+    "object": "https://kbin.social/m/memes@lemmy.ml/t/371636/-/comment/1843783",
+    "type": "Like",
+    "audience": "https://lemmy.ml/c/memes"
+  },
+  "cc": [
+    "https://lemmy.ml/c/memes/followers"
+  ],
+  "type": "Announce",
+  "id": "https://lemmy.ml/activities/announce/7530ce36-2d23-442d-a2b5-211f615f63ba"
+}

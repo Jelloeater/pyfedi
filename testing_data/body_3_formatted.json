@@ -1,0 +1,110 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1",
+    {
+      "lemmy": "https://join-lemmy.org/ns#",
+      "litepub": "http://litepub.social/ns#",
+      "pt": "https://joinpeertube.org/ns#",
+      "sc": "http://schema.org/",
+      "ChatMessage": "litepub:ChatMessage",
+      "commentsEnabled": "pt:commentsEnabled",
+      "sensitive": "as:sensitive",
+      "matrixUserId": "lemmy:matrixUserId",
+      "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
+      "removeData": "lemmy:removeData",
+      "stickied": "lemmy:stickied",
+      "moderators": {
+        "@type": "@id",
+        "@id": "lemmy:moderators"
+      },
+      "expires": "as:endTime",
+      "distinguished": "lemmy:distinguished",
+      "language": "sc:inLanguage",
+      "identifier": "sc:identifier"
+    }
+  ],
+  "actor": "https://lemmy.ml/c/asklemmy",
+  "to": [
+    "https://www.w3.org/ns/activitystreams#Public"
+  ],
+  "object": {
+    "id": "https://lemmy.world/activities/create/c22cc7ca-f1fc-4bf4-b591-4a3313430fc0",
+    "actor": "https://lemmy.world/u/Mojave",
+    "@context": [
+      "https://www.w3.org/ns/activitystreams",
+      "https://w3id.org/security/v1",
+      {
+        "lemmy": "https://join-lemmy.org/ns#",
+        "litepub": "http://litepub.social/ns#",
+        "pt": "https://joinpeertube.org/ns#",
+        "sc": "http://schema.org/",
+        "ChatMessage": "litepub:ChatMessage",
+        "commentsEnabled": "pt:commentsEnabled",
+        "sensitive": "as:sensitive",
+        "matrixUserId": "lemmy:matrixUserId",
+        "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
+        "removeData": "lemmy:removeData",
+        "stickied": "lemmy:stickied",
+        "moderators": {
+          "@type": "@id",
+          "@id": "lemmy:moderators"
+        },
+        "expires": "as:endTime",
+        "distinguished": "lemmy:distinguished",
+        "language": "sc:inLanguage",
+        "identifier": "sc:identifier"
+      }
+    ],
+    "to": [
+      "https://www.w3.org/ns/activitystreams#Public"
+    ],
+    "object": {
+      "type": "Note",
+      "id": "https://lemmy.world/comment/2744248",
+      "attributedTo": "https://lemmy.world/u/Mojave",
+      "to": [
+        "https://www.w3.org/ns/activitystreams#Public"
+      ],
+      "cc": [
+        "https://lemmy.ml/c/asklemmy",
+        "https://lemm.ee/u/handsatinizer"
+      ],
+      "content": "<p>No, I’m mentally stable</p>\n",
+      "inReplyTo": "https://lemm.ee/post/5204840",
+      "mediaType": "text/html",
+      "source": {
+        "content": "No, I'm mentally stable",
+        "mediaType": "text/markdown"
+      },
+      "published": "2023-08-24T06:45:08.987710+00:00",
+      "tag": [
+        {
+          "href": "https://lemm.ee/u/handsatinizer",
+          "name": "@handsatinizer@lemm.ee",
+          "type": "Mention"
+        }
+      ],
+      "distinguished": false,
+      "audience": "https://lemmy.ml/c/asklemmy"
+    },
+    "cc": [
+      "https://lemmy.ml/c/asklemmy",
+      "https://lemm.ee/u/handsatinizer"
+    ],
+    "tag": [
+      {
+        "href": "https://lemm.ee/u/handsatinizer",
+        "name": "@handsatinizer@lemm.ee",
+        "type": "Mention"
+      }
+    ],
+    "type": "Create",
+    "audience": "https://lemmy.ml/c/asklemmy"
+  },
+  "cc": [
+    "https://lemmy.ml/c/asklemmy/followers"
+  ],
+  "type": "Announce",
+  "id": "https://lemmy.ml/activities/announce/187b8b67-611f-43fb-b256-09090e29cff5"
+}
