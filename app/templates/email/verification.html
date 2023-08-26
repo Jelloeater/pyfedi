@@ -1,0 +1,11 @@
+<p>Hi {{ user.user_name }},</p>
+<p>
+    To verify your email address
+    <a href="{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}">
+        click here
+    </a>.
+</p>
+<p>Alternatively, you can paste the following link in your browser's address bar:</p>
+<p>{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}</p>
+<p>Thanks,</p>
+<p>The PyFedi Team</p>

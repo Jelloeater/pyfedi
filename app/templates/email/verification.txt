@@ -1,0 +1,9 @@
+Hello {{ user.user_name }},
+
+To verify your email address:
+
+{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}
+
+Thanks,
+
+The PyFedi Team

@@ -1,3 +1,256 @@
 /* */
+/* for more info about the feather font used for icons see https://at-ui.github.io/feather-font/ */
+/* use https://fontdrop.info/ to get the unicode values of the featuer.ttf file */
+@font-face {
+  font-family: "Feather";
+  src: url("/static/fonts/feather/feather.ttf?cb") format("truetype"), url("/static/fonts/feather/feather.woff?cb") format("woff"), url("/static/fonts/feather/feather.svg?cb#Feather") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+.fe {
+  font-family: "Feather" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dropdown-item .fe {
+  padding-right: 5px;
+}
+
+.fe-subscription::before {
+  content: "\e9b9";
+}
+
+.fe-logout::before {
+  content: "\e988";
+}
+
+.fe-fb::before {
+  content: "\e95e";
+}
+
+.fe-close::before {
+  content: "\ea03";
+}
+
+.fe-circle::before {
+  content: "\e937";
+}
+
+.fe-activity::before {
+  content: "\e900";
+}
+
+.fe-copy::before {
+  content: "\e944";
+}
+
+.fe-edit::before {
+  content: "\e958";
+}
+
+.fe-plus::before {
+  content: "\e9b1";
+}
+
+.fe-wind::before {
+  content: "\ea01";
+}
+
+.fe-refresh-cw::before {
+  content: "\e9b9";
+}
+
+.fe-x-circle::before {
+  content: "\ea03";
+}
+
+.fe-printer::before {
+  content: "\e9b6";
+}
+
+.fe-search::before {
+  content: "\e9c1";
+}
+
+.fe-check::before {
+  content: "\e92b";
+}
+
+.fe-user::before {
+  content: "\e9f1";
+}
+
+.fe-heart::before {
+  content: "\e977";
+}
+
+.fe-message-circle::before {
+  content: "\e990";
+}
+
+.fe-settings::before {
+  content: "\e9c4";
+}
+
+.fe-calendar::before {
+  content: "\e927";
+}
+
+.fe-facebook::before {
+  content: "\e95e";
+}
+
+.fe-share::before {
+  content: "\e9c2";
+}
+
+.fe-chevron-up::before {
+  content: "\e931";
+}
+
+.fe-chevron-down::before {
+  content: "\e92e";
+}
+
+.fe-feather::before {
+  content: "\e960";
+}
+
+.fe-mobile::before {
+  content: "\e9d2";
+}
+
+.fe-loader::before {
+  content: "\e986";
+}
+
+.fe-sun::before {
+  content: "\e9d7";
+}
+
+a.no-underline {
+  text-decoration: none;
+}
+a.no-underline:hover {
+  text-decoration: none;
+}
+
+.small, small {
+  font-size: 87%;
+}
+
+fieldset legend {
+  font-size: inherit;
+}
+
+.form-check-input {
+  margin-top: 0;
+}
+
+.form-group {
+  display: block;
+}
+.form-group .text-nowrap input[type=number], .form-group .form-check-inline input[type=number], .form-group .fix-radio-align input[type=number] {
+  vertical-align: inherit;
+}
+
+.form-control-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-weight: 600;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 40, 100, 0.12);
+  border-radius: 3px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #1991eb;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(70, 127, 207, 0.25);
+}
+
+.btn-secondary {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+.btn-secondary:hover {
+  color: #fff;
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.table-striped tbody tr .current_sort,
+.table-striped thead th.current_sort {
+  background-color: #f0f0f2;
+}
+
+.table-striped tbody tr:nth-of-type(2n+1) .current_sort {
+  background-color: #d8e5ee;
+}
+
+body {
+  font-size: 0.9rem;
+  background-color: #fbfdfe;
+  color: #495057;
+}
+
+nav.navbar {
+  background-color: #fff !important;
+  border-bottom: 1px solid rgba(0, 40, 100, 0.12);
+  min-height: 60px;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: rgba(0, 0, 0, 0.8);
+  outline-style: none;
+}
+
+.navbar-light .navbar-toggler-icon {
+  background-image: url(https://www.chorebuster.net/images/menu.svg);
+}
+
+.dropdown.active {
+  background-color: #0071CE;
+}
+
+.navbar-light .navbar-nav .active > .nav-link {
+  color: white;
+  opacity: 0.9;
+}
+
+.dropdown-menu .dropdown-item.active {
+  background-color: #0071CE;
+}
+
+.card-title {
+  font-size: 140%;
+}
+
+.alert-message {
+  color: #0c5460;
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+}
 
 /*# sourceMappingURL=styles.css.map */

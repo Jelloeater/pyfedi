@@ -1,1 +1,52 @@
 /* */
+@import "scss/colours";
+@import "scss/mixins";
+@import "scss/typography";
+@import "scss/controls";
+
+body {
+  font-size: 0.9rem;
+  background-color: #fbfdfe;
+  color: #495057;
+}
+
+nav.navbar {
+  background-color: #fff!important;
+  border-bottom: 1px solid rgba(0, 40, 100, 0.12);
+  min-height: 60px;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: rgba(0,0,0,.8);
+  outline-style: none;
+}
+
+
+.navbar-light .navbar-toggler-icon {
+  background-image: url(https://www.chorebuster.net/images/menu.svg);
+}
+
+.dropdown.active {
+    background-color: $primary-colour;
+}
+
+.navbar-light .navbar-nav .active > .nav-link {
+    color: white;
+    opacity: 0.9;
+}
+
+.dropdown-menu {
+  .dropdown-item.active {
+    background-color: $primary-colour;
+  }
+}
+
+.card-title {
+  font-size: 140%;
+}
+
+.alert-message {
+  color: #0c5460;
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+}

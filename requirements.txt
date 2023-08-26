@@ -18,3 +18,4 @@ Bootstrap-Flask==2.3.0
 pycryptodome==3.18.0
 arrow==1.2.3
 pyld==2.0.3
+boto3==1.28.35

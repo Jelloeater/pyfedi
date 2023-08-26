@@ -1,13 +1,14 @@
 from datetime import date, datetime, timedelta
-from flask import render_template, redirect, url_for, flash, request, make_response, session, Markup
+from flask import render_template, redirect, url_for, flash, request, make_response, session, Markup, current_app
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
 from app import db
 from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.auth.util import random_token
 from app.models import User
-from app.auth.email import send_password_reset_email, send_welcome_email
+from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
 from sqlalchemy import text
 
 
@@ -37,6 +38,7 @@ def login():
             return redirect(url_for('auth.login'))
         login_user(user, remember=True)
         current_user.last_seen = datetime.utcnow()
+        current_user.verification_token = ''
         db.session.commit()
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
@@ -56,18 +58,26 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
+    if current_app.config['MODE'] == 'development':
+        del form.recaptcha
     if form.validate_on_submit():
         if form.email.data == '': # ignore any registration where the email field is filled out. spam prevention
             if form.real_email.data.lower().startswith('postmaster@') or form.real_email.data.lower().startswith('abuse@') or \
                     form.real_email.data.lower().startswith('noc@'):
                 flash(_('Sorry, you cannot use that email address'), 'error')
             else:
-                user = User(username=form.user_name.data, email=form.real_email.data, last_seen=datetime.utcnow())
+                verification_token = random_token(16)
+                user = User(user_name=form.user_name.data, email=form.real_email.data,
+                            verification_token=verification_token)
                 user.set_password(form.password.data)
-                db.session.add_all([user])
+                db.session.add(user)
                 db.session.commit()
                 login_user(user, remember=True)
                 send_welcome_email(user)
+                send_verification_email(user)
+
+                if current_app.config['MODE'] == 'development':
+                    current_app.logger.info('Verify account:' + url_for('auth.verify_email', token=user.verification_token, _external=True))
 
                 flash(_('Great, you are now a registered user!'))
 
@@ -115,3 +125,17 @@ def reset_password(token):
         flash(_('Your password has been reset.'))
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', form=form)
+
+
+@bp.route('/verify_email/<token>')
+def verify_email(token):
+    if token != '':
+        user = User.query.filter_by(verification_token=token).first()
+        if user is not None:
+            user.verified = True
+            user.last_seen = datetime.utcnow()
+            db.session.commit()
+            flash(_('Thanks for verifying your email address.'))
+        else:
+            flash(_('Email address validation failed.'), 'error')
+        return redirect(url_for('main.index'))

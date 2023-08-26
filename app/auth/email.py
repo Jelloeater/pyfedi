@@ -20,3 +20,11 @@ def send_welcome_email(user):
                recipients=[user.email],
                text_body=render_template('email/welcome.txt', user=user),
                html_body=render_template('email/welcome.html', user=user))
+
+
+def send_verification_email(user):
+    send_email(_('Please verify your email address'),
+               sender='PyFedi <rimu@chorebuster.net>',
+               recipients=[user.email],
+               text_body=render_template('email/verification.txt', user=user),
+               html_body=render_template('email/verification.html', user=user))

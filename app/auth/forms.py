@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, HiddenField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length
 from flask_babel import _, lazy_gettext as _l
-from app.models import User
+from app.models import User, Community
 from app.auth.recaptcha3 import Recaptcha3Field
 
 
@@ -22,12 +22,20 @@ class RegistrationForm(FlaskForm):
                                            EqualTo('password')])
     recaptcha = Recaptcha3Field(action="TestAction", execute_on_load=True)
 
-    submit = SubmitField(_l('Sign up'))
+    submit = SubmitField(_l('Register'))
 
     def validate_real_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError(_('An account with this email address already exists.'))
+
+    def validate_user_name(self, user_name):
+        user = User.query.filter_by(user_name=user_name.data).first()
+        if user is not None:
+            raise ValidationError(_('An account with this user name already exists.'))
+        community = Community.query.filter_by(name=user_name.data).first()
+        if community is not None:
+            raise ValidationError(_('A community with this name exists so it cannot be used for a user.'))
 
 
 class ResetPasswordRequestForm(FlaskForm):

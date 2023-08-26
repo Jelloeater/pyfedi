@@ -43,10 +43,11 @@
                     <ul class="nav navbar-nav ml-md-4">
                         {% if current_user.is_anonymous %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/news">{{ _('News') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/auth/login">{{ _('Log in') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/auth/register">{{ _('Register') }}</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/news">{{ _('News') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
                         {% endif %}
                     </ul>
             </div>

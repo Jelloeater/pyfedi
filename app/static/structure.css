@@ -1,3 +1,268 @@
-/* */
+/* This file contains SCSS used for creating the general structure of pages. Selectors should be things like body, h1,
+nav, etc which are used site-wide */
+/* for more info about the feather font used for icons see https://at-ui.github.io/feather-font/ */
+/* use https://fontdrop.info/ to get the unicode values of the featuer.ttf file */
+@font-face {
+  font-family: "Feather";
+  src: url("/static/fonts/feather/feather.ttf?cb") format("truetype"), url("/static/fonts/feather/feather.woff?cb") format("woff"), url("/static/fonts/feather/feather.svg?cb#Feather") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+.fe {
+  font-family: "Feather" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dropdown-item .fe {
+  padding-right: 5px;
+}
+
+.fe-subscription::before {
+  content: "\e9b9";
+}
+
+.fe-logout::before {
+  content: "\e988";
+}
+
+.fe-fb::before {
+  content: "\e95e";
+}
+
+.fe-close::before {
+  content: "\ea03";
+}
+
+.fe-circle::before {
+  content: "\e937";
+}
+
+.fe-activity::before {
+  content: "\e900";
+}
+
+.fe-copy::before {
+  content: "\e944";
+}
+
+.fe-edit::before {
+  content: "\e958";
+}
+
+.fe-plus::before {
+  content: "\e9b1";
+}
+
+.fe-wind::before {
+  content: "\ea01";
+}
+
+.fe-refresh-cw::before {
+  content: "\e9b9";
+}
+
+.fe-x-circle::before {
+  content: "\ea03";
+}
+
+.fe-printer::before {
+  content: "\e9b6";
+}
+
+.fe-search::before {
+  content: "\e9c1";
+}
+
+.fe-check::before {
+  content: "\e92b";
+}
+
+.fe-user::before {
+  content: "\e9f1";
+}
+
+.fe-heart::before {
+  content: "\e977";
+}
+
+.fe-message-circle::before {
+  content: "\e990";
+}
+
+.fe-settings::before {
+  content: "\e9c4";
+}
+
+.fe-calendar::before {
+  content: "\e927";
+}
+
+.fe-facebook::before {
+  content: "\e95e";
+}
+
+.fe-share::before {
+  content: "\e9c2";
+}
+
+.fe-chevron-up::before {
+  content: "\e931";
+}
+
+.fe-chevron-down::before {
+  content: "\e92e";
+}
+
+.fe-feather::before {
+  content: "\e960";
+}
+
+.fe-mobile::before {
+  content: "\e9d2";
+}
+
+.fe-loader::before {
+  content: "\e986";
+}
+
+.fe-sun::before {
+  content: "\e9d7";
+}
+
+a.no-underline {
+  text-decoration: none;
+}
+a.no-underline:hover {
+  text-decoration: none;
+}
+
+.small, small {
+  font-size: 87%;
+}
+
+fieldset legend {
+  font-size: inherit;
+}
+
+.form-check-input {
+  margin-top: 0;
+}
+
+.form-group {
+  display: block;
+}
+.form-group .text-nowrap input[type=number], .form-group .form-check-inline input[type=number], .form-group .fix-radio-align input[type=number] {
+  vertical-align: inherit;
+}
+
+.form-control-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-weight: 600;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 40, 100, 0.12);
+  border-radius: 3px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #1991eb;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(70, 127, 207, 0.25);
+}
+
+.btn-secondary {
+  color: #fff;
+  background-color: #007bff;
+  border-color: #007bff;
+}
+.btn-secondary:hover {
+  color: #fff;
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.table-striped tbody tr .current_sort,
+.table-striped thead th.current_sort {
+  background-color: #f0f0f2;
+}
+
+.table-striped tbody tr:nth-of-type(2n+1) .current_sort {
+  background-color: #d8e5ee;
+}
+
+.container {
+  width: 100%;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  margin-right: auto;
+  margin-left: auto;
+  max-width: inherit;
+}
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1200px;
+  }
+}
+@media (min-width: 1600px) {
+  .container {
+    max-width: 1550px;
+  }
+}
+@media (min-width: 2000px) {
+  .container {
+    max-width: 1880px;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  /* Adjust as needed to hide the link off-screen */
+  left: 0;
+  background-color: #fff;
+  /* Background color to cover the link for screen readers */
+  z-index: 999;
+  /* Ensure it's above other content */
+}
+
+.skip-link:focus {
+  top: 0;
+  /* Bring the link back into view when it receives focus */
+}
+
+.form-group {
+  margin-bottom: 1.1rem;
+}
+
+.card {
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 /*# sourceMappingURL=structure.css.map */

@@ -1,0 +1,14 @@
+Hello {{ first_name }} and welcome!
+
+I'm Rimu, the founder of PyFedi and I'd like to personally thank you for signing up.
+
+I'd also like to give you the tools and information you need to get the most out of it. Let's get you up and running:
+
+    1. Helpful resources go here
+
+I hope this helps. For more information please see the FAQ at https://pyfedi.social/faq.php or ask me anything by replying to this email.
+
+Warm regards,
+
+Rimu Atkinson
+Founder

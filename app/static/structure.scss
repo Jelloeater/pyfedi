@@ -1,1 +1,52 @@
-/* */
+/* This file contains SCSS used for creating the general structure of pages. Selectors should be things like body, h1,
+nav, etc which are used site-wide */
+@import "scss/colours";
+@import "scss/mixins";
+@import "scss/typography";
+@import "scss/controls";
+
+.container {
+  width: 100%;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  margin-right: auto;
+  margin-left: auto;
+  max-width: inherit;
+  @include breakpoint(phablet) {
+
+  }
+  @include breakpoint(tablet) {
+    max-width: 960px;
+  }
+  @include breakpoint(laptop) {
+    max-width: 1200px;
+  }
+  @include breakpoint(desktop) {
+    max-width: 1550px;
+  }
+  @include breakpoint(bigbig) {
+    max-width: 1880px;
+  }
+}
+
+.skip-link {
+    position: absolute;
+    top: -40px; /* Adjust as needed to hide the link off-screen */
+    left: 0;
+    background-color: #fff; /* Background color to cover the link for screen readers */
+    z-index: 999; /* Ensure it's above other content */
+}
+
+.skip-link:focus {
+    top: 0; /* Bring the link back into view when it receives focus */
+}
+
+.form-group {
+  margin-bottom: 1.1rem;
+}
+
+.card {
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
