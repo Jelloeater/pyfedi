@@ -84,6 +84,7 @@ class User(UserMixin, db.Model):
     stripe_customer_id = db.Column(db.String(50))
     stripe_subscription_id = db.Column(db.String(50))
     searchable = db.Column(db.Boolean, default=True)
+    indexable = db.Column(db.Boolean, default=False)
 
     ap_id = db.Column(db.String(255), index=True)
     ap_profile_id = db.Column(db.String(255))
@@ -181,6 +182,7 @@ class Post(db.Model):
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
     sticky = db.Column(db.Boolean, default=False)
+    indexable = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     last_active = db.Column(db.DateTime, index=True, default=datetime.utcnow)
