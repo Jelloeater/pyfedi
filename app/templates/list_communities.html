@@ -2,5 +2,56 @@
 {% from 'bootstrap5/form.html' import render_form %}
 
 {% block app_content %}
-<p>Community list goes here.</p>
+<div class="row g-2 justify-content-between">
+    <div class="col-auto">
+        <div class="btn-group">
+            <a href="#" class="btn btn-outline-secondary">{{ _('All') }}</a>
+            <a href="#" class="btn btn-outline-secondary">{{ _('Local') }}</a>
+            <a href="#" class="btn btn-outline-secondary">{{ _('Subscribed') }}</a>
+        </div>
+    </div>
+    <div class="col-auto">
+
+        <div class="btn-group">
+
+            <a href="#" class="btn btn-outline-secondary">{{ _('Add local') }}</a>
+            <a href="{{ url_for('community.add_remote') }}" class="btn btn-outline-secondary">{{ _('Add remote') }}</a>
+        </div>
+        <input type="search" placeholder="Find a community" class="form-control">
+    </div>
+</div>
+{% if len(communities) > 0 %}
+    <div class="table-responsive-md">
+        <table class="table table-striped table-hover w-100">
+            <thead>
+                <tr>
+                    <th scope="col" colspan="2">{{ _('Name') }}</th>
+                    <th scope="col">{{ _('Posts') }}</th>
+                    <th scope="col">{{ _('Comments') }}</th>
+                    <th scope="col">{{ _('Active') }}</th>
+                    <th scope="col">{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for community in communities %}
+                    <tr class="">
+                        <td><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" /></a></td>
+                        <th scope="row"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></th>
+                        <td>{{ community.post_count }}</td>
+                        <td>{{ community.post_reply_count }}</td>
+                        <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>
+                        <td>{% if current_user.subscribed(community) %}
+                                <a class="btn btn-primary btn-sm" href="/c/{{ community.link() }}/unsubscribe">Unsubscribe</a>
+                            {% else %}
+                                <a class="btn btn-primary btn-sm" href="/c/{{ community.link() }}/subscribe">Subscribe</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+<p>{{ _('There are no communities yet.') }}</p>
+{% endif %}
 {% endblock %}

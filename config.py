@@ -20,3 +20,4 @@ class Config(object):
     RECAPTCHA3_PUBLIC_KEY = os.environ.get("RECAPTCHA3_PUBLIC_KEY")
     RECAPTCHA3_PRIVATE_KEY = os.environ.get("RECAPTCHA3_PRIVATE_KEY")
     MODE = os.environ.get('MODE') or 'development'
+    LANGUAGES = ['en']

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link href="editor.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <header></header>
+    <main>
+    
+    <textarea rows="10" class="form-control" id="editor"></textarea>
+</div>
+<script src="index.min.js"></script>
+<script>
+easyMarkdown(document.getElementById('editor'),{
+    btnClass:'btn btn-danger',
+    framework:'bootstrap',
+    icons : {
+        bold: 'fa fa-bold fa-fw',
+        italic: 'fa fa-italic fa-fw',
+        header: 'fa fa-header fa-fw',
+        image: 'fa fa-picture-o fa-fw',
+        link: 'fa fa-link fa-fw',
+        ol: 'fa fa-list-ol fa-fw',
+        ul: 'fa fa-list-ul fa-fw',
+        comment: 'fa fa-comment fa-fw',
+        code: 'fa fa-code fa-fw',
+        preview: 'fa fa-search fa-fw',
+        back: 'fa fa-backward fa-fw'
+    }
+
+});
+</script>
+    
+    </main>
+    <footer></footer>
+  </body>
+</html>

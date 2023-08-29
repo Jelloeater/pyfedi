@@ -39,7 +39,7 @@ import arrow
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from flask import Request
+from flask import Request, current_app
 from datetime import datetime
 from dateutil import parser
 from pyld import jsonld
@@ -313,7 +313,7 @@ class HttpSignature:
             )
         except requests.exceptions.SSLError as invalid_cert:
             # Not our problem if the other end doesn't have proper SSL
-            print(f"{uri} {invalid_cert}")
+            current_app.logger.info(f"{uri} {invalid_cert}")
             raise requests.exceptions.SSLError from invalid_cert
         except ValueError as ex:
             # Convert to a more generic error we handle

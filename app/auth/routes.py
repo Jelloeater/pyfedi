@@ -9,7 +9,7 @@ from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm
 from app.auth.util import random_token
 from app.models import User
 from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
-from sqlalchemy import text
+from app.activitypub.signature import RsaKeys
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -132,10 +132,15 @@ def verify_email(token):
     if token != '':
         user = User.query.filter_by(verification_token=token).first()
         if user is not None:
+            if user.verified:   # guard against users double-clicking the link in the email
+                return redirect(url_for('main.index'))
             user.verified = True
             user.last_seen = datetime.utcnow()
+            private_key, public_key = RsaKeys.generate_keypair()
+            user.private_key = private_key
+            user.public_key = public_key
             db.session.commit()
-            flash(_('Thanks for verifying your email address.'))
+            flash(_('Thank you for verifying your email address. You can now post content and vote.'))
         else:
             flash(_('Email address validation failed.'), 'error')
         return redirect(url_for('main.index'))

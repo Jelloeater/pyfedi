@@ -50,3 +50,17 @@ nav, etc which are used site-wide */
   margin-left: auto;
   margin-right: auto;
 }
+
+.community_header {
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  border-radius: 5px;
+}
+
+.community_header_no_background, .community_header {
+  .community_icon {
+    width: 120px;
+    height: auto;
+  }
+}

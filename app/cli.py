@@ -1,3 +1,8 @@
+# if commands in this file are not working (e.g. 'flask translate') make sure you set the FLASK_APP environment variable.
+# e.g. export FLASK_APP=pyfedi.py
+
+
+from app import db
 import click
 import os
 
@@ -33,3 +38,12 @@ def register(app):
         """Compile all languages."""
         if os.system('pybabel compile -d app/translations'):
             raise RuntimeError('compile command failed')
+
+    @app.cli.command("init-db")
+    def init_db():
+        with app.app_context():
+            db.drop_all()
+            db.configure_mappers()
+            db.create_all()
+            db.session.commit()
+            print("Done")

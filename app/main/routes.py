@@ -9,11 +9,6 @@ from flask_babel import _, get_locale
 from app.models import Community
 
 
-@bp.before_app_request
-def before_request():
-    g.locale = str(get_locale())
-
-
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
 def index():
@@ -26,3 +21,9 @@ def index():
 def list_communities():
     communities = Community.query.all()
     return render_template('list_communities.html', communities=communities)
+
+
+
+@bp.before_app_request
+def before_request():
+    g.locale = str(get_locale())

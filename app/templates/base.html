@@ -32,7 +32,7 @@
     <!-- Page content -->
     {% block navbar %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container-fluid">
+        <div class="container-lg">
             <a class="navbar-brand" href="/" target="_blank">Logo</a>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,10 +43,12 @@
                     <ul class="nav navbar-nav ml-md-4">
                         {% if current_user.is_anonymous %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/login">{{ _('Log in') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/register">{{ _('Register') }}</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
                         {% endif %}
                     </ul>
@@ -57,7 +59,7 @@
     {% endblock %}
 
     {% block content %}
-        <div id="outer_container" class="container-fluid flex-shrink-0 mt-4">
+        <div id="outer_container" class="container-lg flex-shrink-0 mt-4 pt-1">
             {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
                 {% for category, message in messages %}

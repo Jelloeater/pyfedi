@@ -3,7 +3,9 @@
 
 
 from app import create_app, db, cli
-import os
+import os, click
+
+from app.utils import getmtime
 
 app = create_app()
 cli.register(app)
@@ -19,3 +21,8 @@ def app_context_processor():  # NB there needs to be an identical function in cb
 @app.shell_context_processor
 def make_shell_context():
     return {'db': db}
+
+
+with app.app_context():
+    app.jinja_env.globals['getmtime'] = getmtime
+    app.jinja_env.globals['len'] = len

@@ -12,6 +12,8 @@ from flask_bootstrap import Bootstrap5
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel, lazy_gettext as _l
+from sqlalchemy_searchable import make_searchable
+
 from config import Config
 
 
@@ -36,6 +38,7 @@ def create_app(config_class=Config):
     mail.init_app(app)
     bootstrap.init_app(app)
     moment.init_app(app)
+    make_searchable(db.metadata)
     babel.init_app(app, locale_selector=get_locale)
 
     from app.main import bp as main_bp
@@ -52,6 +55,9 @@ def create_app(config_class=Config):
 
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
+
+    from app.community import bp as community_bp
+    app.register_blueprint(community_bp, url_prefix='/community')
 
     def get_resource_as_string(name, charset='utf-8'):
         with app.open_resource(name) as f:

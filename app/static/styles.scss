@@ -45,8 +45,34 @@ nav.navbar {
   font-size: 140%;
 }
 
-.alert-message {
+.alert-info, .alert-message, .alert-error {
   color: #0c5460;
   background-color: #d1ecf1;
   border-color: #bee5eb;
+  @include breakpoint(tablet) {
+    padding-left: 1.8rem;
+    padding-right: 1.8rem;
+  }
+}
+
+.alert-error {
+    color: #722047;
+    background-color: #f8d7da;
+}
+
+.community_icon {
+  width: 30px;
+  height: auto;
+}
+
+.community_icon_big {
+  width: 120px;
+  height: auto;
+}
+
+.bump_up {
+  position: absolute;
+  top: 104px;
+  left: 26px;
+
 }

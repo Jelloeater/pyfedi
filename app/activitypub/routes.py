@@ -3,6 +3,8 @@ from sqlalchemy import text
 from app import db
 from app.activitypub import bp
 from flask import request, Response, render_template, current_app, abort, jsonify
+
+from app.community.routes import show_community
 from app.models import User, Community
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity
@@ -141,9 +143,15 @@ def community_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the community, or a HTML rendering of it.
         The two types of requests are differentiated by the header """
     actor = actor.strip()
-    community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    if '@' in actor:
+        # don't provide activitypub info for remote communities
+        if 'application/ld+json' in request.headers.get('Accept', ''):
+            abort(404)
+        community = Community.query.filter_by(ap_id=actor, banned=False).first()
+    else:
+        community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
     if community is not None:
-        if 'application/ld+json' in request.headers.get('Accept', '') or request.accept_mimetypes.accept_json:
+        if 'application/ld+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
             actor_data = {"@context": [
                 "https://www.w3.org/ns/activitystreams",
@@ -188,8 +196,10 @@ def community_profile(actor):
             resp = jsonify(actor_data)
             resp.content_type = 'application/activity+json'
             return resp
-        else:
-            return render_template('user_profile.html', user=community)
+        else:   # browser request - return html
+            return show_community(community)
+    else:
+        abort(404)
 
 
 @bp.route('/c/<actor>/outbox', methods=['GET'])

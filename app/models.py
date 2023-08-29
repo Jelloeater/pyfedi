@@ -10,6 +10,8 @@ from sqlalchemy_utils.types import TSVectorType # https://sqlalchemy-searchable.
 from app import db, login
 import jwt
 
+from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER
+
 
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,6 +26,7 @@ class File(db.Model):
 class Community(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     icon_id = db.Column(db.Integer, db.ForeignKey('file.id'))
+    image_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     name = db.Column(db.String(256), index=True)
     title = db.Column(db.String(256))
     description = db.Column(db.Text)
@@ -53,10 +56,40 @@ class Community(db.Model):
     restricted_to_mods = db.Column(db.Boolean, default=False)
     searchable = db.Column(db.Boolean, default=True)
 
-    search_vector = db.Column(TSVectorType('name', 'title', 'description'))
+    search_vector = db.Column(TSVectorType('name', 'title', 'description', 'rules'))
 
     posts = db.relationship('Post', backref='community', lazy='dynamic', cascade="all, delete-orphan")
     replies = db.relationship('PostReply', backref='community', lazy='dynamic', cascade="all, delete-orphan")
+    icon = db.relationship('File', foreign_keys=[icon_id], single_parent=True, backref='community', cascade="all, delete-orphan")
+    image = db.relationship('File', foreign_keys=[image_id], single_parent=True, cascade="all, delete-orphan")
+
+    def icon_image(self) -> str:
+        if self.icon_id is not None:
+            if self.icon.file_path is not None:
+                return self.icon.file_path
+            if self.icon.source_url is not None:
+                return self.icon.source_url
+        return ''
+
+    def header_image(self) -> str:
+        if self.image_id is not None:
+            if self.image.file_path is not None:
+                return self.image.file_path
+            if self.image.source_url is not None:
+                return self.image.source_url
+        return ''
+
+    def display_name(self) -> str:
+        if self.ap_id is None:
+            return self.title
+        else:
+            return f"{self.title}@{self.ap_domain}"
+
+    def link(self) -> str:
+        if self.ap_id is None:
+            return self.name
+        else:
+            return self.ap_id
 
 
 class User(UserMixin, db.Model):
@@ -146,6 +179,20 @@ class User(UserMixin, db.Model):
         if self.expires is None:
             return True
         return self.expires < datetime(2019, 9, 1)
+
+    def subscribed(self, community) -> int:
+        if community is None:
+            return False
+        subscription:CommunityMember = CommunityMember.query.filter_by(user_id=self.id, community_id=community.id).first()
+        if subscription:
+            if subscription.is_owner:
+                return SUBSCRIPTION_OWNER
+            elif subscription.is_moderator:
+                return SUBSCRIPTION_MODERATOR
+            else:
+                return SUBSCRIPTION_MEMBER
+        else:
+            return SUBSCRIPTION_NONMEMBER
 
     @staticmethod
     def verify_reset_password_token(token):
@@ -282,7 +329,7 @@ class BannedInstances(db.Model):
 
 class Instance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(256))
+    domain = db.Column(db.String(256), index=True)
     inbox = db.Column(db.String(256))
     shared_inbox = db.Column(db.String(256))
     outbox = db.Column(db.String(256))

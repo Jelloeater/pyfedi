@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+        <div class="row">
+            <div class="col mx-auto">
+                <div class="card mt-5">
+                    <div class="card-body p-6">
+                        <div class="card-title">{{ _('Search') }}</div>
+                        {{ render_form(form) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if new_community %}
+            <div class="row">
+                <div class="col mx-auto">
+                    <div class="card mt-5">
+                        <div class="card-body p-6">
+                            <div class="card-title">{{ _('Found a community:') }}</div>
+                            <div class="card-body">
+                                <p>
+                                    <a href="/c/{{ new_community.link() }}"><img src="{{ new_community.icon_image()}}" class="community_icon rounded-circle" /></a>
+                                    <a href="/c/{{ new_community.link() }}">{{ new_community.title }}@{{ new_community.ap_domain }}</a>
+                                    {% if subscribed %}
+                                        <a class="btn btn-primary mt-4" href="/c/{{ new_community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
+                                    {% else %}
+                                        <a class="btn btn-primary mt-4" href="/c/{{ new_community.link() }}/subscribe">{{ _('Subscribe') }}</a>
+                                    {% endif %}
+
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+{% endblock %}

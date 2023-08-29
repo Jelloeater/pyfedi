@@ -265,4 +265,16 @@ fieldset legend {
   margin-right: auto;
 }
 
+.community_header {
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  border-radius: 5px;
+}
+
+.community_header_no_background .community_icon, .community_header .community_icon {
+  width: 120px;
+  height: auto;
+}
+
 /*# sourceMappingURL=structure.css.map */
