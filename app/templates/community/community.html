@@ -43,10 +43,11 @@
         </div>
         <div class="card mt-3">
             <div class="card-header">
-                 <h2>About community</h2>
+                 <h2>{{ _('About community') }}</h2>
             </div>
             <div class="card-body">
-                {{ community.description|safe }}
+                <p>{{ community.description }}</p>
+                <p>{{ community.rules }}</p>
             </div>
         </div>
     </div>

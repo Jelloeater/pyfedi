@@ -159,7 +159,7 @@ class User(UserMixin, db.Model):
         return jwt.encode(
             {'reset_password': self.id, 'exp': time() + expires_in},
             current_app.config['SECRET_KEY'],
-            algorithm='HS256').decode('utf-8')
+            algorithm='HS256')
 
     def another_account_using_email(self, email):
         another_account = User.query.filter(User.email == email, User.id != self.id).first()

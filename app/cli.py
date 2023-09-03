@@ -1,10 +1,12 @@
 # if commands in this file are not working (e.g. 'flask translate') make sure you set the FLASK_APP environment variable.
 # e.g. export FLASK_APP=pyfedi.py
-
+from flask import json
 
 from app import db
 import click
 import os
+
+from app.models import Settings, BannedInstances
 
 
 def register(app):
@@ -45,5 +47,8 @@ def register(app):
             db.drop_all()
             db.configure_mappers()
             db.create_all()
+            db.session.append(Settings(name='allow_nsfw', value=json.dumps(False)))
+            db.session.append(BannedInstances(domain='lemmygrad.ml'))
+            db.session.append(BannedInstances(domain='gab.com'))
             db.session.commit()
             print("Done")

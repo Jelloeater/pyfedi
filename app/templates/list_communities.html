@@ -14,7 +14,7 @@
 
         <div class="btn-group">
 
-            <a href="#" class="btn btn-outline-secondary">{{ _('Add local') }}</a>
+            <a href="{{ url_for('community.add_local') }}" class="btn btn-outline-secondary">{{ _('Create local') }}</a>
             <a href="{{ url_for('community.add_remote') }}" class="btn btn-outline-secondary">{{ _('Add remote') }}</a>
         </div>
         <input type="search" placeholder="Find a community" class="form-control">
@@ -35,7 +35,7 @@
             <tbody>
                 {% for community in communities %}
                     <tr class="">
-                        <td><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" /></a></td>
+                        <td><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
                         <th scope="row"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></th>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>

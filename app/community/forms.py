@@ -4,9 +4,9 @@ from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Le
 from flask_babel import _, lazy_gettext as _l
 
 
-class AddLocalCommunity():
-    name = StringField(_l('Name'), validators=[DataRequired()])
-    url = StringField(_l('Url'))
+class AddLocalCommunity(FlaskForm):
+    community_name = StringField(_l('Name'), validators=[DataRequired()])
+    url = StringField(_l('Url'), render_kw={'placeholder': '/c/'})
     description = TextAreaField(_l('Description'))
     rules = TextAreaField(_l('Rules'))
     nsfw = BooleanField('18+ NSFW')
