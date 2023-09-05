@@ -27,9 +27,9 @@
                 <div class="row">
                     <div class="col-6">
                         {% if current_user.subscribed(community) %}
-                            <a class="w-100 btn btn-primary" href="/c/{{ community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
+                            <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
                         {% else %}
-                            <a class="w-100 btn btn-primary" href="/c/{{ community.link() }}/subscribe">{{ _('Subscribe') }}</a>
+                            <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/subscribe">{{ _('Subscribe') }}</a>
                         {% endif %}
                     </div>
                     <div class="col-6">
@@ -48,8 +48,27 @@
             <div class="card-body">
                 <p>{{ community.description }}</p>
                 <p>{{ community.rules }}</p>
+                {% if len(mods) > 0 %}
+                    <h3>Moderators</h3>
+                    <ol>
+                        {% for mod in mods %}
+                            <li><a href="/u/{{ mod.user_name }}">{{ mod.user_name }}</a></li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
             </div>
         </div>
+        {% if is_moderator %}
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('Community Settings') }}</h2>
+            </div>
+            <div class="card-body">
+                <p><a href="#" class="btn btn-primary">{{ _('Moderate') }}</a></p>
+                <p><a href="#" class="btn btn-primary">{{ _('Settings') }}</a></p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 <div class="row">

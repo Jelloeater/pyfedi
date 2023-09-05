@@ -1,12 +1,15 @@
 from datetime import datetime
 
+from app import db
 from app.main import bp
-from flask import g, jsonify, render_template, flash
+from flask import g, jsonify, render_template, flash, request
 from flask_moment import moment
 from flask_login import current_user
 from flask_babel import _, get_locale
+from sqlalchemy import select
+from sqlalchemy_searchable import search
 
-from app.models import Community
+from app.models import Community, CommunityMember
 
 
 @bp.route('/', methods=['GET', 'POST'])
@@ -19,7 +22,25 @@ def index():
 
 @bp.route('/communities', methods=['GET'])
 def list_communities():
-    communities = Community.query.all()
+    search_param = request.args.get('search', '')
+    if search_param == '':
+        communities = Community.query.all()
+    else:
+        query = search(select(Community), search_param, sort=True)
+        communities = db.session.scalars(query).all()
+
+    return render_template('list_communities.html', communities=communities, search=search_param)
+
+
+@bp.route('/communities/local', methods=['GET'])
+def list_local_communities():
+    communities = Community.query.filter_by(ap_id=None).all()
+    return render_template('list_communities.html', communities=communities)
+
+
+@bp.route('/communities/subscribed', methods=['GET'])
+def list_subscribed_communities():
+    communities = Community.query.join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
     return render_template('list_communities.html', communities=communities)
 
 

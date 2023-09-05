@@ -12,7 +12,7 @@ def search_for_community(address: str):
         banned = BannedInstances.query.filter_by(domain=server).first()
         if banned:
             reason = f" Reason: {banned.reason}" if banned.reason is not None else ''
-            raise Exception(f"{server} is blocked.{reason}")    # todo: create custom exception class hierarchy
+            raise Exception(f"{server} is blocked.{reason}")  # todo: create custom exception class hierarchy
 
         already_exists = Community.query.filter_by(ap_id=address[1:]).first()
         if already_exists:
@@ -25,7 +25,7 @@ def search_for_community(address: str):
         if webfinger_data.status_code == 200:
             webfinger_json = webfinger_data.json()
             for links in webfinger_json['links']:
-                if 'rel' in links and links['rel'] == 'self':   # this contains the URL of the activitypub profile
+                if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
                     type = links['type'] if 'type' in links else 'application/activity+json'
                     # retrieve the activitypub profile
                     community_data = get_request(links['href'], headers={'Accept': type})
@@ -64,3 +64,8 @@ def search_for_community(address: str):
                             db.session.commit()
                             return community
         return None
+
+
+def community_url_exists(url) -> bool:
+    community = Community.query.filter_by(url=url).first()
+    return community is not None

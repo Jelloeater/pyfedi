@@ -5,10 +5,17 @@
 <div class="row g-2 justify-content-between">
     <div class="col-auto">
         <div class="btn-group">
-            <a href="#" class="btn btn-outline-secondary">{{ _('All') }}</a>
-            <a href="#" class="btn btn-outline-secondary">{{ _('Local') }}</a>
-            <a href="#" class="btn btn-outline-secondary">{{ _('Subscribed') }}</a>
+            <a href="/communities" class="btn {{ 'btn-primary' if request.path == '/communities' else 'btn-outline-secondary' }}">
+                {{ _('All') }}
+            </a>
+            <a href="/communities/local" class="btn {{ 'btn-primary' if request.path == '/communities/local' else 'btn-outline-secondary' }}">
+                {{ _('Local') }}
+            </a>
+            <a href="/communities/subscribed" class="btn {{ 'btn-primary' if request.path == '/communities/subscribed' else 'btn-outline-secondary' }}">
+                {{ _('Subscribed') }}
+            </a>
         </div>
+
     </div>
     <div class="col-auto">
 
@@ -17,7 +24,9 @@
             <a href="{{ url_for('community.add_local') }}" class="btn btn-outline-secondary">{{ _('Create local') }}</a>
             <a href="{{ url_for('community.add_remote') }}" class="btn btn-outline-secondary">{{ _('Add remote') }}</a>
         </div>
-        <input type="search" placeholder="Find a community" class="form-control">
+        <form method="get" action="/communities">
+            <input name='search' type="search" placeholder="Find a community" class="form-control" value="{{ search }}" />
+        </form>
     </div>
 </div>
 {% if len(communities) > 0 %}
@@ -41,9 +50,9 @@
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>
                         <td>{% if current_user.subscribed(community) %}
-                                <a class="btn btn-primary btn-sm" href="/c/{{ community.link() }}/unsubscribe">Unsubscribe</a>
+                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Unsubscribe</a>
                             {% else %}
-                                <a class="btn btn-primary btn-sm" href="/c/{{ community.link() }}/subscribe">Subscribe</a>
+                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">Subscribe</a>
                             {% endif %}
                         </td>
                     </tr>

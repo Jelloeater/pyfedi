@@ -55,6 +55,7 @@ class Community(db.Model):
     banned = db.Column(db.Boolean, default=False)
     restricted_to_mods = db.Column(db.Boolean, default=False)
     searchable = db.Column(db.Boolean, default=True)
+    private_mods = db.Column(db.Boolean, default=False)
 
     search_vector = db.Column(TSVectorType('name', 'title', 'description', 'rules'))
 
@@ -180,7 +181,7 @@ class User(UserMixin, db.Model):
             return True
         return self.expires < datetime(2019, 9, 1)
 
-    def subscribed(self, community) -> int:
+    def subscribed(self, community: Community) -> int:
         if community is None:
             return False
         subscription:CommunityMember = CommunityMember.query.filter_by(user_id=self.id, community_id=community.id).first()
@@ -338,6 +339,12 @@ class Instance(db.Model):
 class Settings(db.Model):
     name = db.Column(db.String(50), primary_key=True)
     value = db.Column(db.String(1024))
+
+
+class Interest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    communities = db.Column(db.Text)
 
 
 @login.user_loader
