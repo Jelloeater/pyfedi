@@ -1,9 +1,5 @@
 from app.activitypub.signature import HttpSignature
-
-def file_get_contents(filename):
-    with open(filename, 'r') as file:
-        contents = file.read()
-    return contents
+from app.utils import file_get_contents
 
 body_1 = file_get_contents('testing_data/body_1.json')
 body_2 = file_get_contents('testing_data/body_2.json')

@@ -6,7 +6,8 @@ from app import db
 import click
 import os
 
-from app.models import Settings, BannedInstances
+from app.models import Settings, BannedInstances, Interest
+from app.utils import file_get_contents
 
 
 def register(app):
@@ -50,5 +51,37 @@ def register(app):
             db.session.append(Settings(name='allow_nsfw', value=json.dumps(False)))
             db.session.append(BannedInstances(domain='lemmygrad.ml'))
             db.session.append(BannedInstances(domain='gab.com'))
+            db.session.append(BannedInstances(domain='exploding-heads.com'))
+            db.session.append(BannedInstances(domain='hexbear.net'))
+            db.session.append(BannedInstances(domain='threads.net'))
+            interests = file_get_contents('interests.txt')
+            db.session.append(Interest(name='🕊 Chilling', communities=parse_communities(interests, 'chilling')))
+            db.session.append(Interest(name='💭 Interesting stuff', communities=parse_communities(interests, 'interesting stuff')))
+            db.session.append(Interest(name='📰 News & Politics', communities=parse_communities(interests, 'news & politics')))
+            db.session.append(Interest(name='🎮 Gaming', communities=parse_communities(interests, 'gaming')))
+            db.session.append(Interest(name='🤓 Linux', communities=parse_communities(interests, 'linux')))
+            db.session.append(Interest(name='♻️ Environment', communities=parse_communities(interests, 'environment')))
+            db.session.append(Interest(name='🏳‍🌈 LGBTQ+', communities=parse_communities(interests, 'lgbtq')))
+            db.session.append(Interest(name='🛠 Programming', communities=parse_communities(interests, 'programming')))
+            db.session.append(Interest(name='🖥️ Tech', communities=parse_communities(interests, 'tech')))
+            db.session.append(Interest(name='🤗 Mental Health', communities=parse_communities(interests, 'mental health')))
             db.session.commit()
             print("Done")
+
+
+def parse_communities(interests_source, segment):
+    lines = interests_source.split("\n")
+    include_in_output = False
+    output = []
+
+    for line in lines:
+        line = line.strip()
+        if line == segment:
+            include_in_output = True
+            continue
+        elif line == '':
+            include_in_output = False
+        if include_in_output:
+            output.append(line)
+
+    return "\n".join(output)

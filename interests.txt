@@ -1,0 +1,167 @@
+chilling
+    https://kbin.social/m/AskKbin
+    https://kbin.social/m/TodayILearned
+    https://kbin.social/m/showerthoughts
+    https://kbin.social/m/ELI5
+    https://kbin.social/m/scifi
+    https://kbin.social/m/wholesome
+    https://kbin.social/m/oddlysatisfying
+    https://kbin.social/m/Funny
+    https://kbin.social/m/photography
+    https://kbin.social/m/videos
+    https://kbin.social/m/music
+    https://kbin.social/m/food
+    https://sh.itjust.works/c/goodnewseveryone
+    https://lemmy.world/c/nostupidquestions
+    https://lemmy.world/c/videos
+    https://lemmy.world/c/foodporn
+    https://lemmy.world/c/pics
+    https://lemmy.world/c/casualconversation
+    https://lemmy.world/c/upliftingnews
+    https://lemmy.world/c/newcommunities
+    https://lemmy.world/c/funny
+    https://lemmy.world/c/xkcd
+    https://lemmy.world/c/wtf
+    https://lemmy.world/c/jokes
+    https://beehaw.org/c/food
+    https://beehaw.org/c/music
+    https://beehaw.org/c/humor
+    https://beehaw.org/c/entertainment
+    https://beehaw.org/c/chat
+    https://lemmy.world/c/bestoflemmy
+    
+gaming
+    https://kbin.social/m/gaming
+    https://kbin.social/m/PCGaming
+    https://kbin.social/m/NintendoSwitch
+    https://kbin.social/m/retrogaming
+    https://kbin.social/m/PatientGamers
+    https://kbin.social/m/Steamdeck
+    https://sh.itjust.works/c/games
+    https://sh.itjust.works/c/patientgamers
+    https://lemmy.world/c/games
+    https://lemmy.world/c/baldurs_gate_3
+    https://lemmy.world/c/retrogaming
+    https://lemmy.world/c/linux_gaming
+    https://lemmy.world/c/pcgaming
+    https://lemmy.world/c/diablo
+    https://beehaw.org/c/gaming
+    
+interesting stuff
+    https://kbin.social/m/science
+    https://kbin.social/m/space
+    https://kbin.social/m/interestingasfuck
+    https://kbin.social/m/Futurology
+    https://kbin.social/m/mildlyinteresting
+    https://lemmy.world/c/mildlyinteresting
+    https://kbin.social/m/damnthatsinteresting
+    https://kbin.social/m/ChatGPT
+    https://lemmy.world/c/til
+    https://lemmy.world/c/science
+    
+tech
+    https://lemmy.world/c/technology
+    https://kbin.social/m/tech
+    https://kbin.social/m/fediverse
+    https://kbin.social/m/technology
+    https://kbin.social/m/apple
+    https://kbin.social/m/selfhosted
+    https://kbin.social/m/android
+    https://lemmy.world/c/selfhosted
+    https://lemmy.world/c/fediverse
+    https://lemmy.world/c/android
+    https://lemmy.world/c/apple_enthusiast
+    https://lemmy.world/c/firefox
+    https://programming.dev/c/auai
+    https://programming.dev/c/security
+    https://programming.dev/c/loud
+    https://lemmy.world/c/battlestations
+    https://beehaw.org/c/technology
+    https://lemmy.ml/c/privacy
+    https://fedia.io/m/firefox
+    https://lemdro.id/c/android
+    https://kbin.social/m/GNOME
+    https://kbin.social/m/openSUSE
+    https://lemmy.one/c/privacyguides
+    https://lemmy.world/c/ergomechkeyboards
+    https://lemmy.world/c/buildapc
+    
+linux
+    https://kbin.social/m/linux
+    https://sh.itjust.works/c/linux
+    https://lemmy.world/c/linux
+    https://lemmy.world/c/sysadmin
+    https://lemmy.world/c/unixporn
+    https://programming.dev/c/linux
+    https://programming.dev/c/linux4noobs
+    https://beehaw.org/c/foss
+    https://lemmy.ml/c/linux
+
+programming
+    https://kbin.social/m/programming
+    https://kbin.social/m/gamedev
+    https://kbin.social/m/opensource
+    https://kbin.social/m/programmerhumor
+    https://kbin.social/m/infosec
+    https://programming.dev/c/programmer_humor
+    https://programming.dev/c/programming
+    https://programming.dev/c/experienced_devs
+    https://programming.dev/c/webdev
+    https://programming.dev/c/gamedev
+    https://programming.dev/c/cs_career_questions
+    https://beehaw.org/c/programming
+    https://lemmy.blahaj.zone/c/gamedev
+    
+news & politics
+    https://kbin.social/m/politics
+    https://kbin.social/m/worldnews
+    https://sh.itjust.works/c/worldnews
+    https://lemmy.world/c/news
+    https://lemmy.world/c/politics
+    https://lemmy.world/c/world
+    https://lemmy.world/c/nottheonion
+    https://lemmy.world/c/workreform
+    https://lemmy.world/c/thepoliceproblem
+    https://lemmy.world/c/worldnews
+    https://beehaw.org/c/politics
+    https://beehaw.org/c/news
+    https://beehaw.org/c/usnews
+    https://lemmy.world/c/outoftheloop
+    https://feddit.de/c/europe
+    
+lgbtq
+    https://kbin.social/m/queer
+    https://beehaw.org/c/lgbtq_plus
+    https://sh.itjust.works/c/lgbtq_plus
+    https://lemmy.blahaj.zone/c/ftm
+    https://lemmy.blahaj.zone/c/mtf
+    https://lemmy.blahaj.zone/c/lgbtq_plus
+    https://lemmy.blahaj.zone/c/ftm
+    https://lemmy.one/c/nonbinary
+    
+environment
+    https://sh.itjust.works/c/environment
+    https://sh.itjust.works/c/sewingrepairing
+    https://lemmy.world/c/fuckcars
+    https://lemmy.world/c/evs
+    https://feddit.uk/c/evs
+    https://slrpnk.net/c/solarpunk
+    https://slrpnk.net/c/climate
+    https://slrpnk.net/c/energy
+    https://slrpnk.net/c/technology
+    https://slrpnk.net/c/urbanism
+    https://slrpnk.net/c/buyitforlife
+    https://beehaw.org/c/greenspace
+    https://beehaw.org/c/environment
+    
+mental health
+    https://kbin.social/m/ADHD
+    https://sh.itjust.works/c/neurodivergentlifehacks
+    https://sh.itjust.works/c/mindfulness
+    https://lemmy.world/c/autism
+    https://lemmy.world/c/adhd
+    https://lemmy.world/c/autisticandadhd
+    https://lemmy.world/c/mentalhealth
+    https://beehaw.org/c/neurodivergence
+    https://lemmy.blahaj.zone/c/bipolar
+    

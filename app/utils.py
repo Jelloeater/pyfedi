@@ -47,3 +47,10 @@ def set_setting(name: str, value):
         setting.value = json.dumps(value)
     db.session.commit()
     get_setting.cache_clear()
+
+
+# Return the contents of a file as a string. Inspired by PHP's function of the same name.
+def file_get_contents(filename):
+    with open(filename, 'r') as file:
+        contents = file.read()
+    return contents
