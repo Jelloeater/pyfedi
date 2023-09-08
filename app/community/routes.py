@@ -3,11 +3,11 @@ from flask import render_template, redirect, url_for, flash, request, make_respo
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
 from app import db
-from app.activitypub.signature import RsaKeys
+from app.activitypub.signature import RsaKeys, HttpSignature
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity
 from app.community.util import search_for_community, community_url_exists
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER
-from app.models import User, Community, CommunityMember
+from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan
 from app.community import bp
 from app.utils import get_setting
 from sqlalchemy import or_
@@ -25,7 +25,8 @@ def add_local():
             form.url.data = form.url.data[3:]
         private_key, public_key = RsaKeys.generate_keypair()
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
-                              rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key, public_key=public_key,
+                              rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
+                              public_key=public_key,
                               subscriptions_count=1)
         db.session.add(community)
         db.session.commit()
@@ -53,7 +54,8 @@ def add_remote():
         elif '@' in address:
             new_community = search_for_community('!' + address)
         else:
-            message = Markup('Type address in the format !community@server.name. Search on <a href="https://lemmyverse.net/communities">Lemmyverse.net</a> to find some.')
+            message = Markup(
+                'Type address in the format !community@server.name. Search on <a href="https://lemmyverse.net/communities">Lemmyverse.net</a> to find some.')
             flash(message, 'error')
 
     return render_template('community/add_remote.html',
@@ -68,7 +70,7 @@ def show_community(community: Community):
                                             CommunityMember.is_owner,
                                             CommunityMember.is_moderator
                                         ))
-    ).all()
+                                        ).all()
 
     is_moderator = any(mod.user_id == current_user.id for mod in mods)
     is_owner = any(mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
@@ -85,18 +87,48 @@ def show_community(community: Community):
 
 @bp.route('/<actor>/subscribe', methods=['GET'])
 def subscribe(actor):
+    remote = False
     actor = actor.strip()
     if '@' in actor:
         community = Community.query.filter_by(banned=False, ap_id=actor).first()
+        remote = True
     else:
         community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
 
     if community is not None:
         if not current_user.subscribed(community):
-            membership = CommunityMember(user_id=current_user.id, community_id=community.id)
-            db.session.add(membership)
-            db.session.commit()
-        flash('You have subscribed to ' + community.title)
+            if remote:
+                # send ActivityPub message to remote community, asking to follow. Accept message will be sent to our shared inbox
+                join_request = CommunityJoinRequest(user_id=current_user.id, community_id=community.id)
+                db.session.add(join_request)
+                db.session.commit()
+                follow = {
+                    "actor": f"https://{current_app.config['SERVER_NAME']}/u/{current_user.user_name}",
+                    "to": [community.ap_id],
+                    "object": community.ap_id,
+                    "type": "Follow",
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/" + join_request.id
+                }
+                try:
+                    message = HttpSignature.signed_request(community.ap_inbox_url, follow, current_user.private_key,
+                                                           current_user.ap_profile_id + '#main-key')
+                    if message.status_code == 200:
+                        flash('Your request to subscribe has been sent to ' + community.title)
+                    else:
+                        flash('Response status code was not 200', 'warning')
+                        current_app.logger.error('Response code for subscription attempt was ' +
+                                                 str(message.status_code) + ' ' + message.text)
+                except Exception as ex:
+                    flash('Failed to send request to subscribe: ' + str(ex), 'error')
+                    current_app.logger.error("Exception while trying to subscribe" + str(ex))
+            else:   # for local communities, joining is instant
+                banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
+                if banned:
+                    flash('You cannot join this community')
+                member = CommunityMember(user_id=current_user.id, community_id=community.id)
+                db.session.add(member)
+                db.session.commit()
+                flash('You are subscribed to ' + community.title)
         referrer = request.headers.get('Referer', None)
         if referrer is not None:
             return redirect(referrer)

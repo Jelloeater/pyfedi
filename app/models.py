@@ -10,7 +10,8 @@ from sqlalchemy_utils.types import TSVectorType # https://sqlalchemy-searchable.
 from app import db, login
 import jwt
 
-from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER
+from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER, \
+    SUBSCRIPTION_BANNED
 
 
 class File(db.Model):
@@ -121,9 +122,12 @@ class User(UserMixin, db.Model):
     searchable = db.Column(db.Boolean, default=True)
     indexable = db.Column(db.Boolean, default=False)
 
-    ap_id = db.Column(db.String(255), index=True)
-    ap_profile_id = db.Column(db.String(255))
-    ap_public_url = db.Column(db.String(255))
+    avatar = db.relationship('File', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
+    cover = db.relationship('File', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
+
+    ap_id = db.Column(db.String(255), index=True)           # e.g. username@server
+    ap_profile_id = db.Column(db.String(255), index=True)   # e.g. https://server/u/username
+    ap_public_url = db.Column(db.String(255))               # e.g. https://server/u/username
     ap_fetched_at = db.Column(db.DateTime)
     ap_followers_url = db.Column(db.String(255))
     ap_preferred_username = db.Column(db.String(255))
@@ -134,7 +138,6 @@ class User(UserMixin, db.Model):
 
     search_vector = db.Column(TSVectorType('user_name', 'bio', 'keywords'))
     activity = db.relationship('ActivityLog', backref='account', lazy='dynamic', cascade="all, delete-orphan")
-    avatar = db.relationship(File, foreign_keys=[avatar_id], cascade="all, delete-orphan")
     posts = db.relationship('Post', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     post_replies = db.relationship('PostReply', backref='author', lazy='dynamic', cascade="all, delete-orphan")
 
@@ -186,7 +189,9 @@ class User(UserMixin, db.Model):
             return False
         subscription:CommunityMember = CommunityMember.query.filter_by(user_id=self.id, community_id=community.id).first()
         if subscription:
-            if subscription.is_owner:
+            if subscription.is_banned:
+                return SUBSCRIPTION_BANNED
+            elif subscription.is_owner:
                 return SUBSCRIPTION_OWNER
             elif subscription.is_moderator:
                 return SUBSCRIPTION_MODERATOR
@@ -305,6 +310,15 @@ class CommunityMember(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class CommunityBan(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    community_id = db.Column(db.Integer, db.ForeignKey('community.id'), primary_key=True)
+    banned_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    reason = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ban_until = db.Column(db.DateTime)
+
+
 class UserNote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -345,6 +359,18 @@ class Interest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
     communities = db.Column(db.Text)
+
+
+class CommunityJoinRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    community_id = db.Column(db.Integer, db.ForeignKey('community.id'))
+
+
+class UserFollowRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    follow_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
 @login.user_loader

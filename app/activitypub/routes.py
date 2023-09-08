@@ -2,12 +2,13 @@ from sqlalchemy import text
 
 from app import db
 from app.activitypub import bp
-from flask import request, Response, render_template, current_app, abort, jsonify
+from flask import request, Response, render_template, current_app, abort, jsonify, json
 
+from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
-from app.models import User, Community
+from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
-    post_to_activity
+    post_to_activity, find_actor_or_create
 
 INBOX = []
 
@@ -155,13 +156,7 @@ def community_profile(actor):
             server = current_app.config['SERVER_NAME']
             actor_data = {"@context": [
                 "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1",
-                {
-                    "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
-                    "schema": "http://schema.org#",
-                    "PropertyValue": "schema:PropertyValue",
-                    "value": "schema:value"
-                }
+                "https://w3id.org/security/v1"
                 ],
                 "type": "Group",
                 "id": f"https://{server}/c/{actor}",
@@ -202,6 +197,36 @@ def community_profile(actor):
         abort(404)
 
 
+@bp.route('/inbox', methods=['GET', 'POST'])
+def shared_inbox():
+    if request.method == 'POST':
+        request_json = request.get_json()
+        actor = find_actor_or_create(request_json['actor'])
+        if actor is not None:
+            if HttpSignature.verify_request(request, actor.public_key, skip_date=True):
+                if 'type' in request_json:
+                    if request_json['type'] == 'Announce':
+                        ...
+                    elif request_json['type'] == 'Follow':
+                        # todo: send accept message if not banned
+                        banned = CommunityBan.query.filter_by(user_id=current_user.id,
+                                                              community_id=community.id).first()
+                        ...
+                    elif request_json['type'] == 'Accept':
+                        if request_json['object']['type'] == 'Follow':
+                            community_ap_id = request_json['actor']
+                            user_ap_id = request_json['object']['actor']
+                            user = find_actor_or_create(user_ap_id)
+                            community = find_actor_or_create(community_ap_id)
+                            join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
+                                                                                community_id=community.id).first()
+                            if join_request:
+                                member = CommunityMember(user_id=user.id, community_id=community.id)
+                                db.session.add(member)
+                                db.session.commit()
+
+
+
 @bp.route('/c/<actor>/outbox', methods=['GET'])
 def community_outbox(actor):
     actor = actor.strip()
@@ -213,24 +238,6 @@ def community_outbox(actor):
             "@context": [
                 "https://www.w3.org/ns/activitystreams",
                 "https://w3id.org/security/v1",
-                {
-                    "lemmy": "https://join-lemmy.org/ns#",
-                    "pt": "https://joinpeertube.org/ns#",
-                    "sc": "http://schema.org/",
-                    "commentsEnabled": "pt:commentsEnabled",
-                    "sensitive": "as:sensitive",
-                    "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
-                    "removeData": "lemmy:removeData",
-                    "stickied": "lemmy:stickied",
-                    "moderators": {
-                        "@type": "@id",
-                        "@id": "lemmy:moderators"
-                    },
-                    "expires": "as:endTime",
-                    "distinguished": "lemmy:distinguished",
-                    "language": "sc:inLanguage",
-                    "identifier": "sc:identifier"
-                }
             ],
             "type": "OrderedCollection",
             "id": f"https://{current_app.config['SERVER_NAME']}/c/{actor}/outbox",

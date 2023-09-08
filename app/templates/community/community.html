@@ -48,7 +48,7 @@
             <div class="card-body">
                 <p>{{ community.description }}</p>
                 <p>{{ community.rules }}</p>
-                {% if len(mods) > 0 %}
+                {% if len(mods) > 0 and not community.private_mods %}
                     <h3>Moderators</h3>
                     <ol>
                         {% for mod in mods %}

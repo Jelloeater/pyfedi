@@ -1,9 +1,12 @@
 import json
 import os
+from datetime import datetime
+from typing import Union
+import markdown2
 from flask import current_app
 from sqlalchemy import text
 from app import db
-from app.models import User, Post, Community, BannedInstances
+from app.models import User, Post, Community, BannedInstances, File
 import time
 import base64
 import requests
@@ -12,6 +15,8 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
 import functools
 from urllib.parse import urlparse
+
+from app.utils import get_request
 
 
 def public_key():
@@ -49,7 +54,6 @@ def local_comments():
 
 
 def send_activity(sender: User, host: str, content: str):
-
     date = time.strftime('%a, %d %b %Y %H:%M:%S UTC', time.gmtime())
 
     private_key = serialization.load_pem_private_key(sender.private_key, password=None)
@@ -168,8 +172,9 @@ def validate_header_signature(body: str, host: str, date: str, signature: str) -
     user = find_actor_or_create(body['actor'])
     return verify_signature(user.private_key, signature, headers)
 
+
 def banned_user_agents():
-    return []   # todo: finish this function
+    return []  # todo: finish this function
 
 
 @functools.lru_cache(maxsize=100)
@@ -178,13 +183,124 @@ def instance_blocked(host):
     return instance is not None
 
 
-def find_actor_or_create(actor):
+def find_actor_or_create(actor: str) -> Union[User, Community, None]:
+    user = None
+    # actor parameter must be formatted as https://server/u/actor or https://server/c/actor
     if current_app.config['SERVER_NAME'] + '/c/' in actor:
-        return Community.query.filter_by(name=actor).first()  # finds communities formatted like https://localhost/c/*
+        return Community.query.filter_by(
+            ap_profile_id=actor).first()  # finds communities formatted like https://localhost/c/*
 
-    user = User.query.filter_by(ap_profile_id=actor).first() # finds users formatted like https://kbin.social/u/tables
+    if current_app.config['SERVER_NAME'] + '/u/' in actor:
+        user = User.query.filter_by(username=actor.split('/')[-1], ap_id=None).first()  # finds local users
+        if user is None:
+            return None
+    elif actor.startswith('https://'):
+        server, address = extract_domain_and_actor(actor)
+        if instance_blocked(server):
+            return None
+        user = User.query.filter_by(ap_profile_id=actor).first()  # finds users formatted like https://kbin.social/u/tables
+        if user is None:
+            user = Community.query.filter_by(ap_profile_id=actor).first()
     if user is None:
-        # todo: retrieve user details via webfinger, etc
-        ...
+        # retrieve user details via webfinger, etc
+        # todo: try, except block around every get_request
+        webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
+                                     params={'resource': f"acct:{address}@{server}"})
+        if webfinger_data.status_code == 200:
+            webfinger_json = webfinger_data.json()
+            for links in webfinger_json['links']:
+                if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
+                    type = links['type'] if 'type' in links else 'application/activity+json'
+                    # retrieve the activitypub profile
+                    actor_data = get_request(links['href'], headers={'Accept': type})
+                    # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
+                    if actor_data.status_code == 200:
+                        activity_json = actor_data.json()
+                        if activity_json['type'] == 'Person':
+                            user = User(user_name=activity_json['preferredUsername'],
+                                        email=f"{address}@{server}",
+                                        about=parse_summary(activity_json),
+                                        created_at=activity_json['published'],
+                                        ap_id=f"{address}@{server}",
+                                        ap_public_url=activity_json['id'],
+                                        ap_profile_id=activity_json['id'],
+                                        ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                                        ap_preferred_username=activity_json['preferredUsername'],
+                                        ap_fetched_at=datetime.utcnow(),
+                                        ap_domain=server,
+                                        public_key=activity_json['publicKey']['publicKeyPem'],
+                                        # language=community_json['language'][0]['identifier'] # todo: language
+                                        )
+                            if 'icon' in activity_json:
+                                # todo: retrieve icon, save to disk, save more complete File record
+                                avatar = File(source_url=activity_json['icon']['url'])
+                                user.avatar = avatar
+                                db.session.add(avatar)
+                            if 'image' in activity_json:
+                                # todo: retrieve image, save to disk, save more complete File record
+                                cover = File(source_url=activity_json['image']['url'])
+                                user.cover = cover
+                                db.session.add(cover)
+                            db.session.add(user)
+                            db.session.commit()
+                            return user
+                        elif activity_json['type'] == 'Group':
+                            community = Community(name=activity_json['preferredUsername'],
+                                                  title=activity_json['name'],
+                                                  description=activity_json['summary'],
+                                                  nsfw=activity_json['sensitive'],
+                                                  restricted_to_mods=activity_json['postingRestrictedToMods'],
+                                                  created_at=activity_json['published'],
+                                                  last_active=activity_json['updated'],
+                                                  ap_id=f"{address[1:]}",
+                                                  ap_public_url=activity_json['id'],
+                                                  ap_profile_id=activity_json['id'],
+                                                  ap_followers_url=activity_json['followers'],
+                                                  ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                                                  ap_fetched_at=datetime.utcnow(),
+                                                  ap_domain=server,
+                                                  public_key=activity_json['publicKey']['publicKeyPem'],
+                                                  # language=community_json['language'][0]['identifier'] # todo: language
+                                                  )
+                            if 'icon' in activity_json:
+                                # todo: retrieve icon, save to disk, save more complete File record
+                                icon = File(source_url=activity_json['icon']['url'])
+                                community.icon = icon
+                                db.session.add(icon)
+                            if 'image' in activity_json:
+                                # todo: retrieve image, save to disk, save more complete File record
+                                image = File(source_url=activity_json['image']['url'])
+                                community.image = image
+                                db.session.add(image)
+                            db.session.add(community)
+                            db.session.commit()
+                            return community
+        return None
     else:
         return user
+
+
+def extract_domain_and_actor(url_string: str):
+    # Parse the URL
+    parsed_url = urlparse(url_string)
+
+    # Extract the server domain name
+    server_domain = parsed_url.netloc
+
+    # Extract the part of the string after the last '/' character
+    actor = parsed_url.path.split('/')[-1]
+
+    return server_domain, actor
+
+
+# create a summary from markdown if present, otherwise use html if available
+def parse_summary(user_json) -> str:
+    if 'source' in user_json and user_json['source'].get('mediaType') == 'text/markdown':
+        # Convert Markdown to HTML
+        markdown_text = user_json['source']['content']
+        html_content = markdown2.markdown(markdown_text)
+        return html_content
+    elif 'summary' in user_json:
+        return user_json['summary']
+    else:
+        return ''
