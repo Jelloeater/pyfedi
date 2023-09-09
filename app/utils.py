@@ -1,10 +1,8 @@
 import functools
-
+import random
 import requests
 import os
-
 from flask import current_app, json
-
 from app import db
 from app.models import Settings
 
@@ -30,6 +28,7 @@ def get_request(uri, params=None, headers=None) -> requests.Response:
     return response
 
 
+# saves an arbitrary object into a persistent key-value store. Possibly redis would be faster than using the DB
 @functools.lru_cache(maxsize=100)
 def get_setting(name: str, default=None):
     setting = Settings.query.filter_by(name=name).first()
@@ -39,6 +38,7 @@ def get_setting(name: str, default=None):
         return json.loads(setting.value)
 
 
+# retrieves arbitrary object from persistent key-value store
 def set_setting(name: str, value):
     setting = Settings.query.filter_by(name=name).first()
     if setting is None:
@@ -54,3 +54,10 @@ def file_get_contents(filename):
     with open(filename, 'r') as file:
         contents = file.read()
     return contents
+
+
+random_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+
+def gibberish(length: int = 10) -> str:
+    return "".join([random.choice(random_chars) for x in range(length)])

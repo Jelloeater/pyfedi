@@ -26,7 +26,7 @@ def add_local():
         private_key, public_key = RsaKeys.generate_keypair()
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
-                              public_key=public_key,
+                              public_key=public_key, ap_profile_id=current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
                               subscriptions_count=1)
         db.session.add(community)
         db.session.commit()

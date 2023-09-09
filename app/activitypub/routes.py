@@ -1,3 +1,4 @@
+import werkzeug.exceptions
 from sqlalchemy import text
 
 from app import db
@@ -6,9 +7,10 @@ from flask import request, Response, render_template, current_app, abort, jsonif
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
-from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan
+from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create
+from app.utils import gibberish
 
 INBOX = []
 
@@ -200,18 +202,77 @@ def community_profile(actor):
 @bp.route('/inbox', methods=['GET', 'POST'])
 def shared_inbox():
     if request.method == 'POST':
-        request_json = request.get_json()
+        # save all incoming data to aid in debugging and development
+        activity_log = ActivityPubLog(direction='in', activity_json=request.data, result='failure')
+
+        try:
+            request_json = request.get_json(force=True)
+        except werkzeug.exceptions.BadRequest as e:
+            activity_log.exception_message = 'Unable to parse json body: ' + e.description
+            db.session.add(activity_log)
+            db.session.commit()
+            return
+        else:
+            if 'id' in request_json:
+                activity_log.activity_id = request_json['id']
+
         actor = find_actor_or_create(request_json['actor'])
         if actor is not None:
             if HttpSignature.verify_request(request, actor.public_key, skip_date=True):
                 if 'type' in request_json:
+                    activity_log.activity_type = request_json['type']
                     if request_json['type'] == 'Announce':
                         ...
+                    # remote user wants to follow one of our communities
                     elif request_json['type'] == 'Follow':
-                        # todo: send accept message if not banned
-                        banned = CommunityBan.query.filter_by(user_id=current_user.id,
-                                                              community_id=community.id).first()
-                        ...
+                        user_ap_id = request_json['actor']
+                        community_ap_id = request_json['object']
+                        follow_id = request_json['id']
+                        user = find_actor_or_create(user_ap_id)
+                        community = find_actor_or_create(community_ap_id)
+                        if user is not None and community is not None:
+                            # check if user is banned from this community
+                            banned = CommunityBan.query.filter_by(user_id=user.id,
+                                                                  community_id=community.id).first()
+                            if banned is None:
+                                if not user.subscribed(community):
+                                    member = CommunityMember(user_id=user.id, community_id=community.id)
+                                    db.session.add(member)
+                                    db.session.commit()
+                                # send accept message to acknowledge the follow
+                                accept = {
+                                    "@context": [
+                                        "https://www.w3.org/ns/activitystreams",
+                                        "https://w3id.org/security/v1",
+                                    ],
+                                    "actor": community.ap_profile_id,
+                                    "to": [
+                                        user.ap_profile_id
+                                    ],
+                                    "object": {
+                                        "actor": user.ap_profile_id,
+                                        "to": None,
+                                        "object": community.ap_profile_id,
+                                        "type": "Follow",
+                                        "id": follow_id
+                                    },
+                                    "type": "Accept",
+                                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/accept/" + gibberish(32)
+                                }
+                                try:
+                                    HttpSignature.signed_request(user.ap_inbox_url, accept, community.private_key,
+                                                                 f"https://{current_app.config['SERVER_NAME']}/c/{community.name}#main-key")
+                                except Exception as e:
+                                    accept_log = ActivityPubLog(direction='out', activity_json=json.dumps(accept),
+                                                                result='failure', activity_id=accept['id'],
+                                                                exception_message = 'could not send Accept' + str(e))
+                                    db.session.add(accept_log)
+                                    db.session.commit()
+                                    return
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'user is banned from this community'
+                    # remote server is accepting our previous follow request
                     elif request_json['type'] == 'Accept':
                         if request_json['object']['type'] == 'Follow':
                             community_ap_id = request_json['actor']
@@ -224,7 +285,15 @@ def shared_inbox():
                                 member = CommunityMember(user_id=user.id, community_id=community.id)
                                 db.session.add(member)
                                 db.session.commit()
+                                activity_log.result = 'success'
 
+            else:
+                activity_log.exception_message = 'Could not verify signature'
+        else:
+            activity_log.exception_message = 'Actor could not be found: ' + request_json['actor']
+
+        db.session.add(activity_log)
+        db.session.commit()
 
 
 @bp.route('/c/<actor>/outbox', methods=['GET'])

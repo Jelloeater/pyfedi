@@ -310,6 +310,7 @@ class CommunityMember(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+# people banned from communities
 class CommunityBan(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), primary_key=True)
@@ -371,6 +372,18 @@ class UserFollowRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     follow_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+
+# save every activity to a log, to aid debugging
+class ActivityPubLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    direction = db.Column(db.String(3))         # 'in' or 'out'
+    activity_id = db.Column(db.String(100), indexed=True)
+    activity_type = db.Column(db.String(50))    # e.g. 'Follow', 'Accept', 'Like', etc
+    activity_json = db.Column(db.Text)          # the full json of the activity
+    result = db.Column(db.String(10))           # 'success' or 'failure'
+    exception_message = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 @login.user_loader
