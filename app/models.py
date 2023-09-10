@@ -117,6 +117,7 @@ class User(UserMixin, db.Model):
     newsletter = db.Column(db.Boolean, default=True)
     bounces = db.Column(db.SmallInteger, default=0)
     timezone = db.Column(db.String(20))
+    reputation = db.Column(db.Float, default=0.0)
     stripe_customer_id = db.Column(db.String(50))
     stripe_subscription_id = db.Column(db.String(50))
     searchable = db.Column(db.Boolean, default=True)
@@ -349,6 +350,7 @@ class Instance(db.Model):
     inbox = db.Column(db.String(256))
     shared_inbox = db.Column(db.String(256))
     outbox = db.Column(db.String(256))
+    vote_weight = db.Column(db.Float, default=1.0)
 
 
 class Settings(db.Model):
@@ -374,11 +376,29 @@ class UserFollowRequest(db.Model):
     follow_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
+class PostVote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    effect = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class PostReplyVote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
+    effect = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 # save every activity to a log, to aid debugging
 class ActivityPubLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     direction = db.Column(db.String(3))         # 'in' or 'out'
-    activity_id = db.Column(db.String(100), indexed=True)
+    activity_id = db.Column(db.String(100), index=True)
     activity_type = db.Column(db.String(50))    # e.g. 'Follow', 'Accept', 'Like', etc
     activity_json = db.Column(db.Text)          # the full json of the activity
     result = db.Column(db.String(10))           # 'success' or 'failure'

@@ -7,10 +7,11 @@ from flask import request, Response, render_template, current_app, abort, jsonif
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
-from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog
+from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
+    PostReply, Instance, PostVote, PostReplyVote
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create
-from app.utils import gibberish
+from app.utils import gibberish, get_setting
 
 INBOX = []
 
@@ -222,7 +223,48 @@ def shared_inbox():
                 if 'type' in request_json:
                     activity_log.activity_type = request_json['type']
                     if request_json['type'] == 'Announce':
-                        ...
+                        if request_json['object']['type'] == 'Like' or request_json['object']['type'] == 'Dislike':
+                            activity_log.activity_type = request_json['object']['type']
+                            vote_effect = 1.0 if request_json['object']['type'] == 'Like' else -1.0
+                            if vote_effect < 0 and get_setting('allow_dislike', True) is False:
+                                activity_log.exception_message = 'Dislike ignored because of allow_dislike setting'
+                            else:
+                                user_ap_id = request_json['object']['actor']
+                                liked_ap_id = request_json['object']['object']
+                                user = find_actor_or_create(user_ap_id)
+                                vote_weight = 1.0
+                                if user.ap_domain:
+                                    instance = Instance.query.filter_by(domain=user.ap_domain).fetch()
+                                    if instance:
+                                        vote_weight = instance.vote_weight
+                                liked = find_liked_object(liked_ap_id)
+                                # insert into voted table
+                                if isinstance(liked, Post):
+                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
+                                    if existing_vote:
+                                        existing_vote.effect = vote_effect * vote_weight
+                                    else:
+                                        vote = PostVote(user_id=user.id, author_id=liked.user_id, post_id=liked.id,
+                                                        effect=vote_effect * vote_weight)
+                                        db.session.add(vote)
+                                    db.session.commit()
+                                    activity_log.result = 'success'
+                                elif isinstance(liked, PostReply):
+                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
+                                    if existing_vote:
+                                        existing_vote.effect = vote_effect * vote_weight
+                                    else:
+                                        vote = PostReplyVote(user_id=user.id, author_id=liked.user_id, post_reply_id=liked.id,
+                                                        effect=vote_effect * vote_weight)
+                                        db.session.add(vote)
+                                    db.session.commit()
+                                    activity_log.result = 'success'
+                                else:
+                                    activity_log.result='failure'
+                                    activity_log.exception_message = 'Could not detect type of like'
+                                if activity_log.result == 'success':
+                                    ... # todo: recalculate 'hotness' of liked post/reply
+
                     # remote user wants to follow one of our communities
                     elif request_json['type'] == 'Follow':
                         user_ap_id = request_json['actor']

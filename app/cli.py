@@ -49,6 +49,7 @@ def register(app):
             db.configure_mappers()
             db.create_all()
             db.session.append(Settings(name='allow_nsfw', value=json.dumps(False)))
+            db.session.append(Settings(name='allow_dislike', value=json.dumps(True)))
             db.session.append(BannedInstances(domain='lemmygrad.ml'))
             db.session.append(BannedInstances(domain='gab.com'))
             db.session.append(BannedInstances(domain='exploding-heads.com'))
