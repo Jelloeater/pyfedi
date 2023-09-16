@@ -1,13 +1,26 @@
 import functools
 import random
+from urllib.parse import urlparse
+
+import flask
+from bs4 import BeautifulSoup
+import html as html_module
 import requests
 import os
 from flask import current_app, json
-from app import db
-from app.models import Settings
+from app import db, cache
+from app.models import Settings, Domain, Instance, BannedInstances
 
 
-# ----------------------------------------------------------------------
+# Flask's render_template function, with support for themes added
+def render_template(template_name: str, **context) -> str:
+    theme = get_setting('theme', '')
+    if theme != '':
+        return flask.render_template(f'themes/{theme}/{template_name}', **context)
+    else:
+        return flask.render_template(template_name, **context)
+
+
 # Jinja: when a file was modified. Useful for cache-busting
 def getmtime(filename):
     return os.path.getmtime('static/' + filename)
@@ -28,8 +41,8 @@ def get_request(uri, params=None, headers=None) -> requests.Response:
     return response
 
 
-# saves an arbitrary object into a persistent key-value store. Possibly redis would be faster than using the DB
-@functools.lru_cache(maxsize=100)
+# saves an arbitrary object into a persistent key-value store. cached.
+@cache.cached(timeout=50)
 def get_setting(name: str, default=None):
     setting = Settings.query.filter_by(name=name).first()
     if setting is None:
@@ -46,7 +59,7 @@ def set_setting(name: str, value):
     else:
         setting.value = json.dumps(value)
     db.session.commit()
-    get_setting.cache_clear()
+    cache.delete_memoized(get_setting)
 
 
 # Return the contents of a file as a string. Inspired by PHP's function of the same name.
@@ -61,3 +74,73 @@ random_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 def gibberish(length: int = 10) -> str:
     return "".join([random.choice(random_chars) for x in range(length)])
+
+
+def is_image_url(url):
+    parsed_url = urlparse(url)
+    path = parsed_url.path.lower()
+    common_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']
+    return any(path.endswith(extension) for extension in common_image_extensions)
+
+
+# sanitise HTML using an allow list
+def allowlist_html(html: str) -> str:
+    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h3', 'h4', 'h5']
+    # Parse the HTML using BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Find all tags in the parsed HTML
+    for tag in soup.find_all():
+        # If the tag is not in the allowed_tags list, remove it and its contents
+        if tag.name not in allowed_tags:
+            tag.extract()
+        else:
+            # Filter and sanitize attributes
+            for attr in list(tag.attrs):
+                if attr not in ['href', 'src']:  # Add allowed attributes here
+                    del tag[attr]
+
+    # Encode the HTML to prevent script execution
+    return html_module.escape(str(soup))
+
+
+# convert basic HTML to Markdown
+def html_to_markdown(html: str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    return html_to_markdown_worker(soup)
+
+
+def html_to_markdown_worker(element, indent_level=0):
+    formatted_text = ''
+    for item in element.contents:
+        if isinstance(item, str):
+            formatted_text += item
+        elif item.name == 'p':
+            formatted_text += '\n\n'
+        elif item.name == 'br':
+            formatted_text += '  \n'  # Double space at the end for line break
+        elif item.name == 'strong':
+            formatted_text += '**' + html_to_markdown_worker(item) + '**'
+        elif item.name == 'ul':
+            formatted_text += '\n'
+            formatted_text += html_to_markdown_worker(item, indent_level + 1)
+            formatted_text += '\n'
+        elif item.name == 'ol':
+            formatted_text += '\n'
+            formatted_text += html_to_markdown_worker(item, indent_level + 1)
+            formatted_text += '\n'
+        elif item.name == 'li':
+            bullet = '-' if item.find_parent(['ul', 'ol']) and item.find_previous_sibling() is None else ''
+            formatted_text += '  ' * indent_level + bullet + ' ' + html_to_markdown_worker(item).strip() + '\n'
+        elif item.name == 'blockquote':
+            formatted_text += '  ' * indent_level + '> ' + html_to_markdown_worker(item).strip() + '\n'
+        elif item.name == 'code':
+            formatted_text += '`' + html_to_markdown_worker(item) + '`'
+    return formatted_text
+
+
+def domain_from_url(url: str) -> Domain:
+    parsed_url = urlparse(url)
+    domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
+    return domain
+

@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from flask import render_template, redirect, url_for, flash, request, make_response, session, Markup, current_app
+from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
@@ -10,6 +10,7 @@ from app.auth.util import random_token
 from app.models import User
 from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
 from app.activitypub.signature import RsaKeys
+from app.utils import render_template
 
 
 @bp.route('/login', methods=['GET', 'POST'])

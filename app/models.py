@@ -231,6 +231,7 @@ class Post(db.Model):
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     type = db.Column(db.Integer)
+    comments_enabled = db.Column(db.Boolean, default=True)
     has_embed = db.Column(db.Boolean, default=False)
     reply_count = db.Column(db.Integer, default=0)
     score = db.Column(db.Integer, default=0, index=True)
@@ -256,6 +257,10 @@ class Post(db.Model):
 
     image = db.relationship(File, foreign_keys=[image_id], cascade="all, delete")
 
+    @classmethod
+    def get_by_ap_id(cls, ap_id):
+        return cls.query.filter_by(ap_id=ap_id).first()
+
 
 class PostReply(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -267,6 +272,7 @@ class PostReply(db.Model):
     root_id = db.Column(db.Integer)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
+    body_html_safe = db.Column(db.Boolean, default=False)
     score = db.Column(db.Integer, default=0, index=True)
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
@@ -280,15 +286,21 @@ class PostReply(db.Model):
     edited_at = db.Column(db.DateTime)
 
     ap_id = db.Column(db.String(255), index=True)
+    ap_create_id = db.Column(db.String(100))
+    ap_announce_id = db.Column(db.String(100))
 
     search_vector = db.Column(TSVectorType('body'))
+
+    @classmethod
+    def get_by_ap_id(cls, ap_id):
+        return cls.query.filter_by(ap_id=ap_id).first()
 
 
 class Domain(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), index=True)
     post_count = db.Column(db.Integer, default=0)
-    banned = db.Column(db.Boolean, default=False, index=True)
+    banned = db.Column(db.Boolean, default=False, index=True) # Domains can be banned site-wide (by admin) or DomainBlock'ed by users
 
 
 class DomainBlock(db.Model):

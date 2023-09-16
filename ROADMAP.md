@@ -11,6 +11,7 @@ The following are the goals for a 1.0 release, good enough for production use. I
 - vote
 - sort posts by hotness algo
 - markdown
+- logging and debugging support
 
 
 ### Activitypub-enabled

@@ -1,22 +1,21 @@
 import json
 import os
 from datetime import datetime
-from typing import Union
+from typing import Union, Tuple
 import markdown2
 from flask import current_app
 from sqlalchemy import text
-from app import db
-from app.models import User, Post, Community, BannedInstances, File
+from app import db, cache
+from app.models import User, Post, Community, BannedInstances, File, PostReply
 import time
 import base64
 import requests
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
-import functools
 from urllib.parse import urlparse
 
-from app.utils import get_request
+from app.utils import get_request, allowlist_html
 
 
 def public_key():
@@ -177,8 +176,11 @@ def banned_user_agents():
     return []  # todo: finish this function
 
 
-@functools.lru_cache(maxsize=100)
-def instance_blocked(host):
+@cache.cached(150)
+def instance_blocked(host: str) -> bool:
+    host = host.lower()
+    if 'https://' in host or 'http://' in host:
+        host = urlparse(host).hostname
     instance = BannedInstances.query.filter_by(domain=host.strip()).first()
     return instance is not None
 
@@ -198,7 +200,8 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
         server, address = extract_domain_and_actor(actor)
         if instance_blocked(server):
             return None
-        user = User.query.filter_by(ap_profile_id=actor).first()  # finds users formatted like https://kbin.social/u/tables
+        user = User.query.filter_by(
+            ap_profile_id=actor).first()  # finds users formatted like https://kbin.social/u/tables
         if user is None:
             user = Community.query.filter_by(ap_profile_id=actor).first()
     if user is None:
@@ -301,6 +304,75 @@ def parse_summary(user_json) -> str:
         html_content = markdown2.markdown(markdown_text)
         return html_content
     elif 'summary' in user_json:
-        return user_json['summary']
+        return allowlist_html(user_json['summary'])
     else:
         return ''
+
+
+def default_context():
+    context = [
+        "https://www.w3.org/ns/activitystreams",
+        "https://w3id.org/security/v1",
+    ]
+    if current_app.config['FULL_AP_CONTEXT']:
+        context.append({
+            "lemmy": "https://join-lemmy.org/ns#",
+            "litepub": "http://litepub.social/ns#",
+            "pt": "https://joinpeertube.org/ns#",
+            "sc": "http://schema.org/",
+            "ChatMessage": "litepub:ChatMessage",
+            "commentsEnabled": "pt:commentsEnabled",
+            "sensitive": "as:sensitive",
+            "matrixUserId": "lemmy:matrixUserId",
+            "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
+            "removeData": "lemmy:removeData",
+            "stickied": "lemmy:stickied",
+            "moderators": {
+                "@type": "@id",
+                "@id": "lemmy:moderators"
+            },
+            "expires": "as:endTime",
+            "distinguished": "lemmy:distinguished",
+            "language": "sc:inLanguage",
+            "identifier": "sc:identifier"
+        })
+    return context
+
+
+def find_reply_parent(in_reply_to: str) -> Tuple[int, int, int]:
+    if 'comment' in in_reply_to:
+        parent_comment = PostReply.get_by_ap_id(in_reply_to)
+        parent_comment_id = parent_comment.id
+        post_id = parent_comment.post_id
+        root_id = parent_comment.root_id
+    elif 'post' in in_reply_to:
+        parent_comment_id = None
+        post = Post.get_by_ap_id(in_reply_to)
+        post_id = post.id
+        root_id = None
+    else:
+        parent_comment_id = None
+        root_id = None
+        post_id = None
+        post = Post.get_by_ap_id(in_reply_to)
+        if post:
+            post_id = post.id
+        else:
+            parent_comment = PostReply.get_by_ap_id(in_reply_to)
+            if parent_comment:
+                parent_comment_id = parent_comment.id
+                post_id = parent_comment.post_id
+                root_id = parent_comment.root_id
+
+    return post_id, parent_comment_id, root_id
+
+
+def find_liked_object(ap_id) -> Union[Post, PostReply, None]:
+    post = Post.get_by_ap_id(ap_id)
+    if post:
+        return post
+    else:
+        post_reply = PostReply.get_by_ap_id(ap_id)
+        if post_reply:
+            return post_reply
+    return None

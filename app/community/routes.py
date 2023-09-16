@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from flask import render_template, redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
+from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
 from app import db
@@ -9,7 +9,7 @@ from app.community.util import search_for_community, community_url_exists
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan
 from app.community import bp
-from app.utils import get_setting
+from app.utils import get_setting, render_template
 from sqlalchemy import or_
 
 

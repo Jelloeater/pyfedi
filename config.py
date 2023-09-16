@@ -21,3 +21,9 @@ class Config(object):
     RECAPTCHA3_PRIVATE_KEY = os.environ.get("RECAPTCHA3_PRIVATE_KEY")
     MODE = os.environ.get('MODE') or 'development'
     LANGUAGES = ['en']
+    FULL_AP_CONTEXT = os.environ.get('FULL_AP_CONTEXT') or True
+    CACHE_TYPE = os.environ.get('CACHE_TYPE') or 'FileSystemCache'
+    CACHE_DIR = os.environ.get('CACHE_DIR') or '/dev/shm/pyfedi'
+    CACHE_DEFAULT_TIMEOUT = 300
+    CACHE_THRESHOLD = 1000
+    CACHE_KEY_PREFIX = 'pyfedi'

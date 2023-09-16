@@ -1,17 +1,20 @@
+import markdown2
 import werkzeug.exceptions
 from sqlalchemy import text
 
 from app import db
 from app.activitypub import bp
-from flask import request, Response, render_template, current_app, abort, jsonify, json
+from flask import request, Response, current_app, abort, jsonify, json
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
+from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
-    PostReply, Instance, PostVote, PostReplyVote
+    PostReply, Instance, PostVote, PostReplyVote, File
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
-    post_to_activity, find_actor_or_create
-from app.utils import gibberish, get_setting
+    post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object
+from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
+    domain_from_url
 
 INBOX = []
 
@@ -105,16 +108,7 @@ def user_profile(actor):
     if user is not None:
         if 'application/ld+json' in request.headers.get('Accept', '') or request.accept_mimetypes.accept_json:
             server = current_app.config['SERVER_NAME']
-            actor_data = {  "@context": [
-                                "https://www.w3.org/ns/activitystreams",
-                                "https://w3id.org/security/v1",
-                                {
-                                    "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
-                                    "schema": "http://schema.org#",
-                                    "PropertyValue": "schema:PropertyValue",
-                                    "value": "schema:value"
-                                }
-                            ],
+            actor_data = {  "@context": default_context(),
                             "type": "Person",
                             "id": f"https://{server}/u/{actor}",
                             "preferredUsername": actor,
@@ -157,10 +151,7 @@ def community_profile(actor):
     if community is not None:
         if 'application/ld+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
-            actor_data = {"@context": [
-                "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1"
-                ],
+            actor_data = {"@context": default_context(),
                 "type": "Group",
                 "id": f"https://{server}/c/{actor}",
                 "name": actor.title,
@@ -210,6 +201,7 @@ def shared_inbox():
             request_json = request.get_json(force=True)
         except werkzeug.exceptions.BadRequest as e:
             activity_log.exception_message = 'Unable to parse json body: ' + e.description
+            activity_log.result = 'failure'
             db.session.add(activity_log)
             db.session.commit()
             return
@@ -217,123 +209,205 @@ def shared_inbox():
             if 'id' in request_json:
                 activity_log.activity_id = request_json['id']
 
-        actor = find_actor_or_create(request_json['actor'])
+        actor = find_actor_or_create(request_json['actor']) if 'actor' in request_json else None
         if actor is not None:
             if HttpSignature.verify_request(request, actor.public_key, skip_date=True):
                 if 'type' in request_json:
                     activity_log.activity_type = request_json['type']
-                    if request_json['type'] == 'Announce':
-                        if request_json['object']['type'] == 'Like' or request_json['object']['type'] == 'Dislike':
-                            activity_log.activity_type = request_json['object']['type']
-                            vote_effect = 1.0 if request_json['object']['type'] == 'Like' else -1.0
-                            if vote_effect < 0 and get_setting('allow_dislike', True) is False:
-                                activity_log.exception_message = 'Dislike ignored because of allow_dislike setting'
-                            else:
-                                user_ap_id = request_json['object']['actor']
-                                liked_ap_id = request_json['object']['object']
+                    if not instance_blocked(request_json['id']):
+                        # Announce is new content and votes
+                        if request_json['type'] == 'Announce':
+                            if request_json['object']['type'] == 'Create':
+                                activity_log.activity_type = request_json['object']['type']
+                                user_ap_id = request_json['object']['object']['attributedTo']
+                                community_ap_id = request_json['object']['audience']
+                                community = find_actor_or_create(community_ap_id)
                                 user = find_actor_or_create(user_ap_id)
-                                vote_weight = 1.0
-                                if user.ap_domain:
-                                    instance = Instance.query.filter_by(domain=user.ap_domain).fetch()
-                                    if instance:
-                                        vote_weight = instance.vote_weight
-                                liked = find_liked_object(liked_ap_id)
-                                # insert into voted table
-                                if isinstance(liked, Post):
-                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
-                                    if existing_vote:
-                                        existing_vote.effect = vote_effect * vote_weight
+                                if user and community:
+                                    object_type = request_json['object']['object']['type']
+                                    new_content_types = ['Page', 'Article', 'Link', 'Note']
+                                    if object_type in new_content_types:      # create a new post
+                                        in_reply_to = request_json['object']['object']['inReplyTo'] if 'inReplyTo' in \
+                                                                                                       request_json['object']['object'] else None
+
+                                        if not in_reply_to:
+                                            post = Post(user_id=user.id, community_id=community.id,
+                                                        title=request_json['object']['object']['name'],
+                                                        comments_enabled=request_json['object']['object']['commentsEnabled'],
+                                                        sticky=request_json['object']['object']['stickied'] if 'stickied' in request_json['object']['object'] else False,
+                                                        nsfw=request_json['object']['object']['sensitive'],
+                                                        nsfl=request_json['object']['object']['nsfl'] if 'nsfl' in request_json['object']['object'] else False,
+                                                        ap_id=request_json['object']['object']['id'],
+                                                        ap_create_id=request_json['object']['id'],
+                                                        ap_announce_id=request_json['id'],
+                                                        )
+                                            if 'source' in request_json['object']['object'] and \
+                                                    request_json['object']['object']['source']['mediaType'] == 'text/markdown':
+                                                post.body = request_json['object']['object']['source']['content']
+                                                post.body_html = allowlist_html(markdown2.markdown(post.body, safe_mode=True))
+                                            elif 'content' in request_json['object']['object']:
+                                                post.body_html = allowlist_html(request_json['object']['object']['content'])
+                                                post.body = html_to_markdown(post.body_html)
+                                            if 'attachment' in request_json['object']['object'] and \
+                                                    len(request_json['object']['object']['attachment']) > 0 and \
+                                                    'type' in request_json['object']['object']['attachment'][0]:
+                                                if request_json['object']['object']['attachment'][0]['type'] == 'Link':
+                                                    post.url = request_json['object']['object']['attachment'][0]['href']
+                                                    if is_image_url(post.url):
+                                                        post.type = POST_TYPE_IMAGE
+                                                    else:
+                                                        post.type = POST_TYPE_LINK
+                                                    domain = domain_from_url(post.url)
+                                                    if not domain.banned:
+                                                        post.domain_id = domain.id
+                                                    else:
+                                                        post = None
+                                                        activity_log.exception_message = domain.name + ' is blocked by admin'
+                                                        activity_log.result = 'failure'
+                                            if 'image' in request_json['object']['object']:
+                                                image = File(source_url=request_json['object']['object']['image']['url'])
+                                                db.session.add(image)
+                                                post.image = image
+
+                                            if post is not None:
+                                                db.session.add(post)
+                                                db.session.commit()
+                                        else:
+                                            post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
+                                            post_reply = PostReply(user_id=user.id, community_id=community.id,
+                                                                   post_id=post_id, parent_id=parent_comment_id,
+                                                                   root_id=root_id,
+                                                                   nsfw=community.nsfw,
+                                                                   nsfl=community.nsfl,
+                                                                   ap_id=request_json['object']['object']['id'],
+                                                                   ap_create_id=request_json['object']['id'],
+                                                                   ap_announce_id=request_json['id'])
+                                            if 'source' in request_json['object']['object'] and \
+                                                    request_json['object']['object']['source'][
+                                                        'mediaType'] == 'text/markdown':
+                                                post_reply.body = request_json['object']['object']['source']['content']
+                                                post_reply.body_html = allowlist_html(markdown2.markdown(post_reply.body, safe_mode=True))
+                                            elif 'content' in request_json['object']['object']:
+                                                post_reply.body_html = allowlist_html(
+                                                    request_json['object']['object']['content'])
+                                                post_reply.body = html_to_markdown(post_reply.body_html)
+
+                                            if post_reply is not None:
+                                                db.session.add(post_reply)
+                                                db.session.commit()
                                     else:
-                                        vote = PostVote(user_id=user.id, author_id=liked.user_id, post_id=liked.id,
-                                                        effect=vote_effect * vote_weight)
-                                        db.session.add(vote)
-                                    db.session.commit()
-                                    activity_log.result = 'success'
-                                elif isinstance(liked, PostReply):
-                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
-                                    if existing_vote:
-                                        existing_vote.effect = vote_effect * vote_weight
+                                        activity_log.exception_message = 'Unacceptable type: ' + object_type
+
+                            elif request_json['object']['type'] == 'Like' or request_json['object']['type'] == 'Dislike':
+                                activity_log.activity_type = request_json['object']['type']
+                                vote_effect = 1.0 if request_json['object']['type'] == 'Like' else -1.0
+                                if vote_effect < 0 and get_setting('allow_dislike', True) is False:
+                                    activity_log.exception_message = 'Dislike ignored because of allow_dislike setting'
+                                else:
+                                    user_ap_id = request_json['object']['actor']
+                                    liked_ap_id = request_json['object']['object']
+                                    user = find_actor_or_create(user_ap_id)
+                                    vote_weight = 1.0
+                                    if user.ap_domain:
+                                        instance = Instance.query.filter_by(domain=user.ap_domain).fetch()
+                                        if instance:
+                                            vote_weight = instance.vote_weight
+                                    liked = find_liked_object(liked_ap_id)
+                                    # insert into voted table
+                                    if liked is not None and isinstance(liked, Post):
+                                        existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
+                                        if existing_vote:
+                                            existing_vote.effect = vote_effect * vote_weight
+                                        else:
+                                            vote = PostVote(user_id=user.id, author_id=liked.user_id, post_id=liked.id,
+                                                            effect=vote_effect * vote_weight)
+                                            db.session.add(vote)
+                                        db.session.commit()
+                                        activity_log.result = 'success'
+                                    elif liked is not None and isinstance(liked, PostReply):
+                                        existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
+                                        if existing_vote:
+                                            existing_vote.effect = vote_effect * vote_weight
+                                        else:
+                                            vote = PostReplyVote(user_id=user.id, author_id=liked.user_id, post_reply_id=liked.id,
+                                                            effect=vote_effect * vote_weight)
+                                            db.session.add(vote)
+                                        db.session.commit()
+                                        activity_log.result = 'success'
                                     else:
-                                        vote = PostReplyVote(user_id=user.id, author_id=liked.user_id, post_reply_id=liked.id,
-                                                        effect=vote_effect * vote_weight)
-                                        db.session.add(vote)
-                                    db.session.commit()
+                                        activity_log.exception_message = 'Could not detect type of like'
+                                    if activity_log.result == 'success':
+                                        ... # todo: recalculate 'hotness' of liked post/reply
+
+                        # Follow: remote user wants to follow one of our communities
+                        elif request_json['type'] == 'Follow':      # Follow is when someone wants to join a community
+                            user_ap_id = request_json['actor']
+                            community_ap_id = request_json['object']
+                            follow_id = request_json['id']
+                            user = find_actor_or_create(user_ap_id)
+                            community = find_actor_or_create(community_ap_id)
+                            if user is not None and community is not None:
+                                # check if user is banned from this community
+                                banned = CommunityBan.query.filter_by(user_id=user.id,
+                                                                      community_id=community.id).first()
+                                if banned is None:
+                                    if not user.subscribed(community):
+                                        member = CommunityMember(user_id=user.id, community_id=community.id)
+                                        db.session.add(member)
+                                        db.session.commit()
+                                    # send accept message to acknowledge the follow
+                                    accept = {
+                                        "@context": default_context(),
+                                        "actor": community.ap_profile_id,
+                                        "to": [
+                                            user.ap_profile_id
+                                        ],
+                                        "object": {
+                                            "actor": user.ap_profile_id,
+                                            "to": None,
+                                            "object": community.ap_profile_id,
+                                            "type": "Follow",
+                                            "id": follow_id
+                                        },
+                                        "type": "Accept",
+                                        "id": f"https://{current_app.config['SERVER_NAME']}/activities/accept/" + gibberish(32)
+                                    }
+                                    try:
+                                        HttpSignature.signed_request(user.ap_inbox_url, accept, community.private_key,
+                                                                     f"https://{current_app.config['SERVER_NAME']}/c/{community.name}#main-key")
+                                    except Exception as e:
+                                        accept_log = ActivityPubLog(direction='out', activity_json=json.dumps(accept),
+                                                                    result='failure', activity_id=accept['id'],
+                                                                    exception_message = 'could not send Accept' + str(e))
+                                        db.session.add(accept_log)
+                                        db.session.commit()
+                                        return
                                     activity_log.result = 'success'
                                 else:
-                                    activity_log.result='failure'
-                                    activity_log.exception_message = 'Could not detect type of like'
-                                if activity_log.result == 'success':
-                                    ... # todo: recalculate 'hotness' of liked post/reply
-
-                    # remote user wants to follow one of our communities
-                    elif request_json['type'] == 'Follow':
-                        user_ap_id = request_json['actor']
-                        community_ap_id = request_json['object']
-                        follow_id = request_json['id']
-                        user = find_actor_or_create(user_ap_id)
-                        community = find_actor_or_create(community_ap_id)
-                        if user is not None and community is not None:
-                            # check if user is banned from this community
-                            banned = CommunityBan.query.filter_by(user_id=user.id,
-                                                                  community_id=community.id).first()
-                            if banned is None:
-                                if not user.subscribed(community):
+                                    activity_log.exception_message = 'user is banned from this community'
+                        # Accept: remote server is accepting our previous follow request
+                        elif request_json['type'] == 'Accept':
+                            if request_json['object']['type'] == 'Follow':
+                                community_ap_id = request_json['actor']
+                                user_ap_id = request_json['object']['actor']
+                                user = find_actor_or_create(user_ap_id)
+                                community = find_actor_or_create(community_ap_id)
+                                join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
+                                                                                    community_id=community.id).first()
+                                if join_request:
                                     member = CommunityMember(user_id=user.id, community_id=community.id)
                                     db.session.add(member)
                                     db.session.commit()
-                                # send accept message to acknowledge the follow
-                                accept = {
-                                    "@context": [
-                                        "https://www.w3.org/ns/activitystreams",
-                                        "https://w3id.org/security/v1",
-                                    ],
-                                    "actor": community.ap_profile_id,
-                                    "to": [
-                                        user.ap_profile_id
-                                    ],
-                                    "object": {
-                                        "actor": user.ap_profile_id,
-                                        "to": None,
-                                        "object": community.ap_profile_id,
-                                        "type": "Follow",
-                                        "id": follow_id
-                                    },
-                                    "type": "Accept",
-                                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/accept/" + gibberish(32)
-                                }
-                                try:
-                                    HttpSignature.signed_request(user.ap_inbox_url, accept, community.private_key,
-                                                                 f"https://{current_app.config['SERVER_NAME']}/c/{community.name}#main-key")
-                                except Exception as e:
-                                    accept_log = ActivityPubLog(direction='out', activity_json=json.dumps(accept),
-                                                                result='failure', activity_id=accept['id'],
-                                                                exception_message = 'could not send Accept' + str(e))
-                                    db.session.add(accept_log)
-                                    db.session.commit()
-                                    return
-                                activity_log.result = 'success'
-                            else:
-                                activity_log.exception_message = 'user is banned from this community'
-                    # remote server is accepting our previous follow request
-                    elif request_json['type'] == 'Accept':
-                        if request_json['object']['type'] == 'Follow':
-                            community_ap_id = request_json['actor']
-                            user_ap_id = request_json['object']['actor']
-                            user = find_actor_or_create(user_ap_id)
-                            community = find_actor_or_create(community_ap_id)
-                            join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
-                                                                                community_id=community.id).first()
-                            if join_request:
-                                member = CommunityMember(user_id=user.id, community_id=community.id)
-                                db.session.add(member)
-                                db.session.commit()
-                                activity_log.result = 'success'
-
+                                    activity_log.result = 'success'
+                    else:
+                        activity_log.exception_message = 'Instance banned'
             else:
                 activity_log.exception_message = 'Could not verify signature'
         else:
             activity_log.exception_message = 'Actor could not be found: ' + request_json['actor']
 
+        if activity_log.exception_message is not None:
+            activity_log.result = 'failure'
         db.session.add(activity_log)
         db.session.commit()
 
@@ -346,10 +420,7 @@ def community_outbox(actor):
         posts = community.posts.limit(50).all()
 
         community_data = {
-            "@context": [
-                "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1",
-            ],
+            "@context": default_context(),
             "type": "OrderedCollection",
             "id": f"https://{current_app.config['SERVER_NAME']}/c/{actor}/outbox",
             "totalItems": len(posts),

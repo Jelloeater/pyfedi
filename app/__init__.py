@@ -12,6 +12,7 @@ from flask_bootstrap import Bootstrap5
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel, lazy_gettext as _l
+from flask_caching import Cache
 from sqlalchemy_searchable import make_searchable
 
 from config import Config
@@ -26,6 +27,7 @@ mail = Mail()
 bootstrap = Bootstrap5()
 moment = Moment()
 babel = Babel()
+cache = Cache(config={'CACHE_TYPE': os.environ.get('CACHE_TYPE'), 'CACHE_DIR': os.environ.get('CACHE_DIR') or '/dev/shm'})
 
 
 def create_app(config_class=Config):
@@ -40,6 +42,7 @@ def create_app(config_class=Config):
     moment.init_app(app)
     make_searchable(db.metadata)
     babel.init_app(app, locale_selector=get_locale)
+    cache.init_app(app)
 
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)

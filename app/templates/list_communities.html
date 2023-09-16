@@ -49,10 +49,12 @@
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>
-                        <td>{% if current_user.subscribed(community) %}
-                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Unsubscribe</a>
-                            {% else %}
-                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">Subscribe</a>
+                        <td>{% if current_user.is_authenticated %}
+                                {% if current_user.subscribed(community) %}
+                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Unsubscribe</a>
+                                {% else %}
+                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">Subscribe</a>
+                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>
