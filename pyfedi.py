@@ -20,7 +20,7 @@ def app_context_processor():  # NB there needs to be an identical function in cb
 
 @app.shell_context_processor
 def make_shell_context():
-    return {'db': db}
+    return {'db': db, 'app': app}
 
 
 with app.app_context():

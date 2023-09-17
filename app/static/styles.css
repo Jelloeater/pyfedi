@@ -239,6 +239,14 @@ nav.navbar {
   opacity: 0.9;
 }
 
+.tab-content > .tab-pane {
+  border-right: solid 1px #dee2e6;
+  border-bottom: solid 1px #dee2e6;
+  border-left: solid 1px #dee2e6;
+  border-radius: 0 0 5px 5px;
+  padding: 10px 15px 0 15px;
+}
+
 .dropdown-menu .dropdown-item.active {
   background-color: #0071CE;
 }

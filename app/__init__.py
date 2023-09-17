@@ -27,7 +27,7 @@ mail = Mail()
 bootstrap = Bootstrap5()
 moment = Moment()
 babel = Babel()
-cache = Cache(config={'CACHE_TYPE': os.environ.get('CACHE_TYPE'), 'CACHE_DIR': os.environ.get('CACHE_DIR') or '/dev/shm'})
+cache = Cache()
 
 
 def create_app(config_class=Config):

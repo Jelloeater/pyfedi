@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta, date
 from hashlib import md5
 from time import time
+from typing import List
+
 from flask import current_app, escape
 from flask_login import UserMixin
+from sqlalchemy import or_
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_babel import _, lazy_gettext as _l
 from sqlalchemy.orm import backref
@@ -73,6 +76,7 @@ class Community(db.Model):
                 return self.icon.source_url
         return ''
 
+
     def header_image(self) -> str:
         if self.image_id is not None:
             if self.image.file_path is not None:
@@ -92,6 +96,14 @@ class Community(db.Model):
             return self.name
         else:
             return self.ap_id
+
+    def moderators(self):
+        return CommunityMember.query.filter((CommunityMember.community_id == self.id) &
+                                     (or_(
+                                         CommunityMember.is_owner,
+                                         CommunityMember.is_moderator
+                                     ))
+                                     ).all()
 
 
 class User(UserMixin, db.Model):
@@ -200,6 +212,10 @@ class User(UserMixin, db.Model):
                 return SUBSCRIPTION_MEMBER
         else:
             return SUBSCRIPTION_NONMEMBER
+
+    def communities(self) -> List[Community]:
+        return Community.query.filter(Community.banned == False).\
+            join(CommunityMember).filter(CommunityMember.is_banned == False).all()
 
     @staticmethod
     def verify_reset_password_token(token):
@@ -320,6 +336,7 @@ class CommunityMember(db.Model):
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), primary_key=True)
     is_moderator = db.Column(db.Boolean, default=False)
     is_owner = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 

@@ -67,5 +67,14 @@ def search_for_community(address: str):
 
 
 def community_url_exists(url) -> bool:
-    community = Community.query.filter_by(url=url).first()
+    community = Community.query.filter_by(ap_profile_id=url).first()
     return community is not None
+
+
+def actor_to_community(actor) -> Community:
+    actor = actor.strip()
+    if '@' in actor:
+        community = Community.query.filter_by(banned=False, ap_id=actor).first()
+    else:
+        community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    return community

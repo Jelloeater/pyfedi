@@ -8,7 +8,7 @@
             <div class="community_header" style="height: 240px; background-image: url({{ community.header_image() }});"></div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ community.icon_image() }}" />
             <h1 class="mt-2">{{ community.title }}</h1>
-        {% else %}
+        {% elif community.icon_image() != '' %}
             <div class="row">
                 <div class="col-2">
                     <img class="community_icon_big rounded-circle" src="{{ community.icon_image() }}" />
@@ -17,6 +17,8 @@
                     <h1 class="mt-3">{{ community.title }}</h1>
                 </div>
             </div>
+        {% else %}
+            <h1 class="mt-3">{{ community.title }}</h1>
         {% endif %}
 
     </div>
@@ -33,7 +35,7 @@
                         {% endif %}
                     </div>
                     <div class="col-6">
-                        <a class="w-100 btn btn-primary" href="#">{{ _('Create a post') }}</a>
+                        <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create a post') }}</a>
                     </div>
                 </div>
                 <form method="get">
@@ -46,8 +48,8 @@
                  <h2>{{ _('About community') }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ community.description }}</p>
-                <p>{{ community.rules }}</p>
+                <p>{{ community.description|safe }}</p>
+                <p>{{ community.rules|safe }}</p>
                 {% if len(mods) > 0 and not community.private_mods %}
                     <h3>Moderators</h3>
                     <ol>

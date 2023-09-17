@@ -176,7 +176,7 @@ def banned_user_agents():
     return []  # todo: finish this function
 
 
-@cache.cached(150)
+@cache.memoize(150)
 def instance_blocked(host: str) -> bool:
     host = host.lower()
     if 'https://' in host or 'http://' in host:

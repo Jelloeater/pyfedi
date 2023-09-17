@@ -1,16 +1,19 @@
 from datetime import date, datetime, timedelta
+
+import markdown2
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
+from sqlalchemy import or_
+
 from app import db
 from app.activitypub.signature import RsaKeys, HttpSignature
-from app.community.forms import SearchRemoteCommunity, AddLocalCommunity
-from app.community.util import search_for_community, community_url_exists
-from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER
-from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan
+from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost
+from app.community.util import search_for_community, community_url_exists, actor_to_community
+from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
+from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post
 from app.community import bp
-from app.utils import get_setting, render_template
-from sqlalchemy import or_
+from app.utils import get_setting, render_template, allowlist_html
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -21,7 +24,7 @@ def add_local():
 
     if form.validate_on_submit() and not community_url_exists(form.url.data):
         # todo: more intense data validation
-        if form.url.data.trim().lower().startswith('/c/'):
+        if form.url.data.strip().lower().startswith('/c/'):
             form.url.data = form.url.data[3:]
         private_key, public_key = RsaKeys.generate_keypair()
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
@@ -65,12 +68,7 @@ def add_remote():
 
 # @bp.route('/c/<actor>', methods=['GET']) - defined in activitypub/routes.py, which calls this function for user requests. A bit weird.
 def show_community(community: Community):
-    mods = CommunityMember.query.filter((CommunityMember.community_id == community.id) &
-                                        (or_(
-                                            CommunityMember.is_owner,
-                                            CommunityMember.is_moderator
-                                        ))
-                                        ).all()
+    mods = community.moderators()
 
     is_moderator = any(mod.user_id == current_user.id for mod in mods)
     is_owner = any(mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
@@ -107,7 +105,7 @@ def subscribe(actor):
                     "to": [community.ap_id],
                     "object": community.ap_id,
                     "type": "Follow",
-                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/" + join_request.id
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{join_request.id}"
                 }
                 try:
                     message = HttpSignature.signed_request(community.ap_inbox_url, follow, current_user.private_key,
@@ -140,11 +138,7 @@ def subscribe(actor):
 
 @bp.route('/<actor>/unsubscribe', methods=['GET'])
 def unsubscribe(actor):
-    actor = actor.strip()
-    if '@' in actor:
-        community = Community.query.filter_by(banned=False, ap_id=actor).first()
-    else:
-        community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    community = actor_to_community(actor)
 
     if community is not None:
         subscription = current_user.subscribed(community)
@@ -165,3 +159,48 @@ def unsubscribe(actor):
             return redirect('/c/' + actor)
     else:
         abort(404)
+
+
+@bp.route('/<actor>/submit', methods=['GET', 'POST'])
+def add_post(actor):
+    community = actor_to_community(actor)
+    form = CreatePost()
+    if get_setting('allow_nsfw', False) is False:
+        form.nsfw.render_kw = {'disabled': True}
+    if get_setting('allow_nsfl', False) is False:
+        form.nsfl.render_kw = {'disabled': True}
+    images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''
+
+    form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
+
+    if form.validate_on_submit():
+        post = Post(user_id=current_user.id, community_id=form.communities.data, nsfw=form.nsfw.data,
+                    nsfl=form.nsfl.data)
+        if form.type.data == '' or form.type.data == 'discussion':
+            post.title = form.discussion_title.data
+            post.body = form.discussion_body.data
+            post.body_html = allowlist_html(markdown2.markdown(post.body, safe_mode=True))
+            post.type = POST_TYPE_ARTICLE
+        elif form.type.data == 'link':
+            post.title = form.link_title.data
+            post.url = form.link_url.data
+            post.type = POST_TYPE_LINK
+        elif form.type.data == 'image':
+            post.title = form.image_title.data
+            post.type = POST_TYPE_IMAGE
+            # todo: handle file upload
+        elif form.type.data == 'poll':
+            ...
+        else:
+            raise Exception('invalid post type')
+        db.session.add(post)
+        db.session.commit()
+
+        flash('Post has been added')
+        return redirect(f"/c/{community.link()}")
+    else:
+        form.communities.data = community.id
+        form.notify.data = True
+
+    return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
+                           images_disabled=images_disabled)

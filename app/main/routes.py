@@ -8,7 +8,7 @@ from flask_login import current_user
 from flask_babel import _, get_locale
 from sqlalchemy import select
 from sqlalchemy_searchable import search
-from app.utils import render_template
+from app.utils import render_template, get_setting
 
 from app.models import Community, CommunityMember
 

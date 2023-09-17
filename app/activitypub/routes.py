@@ -338,6 +338,7 @@ def shared_inbox():
                                         activity_log.exception_message = 'Could not detect type of like'
                                     if activity_log.result == 'success':
                                         ... # todo: recalculate 'hotness' of liked post/reply
+                                            # todo: if vote was on content in local community, federate the vote out to followers
 
                         # Follow: remote user wants to follow one of our communities
                         elif request_json['type'] == 'Follow':      # Follow is when someone wants to join a community

@@ -1,4 +1,3 @@
-import functools
 import random
 from urllib.parse import urlparse
 
@@ -42,7 +41,7 @@ def get_request(uri, params=None, headers=None) -> requests.Response:
 
 
 # saves an arbitrary object into a persistent key-value store. cached.
-@cache.cached(timeout=50)
+@cache.memoize(timeout=50)
 def get_setting(name: str, default=None):
     setting = Settings.query.filter_by(name=name).first()
     if setting is None:
@@ -55,7 +54,7 @@ def get_setting(name: str, default=None):
 def set_setting(name: str, value):
     setting = Settings.query.filter_by(name=name).first()
     if setting is None:
-        db.session.append(Settings(name=name, value=json.dumps(value)))
+        db.session.add(Settings(name=name, value=json.dumps(value)))
     else:
         setting.value = json.dumps(value)
     db.session.commit()
