@@ -5,11 +5,54 @@ starting any large pieces of work to ensure alignment with the roadmap, architec
 
 The general style and philosphy behind the way things have been constructed is well described by 
 [The Grug Brained Developer](https://grugbrain.dev/). If that page resonates with you then you'll
-probably enjoy your time here!
+probably enjoy your time here! Our code needs to be simple enough that new developers of all
+skill levels can easily understand what's going on and onboard quickly without a lot of upfront 
+time investment. Sometimes this will mean writing slightly more verbose/boring code or avoiding the
+use of advanced design patterns.
 
 Mailing list, Matrix channel, etc still to come.
 
-## Code of conduct
+# Technology stack
+
+- Python 
+- Flask
+- Jinja
+- SCSS
+- SQL - Postgresql
+
+Python developers with no Flask experience can quickly learn Flask by exploring the 
+[Flask Mega Tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world) 
+which will guide them through the process of building a simple social media app. Django is
+very similar to Flask so developers familiar with that framework will have an easier
+time of things.
+
+# Coding Standards / Guidelines
+
+**[PEP 8](https://peps.python.org/pep-0008/)** covers the basics. PyCharm encourages this by default - 
+VS Code coders are encouraged to try the free community edition of PyCharm but it is by no means required. 
+
+Use PEP 8 conventions for line length, naming, indentation. Use descriptive commit messages.
+
+### Directory structure
+
+Where possible, the structure should match the URL structure of the site. e.g. "domain.com/admin" 
+should be in a directory called "admin". Exceptions to this are '/activitypub' which contains
+modules for server-to-server communication and 'main' which is all the public non-authenticated
+parts of the app.
+
+Most of the interesting code is in the /app directory. Within that are:
+
+ - /templates which contains all the Jinja2 code for rendering HTML.
+ - /static is all the images, CSS and JS files. SCSS files are compiled into CSS.
+ - /utils.py contains misc helpful functions. Within each directory is often another utils.py for
+helpful functions that pertain to modules in that directory only.
+ - /models.py is the database interface. Each class in this file corresponds to a table in the database. 
+Changes to this file are turned into changes in the DB by using '[migrations](https://www.onlinetutorialspoint.com/flask/flask-how-to-upgrade-or-downgrade-database-migrations.html)'.
+ - /community/* pertains to viewing, posting within and managing communities.
+
+Python developers who are new to Flask will be able to quickly become productive with 
+
+# Code of conduct
 
 ## Our Pledge
 
