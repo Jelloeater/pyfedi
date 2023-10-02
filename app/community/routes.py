@@ -2,13 +2,13 @@ from datetime import date, datetime, timedelta
 
 import markdown2
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
-from flask_login import login_user, logout_user, current_user
+from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_
 
 from app import db
 from app.activitypub.signature import RsaKeys, HttpSignature
-from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost
+from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost, NewReplyForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post
@@ -70,8 +70,8 @@ def add_remote():
 def show_community(community: Community):
     mods = community.moderators()
 
-    is_moderator = any(mod.user_id == current_user.id for mod in mods)
-    is_owner = any(mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
+    is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
+    is_owner = current_user.is_authenticated and any(mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
 
     if community.private_mods:
         mod_list = []
@@ -80,10 +80,11 @@ def show_community(community: Community):
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
     return render_template('community/community.html', community=community, title=community.title,
-                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list)
+                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=community.posts)
 
 
 @bp.route('/<actor>/subscribe', methods=['GET'])
+@login_required
 def subscribe(actor):
     remote = False
     actor = actor.strip()
@@ -137,6 +138,7 @@ def subscribe(actor):
 
 
 @bp.route('/<actor>/unsubscribe', methods=['GET'])
+@login_required
 def unsubscribe(actor):
     community = actor_to_community(actor)
 
@@ -162,6 +164,7 @@ def unsubscribe(actor):
 
 
 @bp.route('/<actor>/submit', methods=['GET', 'POST'])
+@login_required
 def add_post(actor):
     community = actor_to_community(actor)
     form = CreatePost()
@@ -194,7 +197,10 @@ def add_post(actor):
         else:
             raise Exception('invalid post type')
         db.session.add(post)
+        community.post_count += 1
         db.session.commit()
+
+        # todo: federate post creation out to followers
 
         flash('Post has been added')
         return redirect(f"/c/{community.link()}")
@@ -204,3 +210,13 @@ def add_post(actor):
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
                            images_disabled=images_disabled)
+
+
+@bp.route('/post/<int:post_id>')
+def show_post(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    mods = post.community.moderators()
+    is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
+    form = NewReplyForm()
+    return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
+                           canonical=post.ap_id, form=form)

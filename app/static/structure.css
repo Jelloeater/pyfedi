@@ -277,4 +277,17 @@ fieldset legend {
   height: auto;
 }
 
+.post_list .post_teaser {
+  border-bottom: solid 2px #ddd;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.post_list .post_teaser h3 {
+  font-size: 120%;
+  margin-top: 8px;
+}
+.post_list .post_teaser h3 a {
+  text-decoration: none;
+}
+
 /*# sourceMappingURL=structure.css.map */

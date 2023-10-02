@@ -64,3 +64,21 @@ nav, etc which are used site-wide */
     height: auto;
   }
 }
+
+.post_list {
+  .post_teaser {
+
+    h3 {
+      font-size: 120%;
+      margin-top: 8px;
+
+      a {
+        text-decoration: none;
+      }
+    }
+
+    border-bottom: solid 2px $light-grey;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}

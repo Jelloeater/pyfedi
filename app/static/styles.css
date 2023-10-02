@@ -288,4 +288,11 @@ nav.navbar {
   left: 26px;
 }
 
+.external_link_icon {
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  margin-bottom: 3px;
+}
+
 /*# sourceMappingURL=styles.css.map */

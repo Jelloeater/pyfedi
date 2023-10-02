@@ -255,8 +255,8 @@ class Post(db.Model):
     nsfl = db.Column(db.Boolean, default=False)
     sticky = db.Column(db.Boolean, default=False)
     indexable = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)    # this is when the content arrived here
+    posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)     # this is when the original server created it
     last_active = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     ip = db.Column(db.String(50))
     up_votes = db.Column(db.Integer, default=0)
@@ -433,6 +433,23 @@ class ActivityPubLog(db.Model):
     result = db.Column(db.String(10))           # 'success' or 'failure'
     exception_message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Filter(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50))
+    filter_posts = db.Column(db.Boolean, default=True)
+    filter_replies = db.Column(db.Boolean, default=False)
+    hide_type = db.Column(db.Integer, default=0)    # 0 = hide with warning, 1 = hide completely
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+
+class FilterKeyword(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    keyword = db.Column(db.String(100))
+    filter_id = db.Column(db.Integer, db.ForeignKey('filter.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
 
 
 @login.user_loader

@@ -271,6 +271,7 @@ def shared_inbox():
 
                                             if post is not None:
                                                 db.session.add(post)
+                                                community.post_count += 1
                                                 db.session.commit()
                                         else:
                                             post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
@@ -294,6 +295,7 @@ def shared_inbox():
 
                                             if post_reply is not None:
                                                 db.session.add(post_reply)
+                                                community.post_reply_count += 1
                                                 db.session.commit()
                                     else:
                                         activity_log.exception_message = 'Unacceptable type: ' + object_type
@@ -398,6 +400,7 @@ def shared_inbox():
                                 if join_request:
                                     member = CommunityMember(user_id=user.id, community_id=community.id)
                                     db.session.add(member)
+                                    community.subscriptions_count += 1
                                     db.session.commit()
                                     activity_log.result = 'success'
                     else:

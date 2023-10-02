@@ -5,7 +5,7 @@ starting any large pieces of work to ensure alignment with the roadmap, architec
 
 The general style and philosphy behind the way things have been constructed is well described by 
 [The Grug Brained Developer](https://grugbrain.dev/). If that page resonates with you then you'll
-probably enjoy your time here! Our code needs to be simple enough that new developers of all
+probably enjoy your time here! The codebase needs to be simple enough that new developers of all
 skill levels can easily understand what's going on and onboard quickly without a lot of upfront 
 time investment. Sometimes this will mean writing slightly more verbose/boring code or avoiding the
 use of advanced design patterns.
@@ -33,6 +33,8 @@ VS Code coders are encouraged to try the free community edition of PyCharm but i
 
 Use PEP 8 conventions for line length, naming, indentation. Use descriptive commit messages.
 
+Database model classes are singular. As in "Car", not "Cars".
+
 ### Directory structure
 
 Where possible, the structure should match the URL structure of the site. e.g. "domain.com/admin" 
@@ -49,8 +51,6 @@ helpful functions that pertain to modules in that directory only.
  - /models.py is the database interface. Each class in this file corresponds to a table in the database. 
 Changes to this file are turned into changes in the DB by using '[migrations](https://www.onlinetutorialspoint.com/flask/flask-how-to-upgrade-or-downgrade-database-migrations.html)'.
  - /community/* pertains to viewing, posting within and managing communities.
-
-Python developers who are new to Flask will be able to quickly become productive with 
 
 # Code of conduct
 

@@ -26,6 +26,9 @@
         <meta name="msapplication-TileColor" content="#da532c">
         <meta name="msapplication-config" content="/static/browserconfig.xml">
         <meta name="theme-color" content="#ffffff">
+        {% if canonical %}
+            <link rel="canonical" href="{{ canonical }}" />
+        {% endif %}
     {% endblock %}
   </head>
   <body class="d-flex flex-column" style="padding-top: 43px;">
@@ -77,8 +80,8 @@
     {% endblock %}
 
     {% block scripts %}
-        {{ moment.include_moment() }}
-        {{ moment.lang(g.locale) }}
+        {{ str(moment.include_moment()).replace('<script>', '<script nonce="' + session['nonce'] + '">')|safe }}
+        {{ str(moment.lang(g.locale)).replace('<script>', '<script nonce="' + session['nonce'] + '">')|safe }}
     {% endblock %}
     {{ bootstrap.load_js() }}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>

@@ -68,3 +68,8 @@ class CreatePost(FlaskForm):
             return False
 
         return True
+
+
+class NewReplyForm(FlaskForm):
+    body = TextAreaField(_l('Body'), render_kw={'placeholder': 'What are your thoughts?'})
+    submit = SubmitField(_l('Comment'))

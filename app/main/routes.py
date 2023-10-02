@@ -2,13 +2,13 @@ from datetime import datetime
 
 from app import db
 from app.main import bp
-from flask import g, jsonify, flash, request
+from flask import g, session, flash, request
 from flask_moment import moment
 from flask_login import current_user
 from flask_babel import _, get_locale
 from sqlalchemy import select
 from sqlalchemy_searchable import search
-from app.utils import render_template, get_setting
+from app.utils import render_template, get_setting, gibberish
 
 from app.models import Community, CommunityMember
 
@@ -43,9 +43,3 @@ def list_local_communities():
 def list_subscribed_communities():
     communities = Community.query.join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
     return render_template('list_communities.html', communities=communities)
-
-
-
-@bp.before_app_request
-def before_request():
-    g.locale = str(get_locale())

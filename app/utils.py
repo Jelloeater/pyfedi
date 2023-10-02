@@ -143,3 +143,13 @@ def domain_from_url(url: str) -> Domain:
     domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
     return domain
 
+
+def shorten_string(input_str, max_length=50):
+    if len(input_str) <= max_length:
+        return input_str
+    else:
+        return input_str[:max_length - 3] + '…'
+
+
+def shorten_url(input: str, max_length=20):
+    return shorten_string(input.replace('https://', '').replace('http://', ''))
