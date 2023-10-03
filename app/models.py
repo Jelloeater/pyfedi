@@ -10,11 +10,17 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_babel import _, lazy_gettext as _l
 from sqlalchemy.orm import backref
 from sqlalchemy_utils.types import TSVectorType # https://sqlalchemy-searchable.readthedocs.io/en/latest/installation.html
+from flask_sqlalchemy import BaseQuery
+from sqlalchemy_searchable import SearchQueryMixin
 from app import db, login
 import jwt
 
 from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER, \
     SUBSCRIPTION_BANNED
+
+
+class FullTextSearchQuery(BaseQuery, SearchQueryMixin):
+    pass
 
 
 class File(db.Model):
@@ -28,6 +34,7 @@ class File(db.Model):
 
 
 class Community(db.Model):
+    query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
     icon_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     image_id = db.Column(db.Integer, db.ForeignKey('file.id'))
@@ -107,6 +114,7 @@ class Community(db.Model):
 
 
 class User(UserMixin, db.Model):
+    query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
     user_name = db.Column(db.String(255), unique=True, index=True)
     email = db.Column(db.String(255), index=True)
@@ -236,6 +244,7 @@ class ActivityLog(db.Model):
 
 
 class Post(db.Model):
+    query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), index=True)
@@ -279,6 +288,7 @@ class Post(db.Model):
 
 
 class PostReply(db.Model):
+    query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), index=True)

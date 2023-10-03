@@ -51,11 +51,57 @@ nav, etc which are used site-wide */
   margin-right: auto;
 }
 
+#breadcrumb_nav {
+  display: none;
+}
+
+@include breakpoint(tablet) {
+  #breadcrumb_nav {
+      display: block;
+      font-size: 87%;
+
+      .breadcrumb {
+          padding: 0;
+          margin-bottom: 0;
+          background-color: inherit;
+
+          .breadcrumb-item + .breadcrumb-item::before {
+              content: ">";
+          }
+      }
+  }
+}
+
 .community_header {
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
   border-radius: 5px;
+
+  @include breakpoint(tablet) {
+    #breadcrumb_nav {
+      padding-left: 20px;
+      padding-top: 13px;
+
+      .breadcrumb {
+        padding: 0;
+        margin-bottom: 0;
+        background-color: inherit;
+
+        .breadcrumb-item {
+          color: white;
+          a {
+            color: white;
+          }
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: ">";
+           color: white;
+        }
+      }
+    }
+  }
 }
 
 .community_header_no_background, .community_header {

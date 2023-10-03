@@ -5,7 +5,15 @@
 <div class="row">
     <div class="col-8 position-relative">
         {% if community.header_image() != '' %}
-            <div class="community_header" style="height: 240px; background-image: url({{ community.header_image() }});"></div>
+            <div class="community_header" style="height: 240px; background-image: url({{ community.header_image() }});">
+                <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                    <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
+                    <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
+                  </ol>
+                </nav>
+            </div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ community.icon_image() }}" />
             <h1 class="mt-2">{{ community.title }}</h1>
         {% elif community.icon_image() != '' %}
@@ -18,7 +26,14 @@
                 </div>
             </div>
         {% else %}
-            <h1 class="mt-3">{{ community.title }}</h1>
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
+                <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
+              </ol>
+            </nav>
+            <h1 class="mt-2">{{ community.title }}</h1>
         {% endif %}
         <div class="post_list">
             {% for post in posts %}

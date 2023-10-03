@@ -58,6 +58,7 @@ def register(app):
             db.session.append(Settings(name='federation', value=json.dumps(True)))
             db.session.append(BannedInstances(domain='lemmygrad.ml'))
             db.session.append(BannedInstances(domain='gab.com'))
+            db.session.append(BannedInstances(domain='rqd2.net'))
             db.session.append(BannedInstances(domain='exploding-heads.com'))
             db.session.append(BannedInstances(domain='hexbear.net'))
             db.session.append(BannedInstances(domain='threads.net'))
