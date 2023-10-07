@@ -52,7 +52,9 @@
                     {% endif %}
                     </small></p>
                 {% endif %}
-                <p><small>submitted {{ moment(post.posted_at).fromNow() }} by {{ post.author.user_name }}</small></p>
+                <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
+                    <a href="{{ url_for('activitypub.user_profile', actor=post.author.user_name) }}">{{ post.author.user_name }}</a>
+                </p>
             {% endif %}
         </div>
 

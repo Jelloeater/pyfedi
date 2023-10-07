@@ -1,0 +1,31 @@
+<div class="post_teaser">
+    <div class="row meta_row small">
+        <div class="col"><a href="{{ url_for('activitypub.user_profile', actor=post.author.user_name) }}">{{ post.author.user_name }}</a> · {{ moment(post.posted_at).fromNow() }}</div>
+    </div>
+    <div class="row main_row">
+        <div class="col{% if post.image_id %}-8{% endif %}">
+            <h3>
+                <a href="{{ url_for('community.show_post', post_id=post.id) }}">{{ post.title }}</a>
+                {% if post.type == post_type_link %}
+                    <span class="domain_link">(<a href="/d/{{ post.domain_id }}">domain</a>)</span>
+                {% endif %}
+            </h3>
+        </div>
+        {% if post.image_id %}
+            <div class="col-4">
+                <img src="{{ post.image.source_url}}" alt="{{ post.image.alt_text }}"
+                     width="100" />
+            </div>
+        {% endif %}
+    </div>
+    <div class="row utilities_row">
+        <div class="col-4">
+            up {{ post.score }} down
+        </div>
+        <div class="col-6">
+            <a href="{{ url_for('community.show_post', post_id=post.id, _anchor='replies') }}">{{post.reply_count}}</a> additional tools
+        </div>
+        <div class="col-2">...</div>
+    </div>
+
+</div>

@@ -142,6 +142,8 @@ class User(UserMixin, db.Model):
     stripe_subscription_id = db.Column(db.String(50))
     searchable = db.Column(db.Boolean, default=True)
     indexable = db.Column(db.Boolean, default=False)
+    bot = db.Column(db.Boolean, default=False)
+    ignore_bots = db.Column(db.Boolean, default=False)
 
     avatar = db.relationship('File', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
@@ -179,6 +181,22 @@ class User(UserMixin, db.Model):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
+
+    def avatar_image(self) -> str:
+        if self.avatar_id is not None:
+            if self.avatar.file_path is not None:
+                return self.avatar.file_path
+            if self.avatar.source_url is not None:
+                return self.avatar.source_url
+        return ''
+
+    def cover_image(self) -> str:
+        if self.cover_id is not None:
+            if self.cover.file_path is not None:
+                return self.cover.file_path
+            if self.cover.source_url is not None:
+                return self.cover.source_url
+        return ''
 
     def get_reset_password_token(self, expires_in=600):
         return jwt.encode(
@@ -264,6 +282,7 @@ class Post(db.Model):
     nsfl = db.Column(db.Boolean, default=False)
     sticky = db.Column(db.Boolean, default=False)
     indexable = db.Column(db.Boolean, default=False)
+    from_bot = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)    # this is when the content arrived here
     posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)     # this is when the original server created it
     last_active = db.Column(db.DateTime, index=True, default=datetime.utcnow)
@@ -305,6 +324,7 @@ class PostReply(db.Model):
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     ip = db.Column(db.String(50))
+    from_bot = db.Column(db.Boolean, default=False)
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
     ranking = db.Column(db.Integer, default=0)

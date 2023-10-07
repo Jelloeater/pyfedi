@@ -79,8 +79,13 @@ def show_community(community: Community):
         mod_user_ids = [mod.user_id for mod in mods]
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
+    if current_user.ignore_bots:
+        posts = community.posts.query.filter(Post.from_bot == False).all()
+    else:
+        posts = community.posts
+
     return render_template('community/community.html', community=community, title=community.title,
-                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=community.posts)
+                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts)
 
 
 @bp.route('/<actor>/subscribe', methods=['GET'])

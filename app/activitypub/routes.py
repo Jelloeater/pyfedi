@@ -1,6 +1,5 @@
 import markdown2
 import werkzeug.exceptions
-from sqlalchemy import text
 
 from app import db
 from app.activitypub import bp
@@ -8,6 +7,7 @@ from flask import request, Response, current_app, abort, jsonify, json
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
+from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
     PostReply, Instance, PostVote, PostReplyVote, File
@@ -106,7 +106,7 @@ def user_profile(actor):
     actor = actor.strip()
     user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
     if user is not None:
-        if 'application/ld+json' in request.headers.get('Accept', '') or request.accept_mimetypes.accept_json:
+        if 'application/ld+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
             actor_data = {  "@context": default_context(),
                             "type": "Person",
@@ -122,18 +122,24 @@ def user_profile(actor):
                             "endpoints": {
                                 "sharedInbox": f"https://{server}/inbox"
                             },
-                            "published": user.created.isoformat()
+                            "published": user.created.isoformat(),
                         }
             if user.avatar_id is not None:
                 actor_data["icon"] = {
                     "type": "Image",
                     "url": f"https://{server}/avatars/{user.avatar.file_path}"
                 }
+            if user.about:
+                actor_data['source'] = {
+                    "content": user.about,
+                    "mediaType": "text/markdown"
+                }
+                actor_data['summary'] = allowlist_html(markdown2.markdown(user.about, safe_mode=True))
             resp = jsonify(actor_data)
             resp.content_type = 'application/activity+json'
             return resp
         else:
-            return render_template('user_profile.html', user=user)
+            return show_profile(user)
 
 
 @bp.route('/c/<actor>', methods=['GET'])

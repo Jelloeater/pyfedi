@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col">
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item"><a href="/u/{{ user.user_name }}">{{ user.user_name }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Change settings') }}</li>
+              </ol>
+            </nav>
+            <h1 class="mt-2">{{ _('Change settings') }}</h1>
+            <form method='post'>
+                {{ render_form(form) }}
+            </form>
+        </div>
+    </div>
+{% endblock %}

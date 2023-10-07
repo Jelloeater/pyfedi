@@ -25,21 +25,21 @@ def index():
 def list_communities():
     search_param = request.args.get('search', '')
     if search_param == '':
-        communities = Community.query.all()
+        communities = Community.query.filter_by(banned=False).all()
     else:
         query = search(select(Community), search_param, sort=True)
         communities = db.session.scalars(query).all()
 
-    return render_template('list_communities.html', communities=communities, search=search_param)
+    return render_template('list_communities.html', communities=communities, search=search_param, title=_('Communities'))
 
 
 @bp.route('/communities/local', methods=['GET'])
 def list_local_communities():
-    communities = Community.query.filter_by(ap_id=None).all()
-    return render_template('list_communities.html', communities=communities)
+    communities = Community.query.filter_by(ap_id=None, banned=False).all()
+    return render_template('list_communities.html', communities=communities, title=_('Local communities'))
 
 
 @bp.route('/communities/subscribed', methods=['GET'])
 def list_subscribed_communities():
-    communities = Community.query.join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
-    return render_template('list_communities.html', communities=communities)
+    communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
+    return render_template('list_communities.html', communities=communities, title=_('Subscribed communities'))

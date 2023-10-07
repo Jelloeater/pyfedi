@@ -144,8 +144,10 @@ a.no-underline {
   }
 }
 
+$small_text: 87%;
+
 .small, small {
-  font-size: 87%;
+  font-size: $small_text;
 }
 
 fieldset legend {

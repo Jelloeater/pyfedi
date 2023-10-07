@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-8 position-relative">
+        {% if user.cover_image() != '' %}
+            <div class="community_header" style="height: 240px; background-image: url({{ user.cover_image() }});">
+                <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                    <li class="breadcrumb-item"><a href="/users">{{ _('People') }}</a></li>
+                    <li class="breadcrumb-item active">{{ user.user_name|shorten }}</li>
+                  </ol>
+                </nav>
+            </div>
+            <img class="community_icon_big bump_up rounded-circle" src="{{ user.avatar_image() }}" />
+            <h1 class="mt-2">{{ user.user_name }}</h1>
+        {% elif user.avatar_image() != '' %}
+            <div class="row">
+                <div class="col-2">
+                    <img class="community_icon_big rounded-circle" src="{{ user.avatar_image() }}" />
+                </div>
+                <div class="col-10">
+                    <h1 class="mt-3">{{ user.user_name }}</h1>
+                </div>
+            </div>
+        {% else %}
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item"><a href="/users">{{ _('People') }}</a></li>
+                <li class="breadcrumb-item active">{{ user.user_name|shorten }}</li>
+              </ol>
+            </nav>
+            <h1 class="mt-2">{{ user.user_name }}</h1>
+            {{ user.about_html|safe }}
+        {% endif %}
+
+        {% if len(posts) > 0 %}
+            <h2 class="mt-4">Posts</h2>
+            <div class="post_list">
+                {% for post in posts %}
+                    {% include 'community/_post_teaser.html' %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if len(post_replies) > 0 %}
+            <h2 class="mt-4">Comments</h2>
+            <div class="post_list">
+                {% for post_reply in post_replies %}
+                    {% include 'community/_post_reply_teaser.html' %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-4">
+        {% if current_user.id == user.id %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Manage') }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <a class="w-100 btn btn-primary" href="/u/{{ user.user_name }}/profile">{{ _('Profile') }}</a>
+                        </div>
+                        <div class="col-6">
+                            <a class="w-100 btn btn-primary" href="/u/{{ user.user_name }}/settings">{{ _('Settings') }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if len(moderates) > 0 %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Moderates') }}</h2>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        {% for community in moderates %}
+                            <li>
+                                <a href="/c/{{ community.link() }}">
+                                    <img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />
+                                    {{ community.display_name() }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

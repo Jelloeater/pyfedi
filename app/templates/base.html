@@ -52,6 +52,7 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/u/{{ current_user.user_name }}">{{ current_user.user_name }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
                         {% endif %}
                     </ul>

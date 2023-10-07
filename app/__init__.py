@@ -62,6 +62,9 @@ def create_app(config_class=Config):
     from app.community import bp as community_bp
     app.register_blueprint(community_bp, url_prefix='/community')
 
+    from app.user import bp as user_bp
+    app.register_blueprint(user_bp)
+
     def get_resource_as_string(name, charset='utf-8'):
         with app.open_resource(name) as f:
             return f.read().decode(charset)
