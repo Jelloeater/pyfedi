@@ -6,7 +6,7 @@ from app import create_app, db, cli
 import os, click
 from flask import session, g
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
-from app.utils import getmtime, gibberish, shorten_string, shorten_url
+from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits
 
 app = create_app()
 cli.register(app)
@@ -27,6 +27,7 @@ def make_shell_context():
 with app.app_context():
     app.jinja_env.globals['getmtime'] = getmtime
     app.jinja_env.globals['len'] = len
+    app.jinja_env.globals['digits'] = digits
     app.jinja_env.globals['str'] = str
     app.jinja_env.filters['shorten'] = shorten_string
     app.jinja_env.filters['shorten_url'] = shorten_url

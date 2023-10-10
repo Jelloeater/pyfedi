@@ -198,6 +198,12 @@ class User(UserMixin, db.Model):
                 return self.cover.source_url
         return ''
 
+    def link(self) -> str:
+        if self.ap_id is None:
+            return self.user_name
+        else:
+            return self.ap_id
+
     def get_reset_password_token(self, expires_in=600):
         return jwt.encode(
             {'reset_password': self.id, 'exp': time() + expires_in},
@@ -312,9 +318,11 @@ class PostReply(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), index=True)
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), index=True)
+    domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), index=True)
     image_id = db.Column(db.Integer, db.ForeignKey('file.id'), index=True)
     parent_id = db.Column(db.Integer)
     root_id = db.Column(db.Integer)
+    depth = db.Column(db.Integer, default=0)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     body_html_safe = db.Column(db.Boolean, default=False)
@@ -327,7 +335,7 @@ class PostReply(db.Model):
     from_bot = db.Column(db.Boolean, default=False)
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
-    ranking = db.Column(db.Integer, default=0)
+    ranking = db.Column(db.Integer, default=0, index=True)
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
 

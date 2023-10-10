@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 from typing import Union, Tuple
-import markdown2
 from flask import current_app
 from sqlalchemy import text
 from app import db, cache
@@ -15,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
 from urllib.parse import urlparse
 
-from app.utils import get_request, allowlist_html
+from app.utils import get_request, allowlist_html, html_to_markdown
 
 
 def public_key():
@@ -301,7 +300,7 @@ def parse_summary(user_json) -> str:
     if 'source' in user_json and user_json['source'].get('mediaType') == 'text/markdown':
         # Convert Markdown to HTML
         markdown_text = user_json['source']['content']
-        html_content = markdown2.markdown(markdown_text)
+        html_content = html_to_markdown(markdown_text)
         return html_content
     elif 'summary' in user_json:
         return allowlist_html(user_json['summary'])

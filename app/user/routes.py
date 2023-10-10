@@ -1,5 +1,3 @@
-import markdown2
-
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
@@ -8,7 +6,7 @@ from app import db
 from app.models import Post, Community, CommunityMember, User, PostReply
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
-from app.utils import get_setting, render_template, allowlist_html
+from app.utils import get_setting, render_template, markdown_to_html
 from sqlalchemy import desc, or_
 
 
@@ -19,7 +17,7 @@ def show_profile(user):
         moderates = moderates.filter(Community.private_mods == False)
     post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).all()
     canonical = user.ap_public_url if user.ap_public_url else None
-    user.about_html = allowlist_html(markdown2.markdown(user.about, safe_mode=True))
+    user.about_html = markdown_to_html(user.about)
     return render_template('user/show_profile.html', user=user, posts=posts, post_replies=post_replies,
                            moderates=moderates.all(), canonical=canonical, title=_('Posts by %(user_name)s',
                                                                                    user_name=user.user_name))

@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import List
 
 from app import db
-from app.models import Community, File, BannedInstances
+from app.models import Community, File, BannedInstances, PostReply
 from app.utils import get_request
+from sqlalchemy import desc
 
 
 def search_for_community(address: str):
@@ -78,3 +80,24 @@ def actor_to_community(actor) -> Community:
     else:
         community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
     return community
+
+
+# replies to a post, in a tree, sorted by a variety of methods
+def post_replies(post_id: int, sort_by: str, show_first: int = 0) -> List[PostReply]:
+    comments = PostReply.query.filter_by(post_id=post_id)
+    if sort_by == 'hot':
+        comments = comments.order_by(desc(PostReply.ranking))
+    elif sort_by == 'top':
+        comments = comments.order_by(desc(PostReply.score))
+    elif sort_by == 'new':
+        comments = comments.order_by(desc(PostReply.posted_at))
+
+    comments_dict = {comment.id: {'comment': comment, 'replies': []} for comment in comments.all()}
+
+    for comment in comments:
+        if comment.parent_id is not None:
+            parent_comment = comments_dict.get(comment.parent_id)
+            if parent_comment:
+                parent_comment['replies'].append(comments_dict[comment.id])
+
+    return [comment for comment in comments_dict.values() if comment['comment'].parent_id is None]

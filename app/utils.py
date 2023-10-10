@@ -1,9 +1,10 @@
 import random
+import markdown2
+import math
 from urllib.parse import urlparse
 
 import flask
 from bs4 import BeautifulSoup
-import html as html_module
 import requests
 import os
 from flask import current_app, json
@@ -84,7 +85,8 @@ def is_image_url(url):
 
 # sanitise HTML using an allow list
 def allowlist_html(html: str) -> str:
-    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h3', 'h4', 'h5']
+    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h3', 'h4', 'h5', 'pre',
+                    'code']
     # Parse the HTML using BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
 
@@ -100,7 +102,7 @@ def allowlist_html(html: str) -> str:
                     del tag[attr]
 
     # Encode the HTML to prevent script execution
-    return html_module.escape(str(soup))
+    return str(soup)
 
 
 # convert basic HTML to Markdown
@@ -138,6 +140,10 @@ def html_to_markdown_worker(element, indent_level=0):
     return formatted_text
 
 
+def markdown_to_html(markdown_text) -> str:
+    return allowlist_html(markdown2.markdown(markdown_text, safe_mode=True))
+
+
 def domain_from_url(url: str) -> Domain:
     parsed_url = urlparse(url)
     domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
@@ -153,3 +159,11 @@ def shorten_string(input_str, max_length=50):
 
 def shorten_url(input: str, max_length=20):
     return shorten_string(input.replace('https://', '').replace('http://', ''))
+
+
+# the number of digits in a number. e.g. 1000 would be 4
+def digits(input: int) -> int:
+    if input == 0:
+        return 1  # Special case: 0 has 1 digit
+    else:
+        return math.floor(math.log10(abs(input))) + 1

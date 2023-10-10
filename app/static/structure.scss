@@ -111,6 +111,11 @@ nav, etc which are used site-wide */
   }
 }
 
+.post_reply_form {
+  label {
+    display: none;
+  }
+}
 .post_list {
   .post_teaser {
 
@@ -128,5 +133,64 @@ nav, etc which are used site-wide */
     border-bottom: solid 2px $light-grey;
     padding-top: 8px;
     padding-bottom: 8px;
+  }
+}
+
+.comment {
+  clear: both;
+  margin-bottom: 20px;
+
+  .comment_author {
+    img {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .hide_button {
+    float: right;
+    display: block;
+    width: 60px;
+    padding: 5px;
+
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .voting_buttons {
+    float: right;
+    display: block;
+    width: 60px;
+    padding: 5px;
+
+    div {
+      border: solid 1px $primary-colour;
+    }
+
+    .upvote_button, .downvote_button {
+      padding-left: 3px;
+      border-radius: 3px;
+
+      &.digits_4 {
+        width: 68px;
+      }
+
+      &.digits_5 {
+        width: 76px;
+      }
+
+      &.digits_6 {
+        width: 84px;
+      }
+    }
+
+    .downvote_button {
+      margin-top: 5px;
+    }
+
+    a {
+      text-decoration: none;
+    }
   }
 }

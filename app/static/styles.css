@@ -135,6 +135,14 @@
   content: "\e9d7";
 }
 
+.fe-arrow-up::before {
+  content: "\e914";
+}
+
+.fe-arrow-down::before {
+  content: "\e90c";
+}
+
 a.no-underline {
   text-decoration: none;
 }

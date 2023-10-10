@@ -1,6 +1,3 @@
-import markdown2
-import werkzeug.exceptions
-
 from app import db
 from app.activitypub import bp
 from flask import request, Response, current_app, abort, jsonify, json
@@ -14,7 +11,8 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
-    domain_from_url
+    domain_from_url, markdown_to_html
+import werkzeug.exceptions
 
 INBOX = []
 
@@ -134,7 +132,7 @@ def user_profile(actor):
                     "content": user.about,
                     "mediaType": "text/markdown"
                 }
-                actor_data['summary'] = allowlist_html(markdown2.markdown(user.about, safe_mode=True))
+                actor_data['summary'] = markdown_to_html(user.about)
             resp = jsonify(actor_data)
             resp.content_type = 'application/activity+json'
             return resp
@@ -250,7 +248,7 @@ def shared_inbox():
                                             if 'source' in request_json['object']['object'] and \
                                                     request_json['object']['object']['source']['mediaType'] == 'text/markdown':
                                                 post.body = request_json['object']['object']['source']['content']
-                                                post.body_html = allowlist_html(markdown2.markdown(post.body, safe_mode=True))
+                                                post.body_html = markdown_to_html(post.body)
                                             elif 'content' in request_json['object']['object']:
                                                 post.body_html = allowlist_html(request_json['object']['object']['content'])
                                                 post.body = html_to_markdown(post.body_html)
@@ -293,7 +291,7 @@ def shared_inbox():
                                                     request_json['object']['object']['source'][
                                                         'mediaType'] == 'text/markdown':
                                                 post_reply.body = request_json['object']['object']['source']['content']
-                                                post_reply.body_html = allowlist_html(markdown2.markdown(post_reply.body, safe_mode=True))
+                                                post_reply.body_html = markdown_to_html(post_reply.body)
                                             elif 'content' in request_json['object']['object']:
                                                 post_reply.body_html = allowlist_html(
                                                     request_json['object']['object']['content'])

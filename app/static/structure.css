@@ -136,6 +136,14 @@ nav, etc which are used site-wide */
   content: "\e9d7";
 }
 
+.fe-arrow-up::before {
+  content: "\e914";
+}
+
+.fe-arrow-down::before {
+  content: "\e90c";
+}
+
 a.no-underline {
   text-decoration: none;
 }
@@ -316,6 +324,10 @@ fieldset legend {
   height: auto;
 }
 
+.post_reply_form label {
+  display: none;
+}
+
 .post_list .post_teaser {
   border-bottom: solid 2px #ddd;
   padding-top: 8px;
@@ -326,6 +338,52 @@ fieldset legend {
   margin-top: 8px;
 }
 .post_list .post_teaser .meta_row a, .post_list .post_teaser .main_row a, .post_list .post_teaser .utilities_row a {
+  text-decoration: none;
+}
+
+.comment {
+  clear: both;
+  margin-bottom: 20px;
+}
+.comment .comment_author img {
+  width: 20px;
+  height: 20px;
+}
+.comment .hide_button {
+  float: right;
+  display: block;
+  width: 60px;
+  padding: 5px;
+}
+.comment .hide_button a {
+  text-decoration: none;
+}
+.comment .voting_buttons {
+  float: right;
+  display: block;
+  width: 60px;
+  padding: 5px;
+}
+.comment .voting_buttons div {
+  border: solid 1px #0071CE;
+}
+.comment .voting_buttons .upvote_button, .comment .voting_buttons .downvote_button {
+  padding-left: 3px;
+  border-radius: 3px;
+}
+.comment .voting_buttons .upvote_button.digits_4, .comment .voting_buttons .downvote_button.digits_4 {
+  width: 68px;
+}
+.comment .voting_buttons .upvote_button.digits_5, .comment .voting_buttons .downvote_button.digits_5 {
+  width: 76px;
+}
+.comment .voting_buttons .upvote_button.digits_6, .comment .voting_buttons .downvote_button.digits_6 {
+  width: 84px;
+}
+.comment .voting_buttons .downvote_button {
+  margin-top: 5px;
+}
+.comment .voting_buttons a {
   text-decoration: none;
 }
 

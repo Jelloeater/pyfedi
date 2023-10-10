@@ -1,6 +1,5 @@
 from datetime import date, datetime, timedelta
 
-import markdown2
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
@@ -9,11 +8,12 @@ from sqlalchemy import or_
 from app import db
 from app.activitypub.signature import RsaKeys, HttpSignature
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost, NewReplyForm
-from app.community.util import search_for_community, community_url_exists, actor_to_community
+from app.community.util import search_for_community, community_url_exists, actor_to_community, post_replies
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
-from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post
+from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, PostReply, \
+    PostReplyVote
 from app.community import bp
-from app.utils import get_setting, render_template, allowlist_html
+from app.utils import get_setting, render_template, allowlist_html, markdown_to_html
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -80,7 +80,7 @@ def show_community(community: Community):
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
     if current_user.ignore_bots:
-        posts = community.posts.query.filter(Post.from_bot == False).all()
+        posts = community.posts.filter(Post.from_bot == False).all()
     else:
         posts = community.posts
 
@@ -187,7 +187,7 @@ def add_post(actor):
         if form.type.data == '' or form.type.data == 'discussion':
             post.title = form.discussion_title.data
             post.body = form.discussion_body.data
-            post.body_html = allowlist_html(markdown2.markdown(post.body, safe_mode=True))
+            post.body_html = markdown_to_html(post.body)
             post.type = POST_TYPE_ARTICLE
         elif form.type.data == 'link':
             post.title = form.link_title.data
@@ -217,11 +217,28 @@ def add_post(actor):
                            images_disabled=images_disabled)
 
 
-@bp.route('/post/<int:post_id>')
+@bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def show_post(post_id: int):
     post = Post.query.get_or_404(post_id)
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     form = NewReplyForm()
+    if form.validate_on_submit():
+        reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
+                          body_html=markdown_to_html(form.body.data), body_html_safe=True,
+                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl)
+        db.session.add(reply)
+        db.session.commit()
+        reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
+                                   effect=1.0)
+        db.session.add(reply_vote)
+        db.session.commit()
+        form.body.data = ''
+        flash('Your comment has been added.')
+        # todo: flush cache
+        # todo: federation
+        replies = post_replies(post.id, 'top', show_first=reply.id)
+    else:
+        replies = post_replies(post.id, 'top')
     return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
-                           canonical=post.ap_id, form=form)
+                           canonical=post.ap_id, form=form, replies=replies)
