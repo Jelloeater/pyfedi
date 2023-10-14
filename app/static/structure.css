@@ -370,6 +370,7 @@ fieldset legend {
 .comment .voting_buttons .upvote_button, .comment .voting_buttons .downvote_button {
   padding-left: 3px;
   border-radius: 3px;
+  cursor: pointer;
 }
 .comment .voting_buttons .upvote_button.digits_4, .comment .voting_buttons .downvote_button.digits_4 {
   width: 68px;
@@ -379,6 +380,14 @@ fieldset legend {
 }
 .comment .voting_buttons .upvote_button.digits_6, .comment .voting_buttons .downvote_button.digits_6 {
   width: 84px;
+}
+.comment .voting_buttons .upvote_button.voted_up, .comment .voting_buttons .downvote_button.voted_up {
+  color: green;
+  font-weight: bold;
+}
+.comment .voting_buttons .upvote_button.voted_down, .comment .voting_buttons .downvote_button.voted_down {
+  color: darkred;
+  font-weight: bold;
 }
 .comment .voting_buttons .downvote_button {
   margin-top: 5px;

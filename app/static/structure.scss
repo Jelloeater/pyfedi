@@ -171,6 +171,7 @@ nav, etc which are used site-wide */
     .upvote_button, .downvote_button {
       padding-left: 3px;
       border-radius: 3px;
+      cursor: pointer;
 
       &.digits_4 {
         width: 68px;
@@ -182,6 +183,15 @@ nav, etc which are used site-wide */
 
       &.digits_6 {
         width: 84px;
+      }
+
+      &.voted_up {
+        color: green;
+        font-weight: bold;
+      }
+      &.voted_down {
+        color: darkred;
+        font-weight: bold;
       }
     }
 

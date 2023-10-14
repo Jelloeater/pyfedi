@@ -82,12 +82,9 @@
                 {% macro render_comment(comment) %}
                     <div class="comment" style="margin-left: {{ comment['comment'].depth * 20 }}px;">
                         <div class="voting_buttons">
-                            <div class="upvote_button digits_{{ digits(comment['comment'].up_votes) }}"><a href="#"><span class="fe fe-arrow-up"></span>
-                                {{ comment['comment'].up_votes }}</a>
-                            </div>
-                            <div class="downvote_button digits_{{ digits(comment['comment'].down_votes) }}"><a href="#"><span class="fe fe-arrow-down"></span>
-                                {{ comment['comment'].down_votes }}</a>
-                            </div>
+                            {% with comment=comment['comment'] %}
+                                {% include "community/_voting_buttons.html" %}
+                            {% endwith %}
                         </div>
                         <div class="hide_button"><a href="#">[-] hide</a></div>
                         <div class="comment_author">

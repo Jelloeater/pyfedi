@@ -237,8 +237,55 @@ def show_post(post_id: int):
         flash('Your comment has been added.')
         # todo: flush cache
         # todo: federation
-        replies = post_replies(post.id, 'top', show_first=reply.id)
+        return redirect(url_for('community.show_post', post_id=post_id))    # redirect to current page to avoid refresh resubmitting the form
     else:
         replies = post_replies(post.id, 'top')
     return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
                            canonical=post.ap_id, form=form, replies=replies)
+
+
+@bp.route('/comment/<int:comment_id>/<vote_direction>', methods=['POST'])
+def comment_vote(comment_id, vote_direction):
+    upvoted_class = downvoted_class = ''
+    comment = PostReply.query.get_or_404(comment_id)
+    existing_vote = PostReplyVote.query.filter_by(user_id=current_user.id, post_reply_id=comment.id).first()
+    if existing_vote:
+        if existing_vote.effect > 0:        # previous vote was up
+            if vote_direction == 'upvote':  # new vote is also up, so remove it
+                db.session.delete(existing_vote)
+                comment.up_votes -= 1
+                comment.score -= 1
+            else:                           # new vote is down while previous vote was up, so reverse their previous vote
+                existing_vote.effect = -1
+                comment.up_votes -= 1
+                comment.down_votes += 1
+                comment.score -= 2
+                downvoted_class = 'voted_down'
+        else:                               # previous vote was down
+            if vote_direction == 'upvote':  # new vote is upvote
+                existing_vote.effect = 1
+                comment.up_votes += 1
+                comment.down_votes -= 1
+                comment.score += 1
+                upvoted_class = 'voted_up'
+            else:                           # reverse a previous downvote
+                db.session.delete(existing_vote)
+                comment.down_votes -= 1
+                comment.score += 2
+    else:
+        if vote_direction == 'upvote':
+            effect = 1
+            comment.up_votes += 1
+            comment.score += 1
+            upvoted_class = 'voted_up'
+        else:
+            effect = -1
+            comment.down_votes += 1
+            comment.score -= 1
+            downvoted_class = 'voted_down'
+        vote = PostReplyVote(user_id=current_user.id, post_reply_id=comment_id, author_id=comment.user_id, effect=effect)
+        db.session.add(vote)
+    db.session.commit()
+    return render_template('community/_voting_buttons.html', comment=comment,
+                           upvoted_class=upvoted_class,
+                           downvoted_class=downvoted_class)
