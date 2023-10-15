@@ -366,14 +366,13 @@ fieldset legend {
   clear: both;
   margin-bottom: 20px;
 }
-.comment .comment_body {
-  overflow: hidden;
+.comment .limit_height {
   position: relative;
 }
-.comment .comment_body.expanded {
+.comment .limit_height.expanded {
   max-height: none;
 }
-.comment .comment_body.expanded .show-more {
+.comment .limit_height.expanded .show-more {
   display: none;
 }
 .comment .show-more {
@@ -439,6 +438,10 @@ fieldset legend {
 }
 .comment .comment_actions a {
   text-decoration: none;
+}
+
+.add_reply .form-control-label {
+  display: none;
 }
 
 /*# sourceMappingURL=structure.css.map */

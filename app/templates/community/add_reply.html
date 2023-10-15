@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<script src="/static/js/coolfieldset.js"></script>
+<div class="row">
+    <div class="col-12 col-md-8 position-relative add_reply">
+        <fieldset class="coolfieldset mt-4"><legend class="w-auto">Original post</legend>
+            <h3>{{ post.title }}</h3>
+            {{ post.body_html | safe }}
+        </fieldset>
+        <fieldset class="coolfieldset mt-4"><legend class="w-auto">Comment you are replying to</legend>
+        {{ comment.body_html | safe}}
+        </fieldset>
+        {{ render_form(form) }}
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        {% if current_user.is_authenticated and current_user.subscribed(post.community) %}
+                            <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
+                        {% else %}
+                            <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/subscribe">{{ _('Subscribe') }}</a>
+                        {% endif %}
+                    </div>
+                    <div class="col-6">
+                        <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/submit">{{ _('Create post') }}</a>
+                    </div>
+                </div>
+                <form method="get">
+                    <input type="search" name="search" class="form-control mt-2" placeholder="{{ _('Search this community') }}" />
+                </form>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('About community') }}</h2>
+            </div>
+            <div class="card-body">
+                <p>{{ post.community.description|safe }}</p>
+                <p>{{ post.community.rules|safe }}</p>
+                {% if len(mods) > 0 and not post.community.private_mods %}
+                    <h3>Moderators</h3>
+                    <ol>
+                        {% for mod in mods %}
+                            <li><a href="/u/{{ mod.user_name }}">{{ mod.user_name }}</a></li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            </div>
+        </div>
+        {% if is_moderator %}
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('Community Settings') }}</h2>
+            </div>
+            <div class="card-body">
+                <p><a href="#" class="btn btn-primary">{{ _('Moderate') }}</a></p>
+                <p><a href="#" class="btn btn-primary">{{ _('Settings') }}</a></p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

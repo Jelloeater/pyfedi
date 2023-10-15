@@ -91,3 +91,33 @@ nav.navbar {
   margin-left: 4px;
   margin-bottom: 3px;
 }
+
+.coolfieldset, .coolfieldset.expanded{
+  border:1px solid $light-grey;
+  border-radius: 5px;
+  padding: 0 20px;
+}
+
+.coolfieldset.collapsed{
+  border:0;
+  border-top:1px solid $grey;
+  border-radius: 0;
+}
+
+.coolfieldset legend{
+  padding-left:13px;
+  font-weight:bold;
+  cursor:pointer;
+  background-color: white;
+  display: block;
+  position: relative;
+  top: -11px;
+}
+
+.coolfieldset legend, .coolfieldset.expanded legend{
+	background: whitesmoke url(/static/images/expanded.gif) no-repeat center left;
+}
+
+.coolfieldset.collapsed legend{
+	background: whitesmoke url(/static/images/collapsed.gif) no-repeat center left;
+}

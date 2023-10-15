@@ -15,7 +15,7 @@ function setupShowMoreLinks() {
     const comments = document.querySelectorAll('.comment');
 
     comments.forEach(comment => {
-        const content = comment.querySelector('.comment_body');
+        const content = comment.querySelector('.limit_height');
         if (content && content.clientHeight > 400) {
             content.style.overflow = 'hidden';
             content.style.maxHeight = '400px';
@@ -33,6 +33,7 @@ function setupShowMoreLinks() {
                     showMoreLink.innerHTML = '<i class="fe fe-angles-up" title="Collapse"></i>';
                 } else {
                     content.style.overflow = 'hidden';
+                    content.style.maxHeight = '400px';
                     showMoreLink.innerHTML = '<i class="fe fe-angles-down" title="Read more"></i>';
                 }
             });
@@ -92,6 +93,11 @@ function setupHideButtons() {
             const hidables = parentElement.querySelectorAll('.hidable');
 
             hidables.forEach(hidable => {
+                hidable.style.display = isHidden ? 'block' : 'none';
+            });
+
+            const moreHidables = parentElement.parentElement.querySelectorAll('.hidable');
+            moreHidables.forEach(hidable => {
                 hidable.style.display = isHidden ? 'block' : 'none';
             });
 

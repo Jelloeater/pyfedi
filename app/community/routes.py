@@ -29,7 +29,8 @@ def add_local():
         private_key, public_key = RsaKeys.generate_keypair()
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
-                              public_key=public_key, ap_profile_id=current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
+                              public_key=public_key,
+                              ap_profile_id=current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
                               subscriptions_count=1)
         db.session.add(community)
         db.session.commit()
@@ -71,7 +72,8 @@ def show_community(community: Community):
     mods = community.moderators()
 
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
-    is_owner = current_user.is_authenticated and any(mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
+    is_owner = current_user.is_authenticated and any(
+        mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
 
     if community.private_mods:
         mod_list = []
@@ -125,7 +127,7 @@ def subscribe(actor):
                 except Exception as ex:
                     flash('Failed to send request to subscribe: ' + str(ex), 'error')
                     current_app.logger.error("Exception while trying to subscribe" + str(ex))
-            else:   # for local communities, joining is instant
+            else:  # for local communities, joining is instant
                 banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
                 if banned:
                     flash('You cannot join this community')
@@ -237,7 +239,8 @@ def show_post(post_id: int):
         flash('Your comment has been added.')
         # todo: flush cache
         # todo: federation
-        return redirect(url_for('community.show_post', post_id=post_id))    # redirect to current page to avoid refresh resubmitting the form
+        return redirect(url_for('community.show_post',
+                                post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
         replies = post_replies(post.id, 'top')
     return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
@@ -250,25 +253,25 @@ def comment_vote(comment_id, vote_direction):
     comment = PostReply.query.get_or_404(comment_id)
     existing_vote = PostReplyVote.query.filter_by(user_id=current_user.id, post_reply_id=comment.id).first()
     if existing_vote:
-        if existing_vote.effect > 0:        # previous vote was up
+        if existing_vote.effect > 0:  # previous vote was up
             if vote_direction == 'upvote':  # new vote is also up, so remove it
                 db.session.delete(existing_vote)
                 comment.up_votes -= 1
                 comment.score -= 1
-            else:                           # new vote is down while previous vote was up, so reverse their previous vote
+            else:  # new vote is down while previous vote was up, so reverse their previous vote
                 existing_vote.effect = -1
                 comment.up_votes -= 1
                 comment.down_votes += 1
                 comment.score -= 2
                 downvoted_class = 'voted_down'
-        else:                               # previous vote was down
+        else:  # previous vote was down
             if vote_direction == 'upvote':  # new vote is upvote
                 existing_vote.effect = 1
                 comment.up_votes += 1
                 comment.down_votes -= 1
                 comment.score += 1
                 upvoted_class = 'voted_up'
-            else:                           # reverse a previous downvote
+            else:  # reverse a previous downvote
                 db.session.delete(existing_vote)
                 comment.down_votes -= 1
                 comment.score += 2
@@ -289,3 +292,36 @@ def comment_vote(comment_id, vote_direction):
     return render_template('community/_voting_buttons.html', comment=comment,
                            upvoted_class=upvoted_class,
                            downvoted_class=downvoted_class)
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>')
+def show_comment(post_id, comment_id):
+    ...
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
+def add_reply(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    comment = PostReply.query.get_or_404(comment_id)
+    mods = post.community.moderators()
+    is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
+    form = NewReplyForm()
+    if form.validate_on_submit():
+        reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=comment.id, depth=comment.depth + 1,
+                          community_id=post.community.id, body=form.body.data,
+                          body_html=markdown_to_html(form.body.data), body_html_safe=True,
+                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl)
+        db.session.add(reply)
+        db.session.commit()
+        reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
+                                   effect=1.0)
+        db.session.add(reply_vote)
+        db.session.commit()
+        form.body.data = ''
+        flash('Your comment has been added.')
+        # todo: flush cache
+        # todo: federation
+        return redirect(url_for('community.show_post', post_id=post_id, _anchor=f'comment_{reply.id}'))
+    else:
+        return render_template('community/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
+                               is_moderator=is_moderator, form=form, comment=comment)

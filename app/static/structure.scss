@@ -140,8 +140,7 @@ nav, etc which are used site-wide */
   clear: both;
   margin-bottom: 20px;
 
-  .comment_body {
-    overflow: hidden;
+  .limit_height {
     position: relative;
 
     &.expanded {
@@ -231,5 +230,11 @@ nav, etc which are used site-wide */
     a {
       text-decoration: none;
     }
+  }
+}
+
+.add_reply {
+  .form-control-label {
+    display: none;
   }
 }
