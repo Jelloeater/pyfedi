@@ -1,14 +1,45 @@
 // fires after DOM is ready for manipulation
 document.addEventListener("DOMContentLoaded", function () {
     setupCommunityNameInput();
+    setupShowMoreLinks();
 });
 
 
 // fires after all resources have loaded, including stylesheets and js files
 window.addEventListener("load", function () {
     setupPostTypeTabs();    // when choosing the type of your new post, store the chosen tab in a hidden field so the backend knows which fields to check
+    setupHideButtons();
 });
 
+function setupShowMoreLinks() {
+    const comments = document.querySelectorAll('.comment');
+
+    comments.forEach(comment => {
+        const content = comment.querySelector('.comment_body');
+        if (content && content.clientHeight > 400) {
+            content.style.overflow = 'hidden';
+            content.style.maxHeight = '400px';
+            const showMoreLink = document.createElement('a');
+            showMoreLink.classList.add('show-more');
+            showMoreLink.classList.add('hidable');
+            showMoreLink.innerHTML = '<i class="fe fe-angles-down" title="Read more"></i>';
+            showMoreLink.href = '#';
+            showMoreLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                content.classList.toggle('expanded');
+                if (content.classList.contains('expanded')) {
+                    content.style.overflow = 'visible';
+                    content.style.maxHeight = '';
+                    showMoreLink.innerHTML = '<i class="fe fe-angles-up" title="Collapse"></i>';
+                } else {
+                    content.style.overflow = 'hidden';
+                    showMoreLink.innerHTML = '<i class="fe fe-angles-down" title="Read more"></i>';
+                }
+            });
+            content.insertAdjacentElement('afterend', showMoreLink);
+        }
+    });
+}
 
 function setupCommunityNameInput() {
    var communityNameInput = document.getElementById('community_name');
@@ -49,6 +80,32 @@ function setupPostTypeTabs() {
     }
 }
 
+
+function setupHideButtons() {
+    const hideEls = document.querySelectorAll('.hide_button');
+    hideEls.forEach(hideEl => {
+        let isHidden = false;
+
+        hideEl.addEventListener('click', event => {
+            event.preventDefault();
+            const parentElement = hideEl.parentElement;
+            const hidables = parentElement.querySelectorAll('.hidable');
+
+            hidables.forEach(hidable => {
+                hidable.style.display = isHidden ? 'block' : 'none';
+            });
+
+            // Toggle the content of hideEl
+            if (isHidden) {
+                hideEl.innerHTML = "<a href='#'>[-] hide</a>";
+            } else {
+                hideEl.innerHTML = "<a href='#'>[+] show</a>";
+            }
+
+            isHidden = !isHidden; // Toggle the state
+        });
+    });
+}
 
 function titleToURL(title) {
   // Convert the title to lowercase and replace spaces with hyphens

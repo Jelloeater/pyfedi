@@ -143,6 +143,27 @@
   content: "\e90c";
 }
 
+.fe-reply {
+  position: relative;
+  top: 2px;
+}
+
+.fe-reply::before {
+  content: "\e991";
+}
+
+.fe-report::before {
+  content: "\e967";
+}
+
+.fe-angles-down::before {
+  content: "\e932";
+}
+
+.fe-angles-up::before {
+  content: "\e935";
+}
+
 a.no-underline {
   text-decoration: none;
 }

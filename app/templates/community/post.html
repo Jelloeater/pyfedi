@@ -3,7 +3,7 @@
 
 {% block app_content %}
 <div class="row">
-    <div class="col-8 position-relative">
+    <div class="col-12 col-md-8 position-relative">
         <div class="row">
             {% if post.image_id %}
                 <div class="col-8">
@@ -70,7 +70,9 @@
         {% if post.comments_enabled %}
         <div class="row post_reply_form">
             <div class="col">
-                {{ render_form(form) }}
+                <div class="reply_form_inner">
+                    {{ render_form(form) }}
+                </div>
             </div>
             <hr class="mt-4" />
         </div>
@@ -86,7 +88,7 @@
                                 {% include "community/_voting_buttons.html" %}
                             {% endwith %}
                         </div>
-                        <div class="hide_button"><a href="#">[-] hide</a></div>
+                        <div class="hide_button"><a href='#'>[-] hide</a></div>
                         <div class="comment_author">
                             {% if comment['comment'].author.avatar_id %}
                             <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.ap_id }}">
@@ -94,17 +96,24 @@
                             {% endif %}
                             <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}">
                                 <strong>{{ comment['comment'].author.user_name}}</strong></a>
+                            {% if comment['comment'].author.id == post.author.id%}<span title="Submitter of original post" aria-label="submitter">[S]</span>{% endif %}
                             <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}</span>
                         </div>
-                        {{ comment['comment'].body_html | safe }}
+                        <div class="comment_body hidable">
+                            {{ comment['comment'].body_html | safe }}
+                        </div>
+                        <div class="comment_actions hidable">
+                            <a href="#"><span class="fe fe-reply"></span> reply</a>
+                        </div>
+                        {% if comment['replies'] %}
+                          <div class="replies hidable">
+                            {% for reply in comment['replies'] %}
+                              {{ render_comment(reply) | safe }}
+                            {% endfor %}
+                          </div>
+                        {% endif %}
                     </div>
-                    {% if comment['replies'] %}
-                      <div class="replies">
-                        {% for reply in comment['replies'] %}
-                          {{ render_comment(reply) | safe }}
-                        {% endfor %}
-                      </div>
-                    {% endif %}
+
                 {% endmacro %}
 
                 <div class="comments">
@@ -116,7 +125,7 @@
         </div>
     </div>
 
-    <div class="col-4">
+    <div class="col-12 col-md-4">
         <div class="card">
             <div class="card-body">
                 <div class="row">
@@ -128,7 +137,7 @@
                         {% endif %}
                     </div>
                     <div class="col-6">
-                        <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/submit">{{ _('Create a post') }}</a>
+                        <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/submit">{{ _('Create post') }}</a>
                     </div>
                 </div>
                 <form method="get">

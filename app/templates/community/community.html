@@ -3,7 +3,7 @@
 
 {% block app_content %}
 <div class="row">
-    <div class="col-8 position-relative">
+    <div class="col-12 col-md-8 position-relative">
         {% if community.header_image() != '' %}
             <div class="community_header" style="height: 240px; background-image: url({{ community.header_image() }});">
                 <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
@@ -44,7 +44,7 @@
         </div>
     </div>
 
-    <div class="col-4">
+    <div class="col-12 col-md-4">
         <div class="card">
             <div class="card-body">
                 <div class="row">
