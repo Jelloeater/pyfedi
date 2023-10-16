@@ -5,10 +5,11 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_
 
-from app import db
+from app import db, constants
 from app.activitypub.signature import RsaKeys, HttpSignature
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost, NewReplyForm
-from app.community.util import search_for_community, community_url_exists, actor_to_community, post_replies
+from app.community.util import search_for_community, community_url_exists, actor_to_community, post_replies, \
+    get_comment_branch
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, PostReply, \
     PostReplyVote
@@ -81,7 +82,7 @@ def show_community(community: Community):
         mod_user_ids = [mod.user_id for mod in mods]
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
-    if current_user.ignore_bots:
+    if current_user.is_anonymous or current_user.ignore_bots:
         posts = community.posts.filter(Post.from_bot == False).all()
     else:
         posts = community.posts
@@ -244,7 +245,7 @@ def show_post(post_id: int):
     else:
         replies = post_replies(post.id, 'top')
     return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
-                           canonical=post.ap_id, form=form, replies=replies)
+                           canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH)
 
 
 @bp.route('/comment/<int:comment_id>/<vote_direction>', methods=['POST'])
@@ -295,8 +296,15 @@ def comment_vote(comment_id, vote_direction):
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>')
-def show_comment(post_id, comment_id):
-    ...
+def continue_discussion(post_id, comment_id):
+    post = Post.query.get_or_404(post_id)
+    comment = PostReply.query.get_or_404(comment_id)
+    mods = post.community.moderators()
+    is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
+    replies = get_comment_branch(post.id, comment.id, 'top')
+
+    return render_template('community/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
+                           is_moderator=is_moderator, comment=comment, replies=replies)
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
@@ -321,7 +329,10 @@ def add_reply(post_id: int, comment_id: int):
         flash('Your comment has been added.')
         # todo: flush cache
         # todo: federation
-        return redirect(url_for('community.show_post', post_id=post_id, _anchor=f'comment_{reply.id}'))
+        if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
+            return redirect(url_for('community.show_post', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
+        else:
+            return redirect(url_for('community.continue_discussion', post_id=post_id, comment_id=reply.parent_id))
     else:
         return render_template('community/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
                                is_moderator=is_moderator, form=form, comment=comment)

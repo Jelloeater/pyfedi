@@ -1,4 +1,8 @@
 /* */
+.pl-0 {
+  padding-left: 0;
+}
+
 /* for more info about the feather font used for icons see https://at-ui.github.io/feather-font/ */
 /* use https://fontdrop.info/ to get the unicode values of the featuer.ttf file */
 @font-face {

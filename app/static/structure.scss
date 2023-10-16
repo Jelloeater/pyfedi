@@ -136,9 +136,22 @@ nav, etc which are used site-wide */
   }
 }
 
+.comments > .comment {
+  margin-left: 0;
+}
+
+#replies {
+  scroll-margin-top: 5em;
+}
+
+.post_replies > .col {
+  padding-right: 5px;
+}
+
 .comment {
   clear: both;
   margin-bottom: 20px;
+  margin-left: 20px;
 
   .limit_height {
     position: relative;
@@ -230,6 +243,11 @@ nav, etc which are used site-wide */
     a {
       text-decoration: none;
     }
+  }
+
+  .replies {
+    margin-top: 15px;
+    border-left: solid 1px $light-grey;
   }
 }
 

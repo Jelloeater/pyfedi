@@ -5,19 +5,7 @@
 <div class="row">
     <div class="col-12 col-md-8 position-relative">
         {% include 'community/_post_full.html' %}
-
-        {% if post.comments_enabled %}
-        <div class="row post_reply_form">
-            <div class="col">
-                <div class="reply_form_inner">
-                    {{ render_form(form) }}
-                </div>
-            </div>
-            <hr class="mt-4" />
-        </div>
-        {% else %}
-        <p>{{ _('Comments are disabled for this post.') }}</p>
-        {% endif %}
+        <p><a href="{{ url_for('community.show_post', post_id=post.id, _anchor='replies') }}">Back to main discussion</a></p>
         <div class="row post_replies">
             <div class="col">
                 {% macro render_comment(comment) %}
@@ -35,8 +23,8 @@
                                     <img src="{{ comment['comment'].author.avatar_image() }}" alt="Avatar" /></a>
                                 {% endif %}
                                 <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}">
-                                    <strong>{{ comment['comment'].author.user_name }}</strong></a>
-                                {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter">[S]</span>{% endif %}
+                                    <strong>{{ comment['comment'].author.user_name}}</strong></a>
+                                {% if comment['comment'].author.id == post.author.id%}<span title="Submitter of original post" aria-label="submitter">[S]</span>{% endif %}
                                 <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}</span>
                             </div>
                             <div class="comment_body hidable">
@@ -47,24 +35,15 @@
                             <a href="{{ url_for('community.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
                         </div>
                         {% if comment['replies'] %}
-                            {% if comment['comment'].depth <= THREAD_CUTOFF_DEPTH %}
-                                <div class="replies hidable">
-                                    {% for reply in comment['replies'] %}
-                                      {{ render_comment(reply) | safe }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="continue_thread hidable">
-                                    <a href="{{ url_for('community.continue_discussion', post_id=post.id, comment_id=comment['comment'].id) }}">
-                                        Continue thread</a>
-                                </div>
-                            {% endif %}
+                            <div class="replies hidable">
+                                {% for reply in comment['replies'] %}
+                                  {{ render_comment(reply) | safe }}
+                                {% endfor %}
+                            </div>
                         {% endif %}
                     </div>
-
                 {% endmacro %}
-
-                <div id="replies" class="comments">
+                <div class="comments">
                     {% for reply in replies %}
                       {{ render_comment(reply) | safe }}
                     {% endfor %}

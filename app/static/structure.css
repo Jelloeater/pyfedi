@@ -1,5 +1,9 @@
 /* This file contains SCSS used for creating the general structure of pages. Selectors should be things like body, h1,
 nav, etc which are used site-wide */
+.pl-0 {
+  padding-left: 0;
+}
+
 /* for more info about the feather font used for icons see https://at-ui.github.io/feather-font/ */
 /* use https://fontdrop.info/ to get the unicode values of the featuer.ttf file */
 @font-face {
@@ -362,9 +366,22 @@ fieldset legend {
   text-decoration: none;
 }
 
+.comments > .comment {
+  margin-left: 0;
+}
+
+#replies {
+  scroll-margin-top: 5em;
+}
+
+.post_replies > .col {
+  padding-right: 5px;
+}
+
 .comment {
   clear: both;
   margin-bottom: 20px;
+  margin-left: 20px;
 }
 .comment .limit_height {
   position: relative;
@@ -438,6 +455,10 @@ fieldset legend {
 }
 .comment .comment_actions a {
   text-decoration: none;
+}
+.comment .replies {
+  margin-top: 15px;
+  border-left: solid 1px #ddd;
 }
 
 .add_reply .form-control-label {
