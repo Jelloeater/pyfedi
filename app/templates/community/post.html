@@ -55,7 +55,7 @@
                                 </div>
                             {% else %}
                                 <div class="continue_thread hidable">
-                                    <a href="{{ url_for('community.continue_discussion', post_id=post.id, comment_id=comment['comment'].id) }}">
+                                    <a href="{{ url_for('community.continue_discussion', post_id=post.id, comment_id=comment['comment'].id, _anchor='replies') }}">
                                         Continue thread</a>
                                 </div>
                             {% endif %}
