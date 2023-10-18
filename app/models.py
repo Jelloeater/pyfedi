@@ -113,6 +113,13 @@ class Community(db.Model):
                                      ).all()
 
 
+user_role = db.Table('user_role',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id')),
+    db.PrimaryKeyConstraint('user_id', 'role_id')
+)
+
+
 class User(UserMixin, db.Model):
     query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
@@ -129,7 +136,6 @@ class User(UserMixin, db.Model):
     show_nsfl = db.Column(db.Boolean, default=False)
     created = db.Column(db.DateTime, default=datetime.utcnow)
     last_seen = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    role = db.Column(db.Integer, default=0)
     avatar_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     cover_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     public_key = db.Column(db.Text)
@@ -163,6 +169,8 @@ class User(UserMixin, db.Model):
     activity = db.relationship('ActivityLog', backref='account', lazy='dynamic', cascade="all, delete-orphan")
     posts = db.relationship('Post', backref='author', lazy='dynamic', cascade="all, delete-orphan")
     post_replies = db.relationship('PostReply', backref='author', lazy='dynamic', cascade="all, delete-orphan")
+
+    roles = db.relationship('Role', secondary=user_role, lazy='dynamic', cascade="all, delete")
 
     def __repr__(self):
         return '<User {}>'.format(self.user_name)
@@ -488,6 +496,17 @@ class FilterKeyword(db.Model):
     filter_id = db.Column(db.Integer, db.ForeignKey('filter.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    weight = db.Column(db.Integer, default=0)
+    permissions = db.relationship('RolePermission')
+
+
+class RolePermission(db.Model):
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
+    permission = db.Column(db.String, primary_key=True, index=True)
 
 
 @login.user_loader
