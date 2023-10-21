@@ -8,8 +8,8 @@ import os
 
 from app.auth.email import send_verification_email
 from app.auth.util import random_token
-from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission
-from app.utils import file_get_contents
+from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain
+from app.utils import file_get_contents, retrieve_block_list
 
 
 def register(app):
@@ -75,6 +75,12 @@ def register(app):
             db.session.add(Interest(name='🛠 Programming', communities=parse_communities(interests, 'programming')))
             db.session.add(Interest(name='🖥️ Tech', communities=parse_communities(interests, 'tech')))
             db.session.add(Interest(name='🤗 Mental Health', communities=parse_communities(interests, 'mental health')))
+
+            # Load initial domain block list
+            block_list = retrieve_block_list()
+            if block_list:
+                for domain in block_list.split():
+                    db.session.add(Domain(name=domain.strip(), banned=True))
 
             # Initial roles
             anon_role = Role(name='Anonymous user', weight=0)

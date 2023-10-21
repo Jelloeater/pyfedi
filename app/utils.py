@@ -2,6 +2,7 @@ import random
 import markdown2
 import math
 from urllib.parse import urlparse
+import requests
 
 import flask
 from bs4 import BeautifulSoup
@@ -182,3 +183,12 @@ def user_access(permission: str, user_id: int) -> bool:
                                     'WHERE ur.user_id = :user_id AND rp.permission = :permission'),
                                     {'user_id': user_id, 'permission': permission}).first()
     return has_access is not None
+
+
+def retrieve_block_list():
+    try:
+        response = requests.get('https://github.com/rimu/no-qanon/blob/master/domains.txt', timeout=1)
+    except:
+        return None
+    if response and response.status_code == 200:
+        return response.text
