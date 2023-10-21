@@ -57,7 +57,7 @@
     </div>
 
     <div class="col-4">
-        {% if current_user.id == user.id %}
+        {% if current_user.is_authenticated and current_user.id == user.id %}
             <div class="card mt-3">
                 <div class="card-header">
                      <h2>{{ _('Manage') }}</h2>
@@ -83,13 +83,34 @@
                     <ol>
                         {% for community in moderates %}
                             <li>
-                                <a href="/c/{{ community.link() }}">
-                                    <img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />
-                                    {{ community.display_name() }}
-                                </a>
+                                <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />{{ community.display_name() }}</a>
                             </li>
                         {% endfor %}
                     </ol>
+                </div>
+            </div>
+        {% endif %}
+        {% if current_user.is_authenticated and (user_access('ban users', current_user.id) or user_access('manage users', current_user.id)) and user.id != current_user.id %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Crush') }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if user_access('ban users', current_user.id) %}
+                        <div class="col-4">
+                            <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/ban">{{ _('Ban') }}</a>
+                        </div>
+                        {% endif %}
+                        {% if user_access('manage users', current_user.id) %}
+                        <div class="col-4">
+                            <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/delete">{{ _('Delete') }}</a>
+                        </div>
+                        <div class="col-4">
+                            <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/ban_purge">{{ _('Ban + Purge') }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         {% endif %}

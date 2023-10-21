@@ -75,7 +75,7 @@
                     <h3>Moderators</h3>
                     <ol>
                         {% for mod in mods %}
-                            <li><a href="/u/{{ mod.user_name }}">{{ mod.user_name }}</a></li>
+                            <li>{{ render_username(mod) }}</li>
                         {% endfor %}
                     </ol>
                 {% endif %}

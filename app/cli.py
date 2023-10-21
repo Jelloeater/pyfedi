@@ -86,11 +86,13 @@ def register(app):
 
             staff_role = Role(name='Staff', weight=2)
             staff_role.permissions.append(RolePermission(permission='approve registrations'))
-            staff_role.permissions.append(RolePermission(permission='manage users'))
+            staff_role.permissions.append(RolePermission(permission='ban users'))
             db.session.add(staff_role)
 
             admin_role = Role(name='Admin', weight=3)
+            admin_role.permissions.append(RolePermission(permission='approve registrations'))
             admin_role.permissions.append(RolePermission(permission='change user roles'))
+            admin_role.permissions.append(RolePermission(permission='ban users'))
             admin_role.permissions.append(RolePermission(permission='manage users'))
             db.session.add(admin_role)
 

@@ -8,8 +8,11 @@ from bs4 import BeautifulSoup
 import requests
 import os
 from flask import current_app, json
+from flask_login import current_user
+from sqlalchemy import text
+
 from app import db, cache
-from app.models import Settings, Domain, Instance, BannedInstances
+from app.models import Settings, Domain, Instance, BannedInstances, User
 
 
 # Flask's render_template function, with support for themes added
@@ -141,7 +144,10 @@ def html_to_markdown_worker(element, indent_level=0):
 
 
 def markdown_to_html(markdown_text) -> str:
-    return allowlist_html(markdown2.markdown(markdown_text, safe_mode=True))
+    if markdown_text:
+        return allowlist_html(markdown2.markdown(markdown_text, safe_mode=True))
+    else:
+        return ''
 
 
 def domain_from_url(url: str) -> Domain:
@@ -167,3 +173,12 @@ def digits(input: int) -> int:
         return 1  # Special case: 0 has 1 digit
     else:
         return math.floor(math.log10(abs(input))) + 1
+
+
+@cache.memoize(timeout=50)
+def user_access(permission: str, user_id: int) -> bool:
+    has_access = db.session.execute(text('SELECT * FROM "role_permission" as rp ' +
+                                    'INNER JOIN user_role ur on rp.role_id = ur.role_id ' +
+                                    'WHERE ur.user_id = :user_id AND rp.permission = :permission'),
+                                    {'user_id': user_id, 'permission': permission}).first()
+    return has_access is not None

@@ -6,14 +6,16 @@ from app import db
 from app.models import Post, Community, CommunityMember, User, PostReply
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
-from app.utils import get_setting, render_template, markdown_to_html
+from app.utils import get_setting, render_template, markdown_to_html, user_access
 from sqlalchemy import desc, or_
 
 
 def show_profile(user):
+    if user.deleted or user.banned and current_user.is_anonymous():
+        abort(404)
     posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.posted_at)).all()
     moderates = Community.query.filter_by(banned=False).join(CommunityMember).filter(or_(CommunityMember.is_moderator, CommunityMember.is_owner))
-    if user.id != current_user.id:
+    if current_user.is_anonymous or user.id != current_user.id:
         moderates = moderates.filter(Community.private_mods == False)
     post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).all()
     canonical = user.ap_public_url if user.ap_public_url else None
@@ -78,3 +80,80 @@ def change_settings(actor):
         form.manually_approves_followers.data = current_user.ap_manually_approves_followers
 
     return render_template('user/edit_settings.html', title=_('Edit profile'), form=form, user=current_user)
+
+
+@bp.route('/u/<actor>/ban', methods=['GET'])
+def ban_profile(actor):
+    if user_access('ban users', current_user.id):
+        actor = actor.strip()
+        user = User.query.filter_by(user_name=actor, deleted=False).first()
+        if user is None:
+            user = User.query.filter_by(ap_id=actor, deleted=False).first()
+            if user is None:
+                abort(404)
+
+        if user.id == current_user.id:
+            flash('You cannot ban yourself.', 'error')
+        else:
+            user.banned = True
+            db.session.commit()
+
+            flash(f'{actor} has been banned.')
+    else:
+        abort(401)
+
+    return redirect(f'/u/{actor}')
+
+
+@bp.route('/u/<actor>/delete', methods=['GET'])
+def delete_profile(actor):
+    if user_access('manage users', current_user.id):
+        actor = actor.strip()
+        user = User.query.filter_by(user_name=actor, deleted=False).first()
+        if user is None:
+            user = User.query.filter_by(ap_id=actor, deleted=False).first()
+            if user is None:
+                abort(404)
+        if user.id == current_user.id:
+            flash('You cannot delete yourself.', 'error')
+        else:
+            user.banned = True
+            user.deleted = True
+            db.session.commit()
+
+            flash(f'{actor} has been deleted.')
+    else:
+        abort(401)
+
+    return redirect(f'/u/{actor}')
+
+
+@bp.route('/u/<actor>/ban_purge', methods=['GET'])
+def ban_purge_profile(actor):
+    if user_access('manage users', current_user.id):
+        actor = actor.strip()
+        user = User.query.filter_by(user_name=actor, deleted=False).first()
+        if user is None:
+            user = User.query.filter_by(ap_id=actor, deleted=False).first()
+            if user is None:
+                abort(404)
+
+        if user.id == current_user.id:
+            flash('You cannot purge yourself.', 'error')
+        else:
+            user.banned = True
+            user.deleted = True
+            db.session.commit()
+
+            user.purge_content()
+            db.session.delete(user)
+            db.session.commit()
+
+            # todo: empty relevant caches
+            # todo: federate deletion
+
+            flash(f'{actor} has been banned, deleted and all their content deleted.')
+    else:
+        abort(401)
+
+    return redirect(f'/u/{actor}')

@@ -18,12 +18,16 @@
                             </div>
                             <div class="hide_button"><a href='#'>[-] hide</a></div>
                             <div class="comment_author">
-                                {% if comment['comment'].author.avatar_id %}
-                                <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.ap_id }}">
-                                    <img src="{{ comment['comment'].author.avatar_image() }}" alt="Avatar" /></a>
-                                {% endif %}
-                                <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}">
-                                    <strong>{{ comment['comment'].author.user_name}}</strong></a>
+                                {% if comment['comment'].author.deleted %}
+                                    <strong>[deleted]</strong>
+                                {% else %}
+                                    {% if comment['comment'].author.avatar_id %}
+                                    <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.ap_id }}">
+                                        <img src="{{ comment['comment'].author.avatar_image() }}" alt="Avatar" /></a>
+                                    {% endif %}
+                                    <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}">
+                                        <strong>{{ comment['comment'].author.user_name}}</strong></a>
+                                    {% endif %}
                                 {% if comment['comment'].author.id == post.author.id%}<span title="Submitter of original post" aria-label="submitter">[S]</span>{% endif %}
                                 <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}</span>
                             </div>

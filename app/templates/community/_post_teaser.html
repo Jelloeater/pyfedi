@@ -1,6 +1,6 @@
 <div class="post_teaser">
     <div class="row meta_row small">
-        <div class="col"><a href="{{ url_for('activitypub.user_profile', actor=post.author.user_name) }}">{{ post.author.user_name }}</a> · {{ moment(post.posted_at).fromNow() }}</div>
+        <div class="col">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</div>
     </div>
     <div class="row main_row">
         <div class="col{% if post.image_id %}-8{% endif %}">

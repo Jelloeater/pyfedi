@@ -3,9 +3,9 @@ from hashlib import md5
 from time import time
 from typing import List
 
-from flask import current_app, escape
+from flask import current_app, escape, url_for
 from flask_login import UserMixin
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_babel import _, lazy_gettext as _l
 from sqlalchemy.orm import backref
@@ -38,6 +38,7 @@ class Community(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     icon_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     image_id = db.Column(db.Integer, db.ForeignKey('file.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     name = db.Column(db.String(256), index=True)
     title = db.Column(db.String(256))
     description = db.Column(db.Text)
@@ -185,6 +186,12 @@ class User(UserMixin, db.Model):
         except Exception:
             return False
 
+    def display_name(self):
+        if self.deleted is False:
+            return self.user_name
+        else:
+            return '[deleted]'
+
     def avatar(self, size):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
@@ -265,6 +272,30 @@ class User(UserMixin, db.Model):
         except:
             return
         return User.query.get(id)
+
+    def purge_content(self):
+        db.session.query(ActivityLog).filter(ActivityLog.user_id == self.id).delete()
+        db.session.query(PostVote).filter(PostVote.user_id == self.id).delete()
+        db.session.query(PostReplyVote).filter(PostReplyVote.user_id == self.id).delete()
+        db.session.query(PostReply).filter(PostReply.user_id == self.id).delete()
+        db.session.query(FilterKeyword).filter(FilterKeyword.user_id == self.id).delete()
+        db.session.query(Filter).filter(Filter.user_id == self.id).delete()
+        db.session.query(DomainBlock).filter(DomainBlock.user_id == self.id).delete()
+        db.session.query(CommunityJoinRequest).filter(CommunityJoinRequest.user_id == self.id).delete()
+        db.session.query(CommunityMember).filter(CommunityMember.user_id == self.id).delete()
+        db.session.query(CommunityBlock).filter(CommunityBlock.user_id == self.id).delete()
+        db.session.query(CommunityBan).filter(CommunityBan.user_id == self.id).delete()
+        db.session.query(Community).filter(Community.user_id == self.id).delete()
+        db.session.query(Post).filter(Post.user_id == self.id).delete()
+        db.session.query(UserNote).filter(UserNote.user_id == self.id).delete()
+        db.session.query(UserNote).filter(UserNote.target_id == self.id).delete()
+        db.session.query(UserFollowRequest).filter(UserFollowRequest.follow_id == self.id).delete()
+        db.session.query(UserFollowRequest).filter(UserFollowRequest.user_id == self.id).delete()
+        db.session.query(UserBlock).filter(UserBlock.blocked_id == self.id).delete()
+        db.session.query(UserBlock).filter(UserBlock.blocker_id == self.id).delete()
+        db.session.execute(text('DELETE FROM user_role WHERE user_id = :user_id'),
+                           {'user_id': self.id})
+
 
 
 class ActivityLog(db.Model):

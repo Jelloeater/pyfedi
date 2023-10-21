@@ -138,6 +138,8 @@ def user_profile(actor):
             return resp
         else:
             return show_profile(user)
+    else:
+        abort(404)
 
 
 @bp.route('/c/<actor>', methods=['GET'])
@@ -313,38 +315,39 @@ def shared_inbox():
                                     user_ap_id = request_json['object']['actor']
                                     liked_ap_id = request_json['object']['object']
                                     user = find_actor_or_create(user_ap_id)
-                                    vote_weight = 1.0
-                                    if user.ap_domain:
-                                        instance = Instance.query.filter_by(domain=user.ap_domain).fetch()
-                                        if instance:
-                                            vote_weight = instance.vote_weight
-                                    liked = find_liked_object(liked_ap_id)
-                                    # insert into voted table
-                                    if liked is not None and isinstance(liked, Post):
-                                        existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
-                                        if existing_vote:
-                                            existing_vote.effect = vote_effect * vote_weight
+                                    if user:
+                                        vote_weight = 1.0
+                                        if user.ap_domain:
+                                            instance = Instance.query.filter_by(domain=user.ap_domain).fetch()
+                                            if instance:
+                                                vote_weight = instance.vote_weight
+                                        liked = find_liked_object(liked_ap_id)
+                                        # insert into voted table
+                                        if liked is not None and isinstance(liked, Post):
+                                            existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
+                                            if existing_vote:
+                                                existing_vote.effect = vote_effect * vote_weight
+                                            else:
+                                                vote = PostVote(user_id=user.id, author_id=liked.user_id, post_id=liked.id,
+                                                                effect=vote_effect * vote_weight)
+                                                db.session.add(vote)
+                                            db.session.commit()
+                                            activity_log.result = 'success'
+                                        elif liked is not None and isinstance(liked, PostReply):
+                                            existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
+                                            if existing_vote:
+                                                existing_vote.effect = vote_effect * vote_weight
+                                            else:
+                                                vote = PostReplyVote(user_id=user.id, author_id=liked.user_id, post_reply_id=liked.id,
+                                                                effect=vote_effect * vote_weight)
+                                                db.session.add(vote)
+                                            db.session.commit()
+                                            activity_log.result = 'success'
                                         else:
-                                            vote = PostVote(user_id=user.id, author_id=liked.user_id, post_id=liked.id,
-                                                            effect=vote_effect * vote_weight)
-                                            db.session.add(vote)
-                                        db.session.commit()
-                                        activity_log.result = 'success'
-                                    elif liked is not None and isinstance(liked, PostReply):
-                                        existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
-                                        if existing_vote:
-                                            existing_vote.effect = vote_effect * vote_weight
-                                        else:
-                                            vote = PostReplyVote(user_id=user.id, author_id=liked.user_id, post_reply_id=liked.id,
-                                                            effect=vote_effect * vote_weight)
-                                            db.session.add(vote)
-                                        db.session.commit()
-                                        activity_log.result = 'success'
-                                    else:
-                                        activity_log.exception_message = 'Could not detect type of like'
-                                    if activity_log.result == 'success':
-                                        ... # todo: recalculate 'hotness' of liked post/reply
-                                            # todo: if vote was on content in local community, federate the vote out to followers
+                                            activity_log.exception_message = 'Could not detect type of like'
+                                        if activity_log.result == 'success':
+                                            ... # todo: recalculate 'hotness' of liked post/reply
+                                                # todo: if vote was on content in local community, federate the vote out to followers
 
                         # Follow: remote user wants to follow one of our communities
                         elif request_json['type'] == 'Follow':      # Follow is when someone wants to join a community
@@ -399,14 +402,15 @@ def shared_inbox():
                                 user_ap_id = request_json['object']['actor']
                                 user = find_actor_or_create(user_ap_id)
                                 community = find_actor_or_create(community_ap_id)
-                                join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
-                                                                                    community_id=community.id).first()
-                                if join_request:
-                                    member = CommunityMember(user_id=user.id, community_id=community.id)
-                                    db.session.add(member)
-                                    community.subscriptions_count += 1
-                                    db.session.commit()
-                                    activity_log.result = 'success'
+                                if user and community:
+                                    join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
+                                                                                        community_id=community.id).first()
+                                    if join_request:
+                                        member = CommunityMember(user_id=user.id, community_id=community.id)
+                                        db.session.add(member)
+                                        community.subscriptions_count += 1
+                                        db.session.commit()
+                                        activity_log.result = 'success'
                     else:
                         activity_log.exception_message = 'Instance banned'
             else:

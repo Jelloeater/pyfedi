@@ -2,6 +2,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     setupCommunityNameInput();
     setupShowMoreLinks();
+    setupConfirmFirst();
 });
 
 
@@ -11,6 +12,17 @@ window.addEventListener("load", function () {
     setupHideButtons();
 });
 
+// every element with the 'confirm_first' class gets a popup confirmation dialog
+function setupConfirmFirst() {
+    const show_first = document.querySelectorAll('.confirm_first');
+    show_first.forEach(element => {
+        element.addEventListener("click", function(event) {
+            if (!confirm("Are you sure?")) {
+              event.preventDefault(); // As the user clicked "Cancel" in the dialog, prevent the default action.
+            }
+        });
+    })
+}
 function setupShowMoreLinks() {
     const comments = document.querySelectorAll('.comment');
 

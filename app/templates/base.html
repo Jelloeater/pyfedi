@@ -1,3 +1,10 @@
+{% macro render_username(user) %}
+{% if user.deleted %}
+    [deleted]
+{% else %}
+    <a href="{{ url_for('activitypub.user_profile', actor=user.user_name) }}">{{ user.user_name }}</a>
+{% endif %}
+{% endmacro %}
 <!doctype html>
 <html lang="en">
   <head>
