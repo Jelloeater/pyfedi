@@ -1,5 +1,7 @@
 # Contributing to PyFedi
 
+When it matures enough, PyFedi will aim to work in a way consistent with the [Collective Code Construction Contract](https://42ity.org/c4.html).
+
 Please discuss your ideas in an issue at https://codeberg.org/rimu/pyfedi/issues before 
 starting any large pieces of work to ensure alignment with the roadmap, architecture and processes.
 
