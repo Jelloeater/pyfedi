@@ -102,7 +102,32 @@ def ban_profile(actor):
     else:
         abort(401)
 
-    return redirect(f'/u/{actor}')
+    goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+    return redirect(goto)
+
+
+@bp.route('/u/<actor>/unban', methods=['GET'])
+def unban_profile(actor):
+    if user_access('ban users', current_user.id):
+        actor = actor.strip()
+        user = User.query.filter_by(user_name=actor, deleted=False).first()
+        if user is None:
+            user = User.query.filter_by(ap_id=actor, deleted=False).first()
+            if user is None:
+                abort(404)
+
+        if user.id == current_user.id:
+            flash('You cannot unban yourself.', 'error')
+        else:
+            user.banned = False
+            db.session.commit()
+
+            flash(f'{actor} has been unbanned.')
+    else:
+        abort(401)
+
+    goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+    return redirect(goto)
 
 
 @bp.route('/u/<actor>/delete', methods=['GET'])
@@ -125,7 +150,8 @@ def delete_profile(actor):
     else:
         abort(401)
 
-    return redirect(f'/u/{actor}')
+    goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+    return redirect(goto)
 
 
 @bp.route('/u/<actor>/ban_purge', methods=['GET'])
@@ -156,4 +182,5 @@ def ban_purge_profile(actor):
     else:
         abort(401)
 
-    return redirect(f'/u/{actor}')
+    goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+    return redirect(goto)
