@@ -14,11 +14,9 @@
             </div>
             <h1 class="mt-2">{{ post.title }}</h1>
             {% if post.url %}
-                <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}</a>
-                    {% if post.type == post_type_link %}
-                        <span class="domain_link">(<a href="/d/{{ post.domain_id }}">domain</a>)</span>
-                    {% endif %}
-                </small></p>
+                <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
+                <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
+                </a></small></p>
             {% endif %}
             <p><small>submitted {{ moment(post.posted_at).fromNow() }} by {{ render_username(post.author) }}</small></p>
         </div>
@@ -48,9 +46,6 @@
             {% if post.url %}
                 <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  /></a>
-                {% if post.type == post_type_link %}
-                    <span class="domain_link">(<a href="/d/{{ post.domain_id }}">domain</a>)</span>
-                {% endif %}
                 </small></p>
             {% endif %}
             <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by

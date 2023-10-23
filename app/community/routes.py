@@ -15,7 +15,7 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
     PostReplyVote, PostVote
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text
+    shorten_string, markdown_to_text, domain_from_url
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -205,6 +205,9 @@ def add_post(actor):
             post.title = form.link_title.data
             post.url = form.link_url.data
             post.type = POST_TYPE_LINK
+            domain = domain_from_url(form.link_url.data, create=True)
+            domain.post_count += 1
+            post.domain = domain
         elif form.type.data == 'image':
             post.title = form.image_title.data
             post.type = POST_TYPE_IMAGE

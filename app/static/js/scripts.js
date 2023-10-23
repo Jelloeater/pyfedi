@@ -12,6 +12,32 @@ window.addEventListener("load", function () {
     setupHideButtons();
 });
 
+function collapseReply(comment_id) {
+    const reply = document.getElementById('comment_' + comment_id);
+    let isHidden = false;
+    if(reply) {
+        const hidables = parentElement.querySelectorAll('.hidable');
+
+        hidables.forEach(hidable => {
+            hidable.style.display = isHidden ? 'block' : 'none';
+        });
+
+        const moreHidables = parentElement.parentElement.querySelectorAll('.hidable');
+        moreHidables.forEach(hidable => {
+            hidable.style.display = isHidden ? 'block' : 'none';
+        });
+
+        // Toggle the content of hideEl
+        if (isHidden) {
+            hideEl.innerHTML = "<a href='#'>[-] hide</a>";
+        } else {
+            hideEl.innerHTML = "<a href='#'>[+] show</a>";
+        }
+
+        isHidden = !isHidden; // Toggle the state
+    }
+}
+
 // every element with the 'confirm_first' class gets a popup confirmation dialog
 function setupConfirmFirst() {
     const show_first = document.querySelectorAll('.confirm_first');
@@ -123,6 +149,30 @@ function setupHideButtons() {
             isHidden = !isHidden; // Toggle the state
         });
     });
+
+    if(toBeHidden) {
+        toBeHidden.forEach((arrayElement) => {
+          // Build the ID of the outer div
+          const divId = "comment_" + arrayElement;
+
+          // Access the outer div by its ID
+          const commentDiv = document.getElementById(divId);
+
+          if (commentDiv) {
+            // Access the inner div with class "hide_button" inside the outer div
+            const hideButton = commentDiv.getElementsByClassName("hide_button")[0];
+
+            if (hideButton) {
+              // Programmatically trigger a click event on the "hide_button" div
+              hideButton.click();
+            } else {
+              console.log(`"hide_button" not found in ${divId}`);
+            }
+          } else {
+            console.log(`Div with ID ${divId} not found`);
+          }
+        });
+    }
 }
 
 function titleToURL(title) {

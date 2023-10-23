@@ -121,3 +121,11 @@ nav.navbar {
 .coolfieldset.collapsed legend{
 	background: whitesmoke url(/static/images/collapsed.gif) no-repeat center left;
 }
+
+.domain_link {
+  color: $grey;
+  font-size: 73%;
+  a {
+    color: $dark-grey;
+  }
+}

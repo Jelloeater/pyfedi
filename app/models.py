@@ -345,6 +345,7 @@ class Post(db.Model):
     search_vector = db.Column(TSVectorType('title', 'body'))
 
     image = db.relationship(File, foreign_keys=[image_id], cascade="all, delete")
+    domain = db.relationship('Domain', foreign_keys=[domain_id])
 
     @classmethod
     def get_by_ap_id(cls, ap_id):

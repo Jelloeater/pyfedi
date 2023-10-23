@@ -358,4 +358,12 @@ nav.navbar {
   background: whitesmoke url(/static/images/collapsed.gif) no-repeat center left;
 }
 
+.domain_link {
+  color: #bbb;
+  font-size: 73%;
+}
+.domain_link a {
+  color: #777;
+}
+
 /*# sourceMappingURL=styles.css.map */
