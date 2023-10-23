@@ -378,6 +378,44 @@ fieldset legend {
   padding-right: 5px;
 }
 
+.voting_buttons {
+  float: right;
+  display: block;
+  width: 60px;
+  padding: 5px;
+}
+.voting_buttons div {
+  border: solid 1px #0071CE;
+}
+.voting_buttons .upvote_button, .voting_buttons .downvote_button {
+  padding-left: 3px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.voting_buttons .upvote_button.digits_4, .voting_buttons .downvote_button.digits_4 {
+  width: 68px;
+}
+.voting_buttons .upvote_button.digits_5, .voting_buttons .downvote_button.digits_5 {
+  width: 76px;
+}
+.voting_buttons .upvote_button.digits_6, .voting_buttons .downvote_button.digits_6 {
+  width: 84px;
+}
+.voting_buttons .upvote_button.voted_up, .voting_buttons .downvote_button.voted_up {
+  color: green;
+  font-weight: bold;
+}
+.voting_buttons .upvote_button.voted_down, .voting_buttons .downvote_button.voted_down {
+  color: darkred;
+  font-weight: bold;
+}
+.voting_buttons .downvote_button {
+  margin-top: 5px;
+}
+.voting_buttons a {
+  text-decoration: none;
+}
+
 .comment {
   clear: both;
   margin-bottom: 20px;
@@ -411,43 +449,6 @@ fieldset legend {
   padding: 5px;
 }
 .comment .hide_button a {
-  text-decoration: none;
-}
-.comment .voting_buttons {
-  float: right;
-  display: block;
-  width: 60px;
-  padding: 5px;
-}
-.comment .voting_buttons div {
-  border: solid 1px #0071CE;
-}
-.comment .voting_buttons .upvote_button, .comment .voting_buttons .downvote_button {
-  padding-left: 3px;
-  border-radius: 3px;
-  cursor: pointer;
-}
-.comment .voting_buttons .upvote_button.digits_4, .comment .voting_buttons .downvote_button.digits_4 {
-  width: 68px;
-}
-.comment .voting_buttons .upvote_button.digits_5, .comment .voting_buttons .downvote_button.digits_5 {
-  width: 76px;
-}
-.comment .voting_buttons .upvote_button.digits_6, .comment .voting_buttons .downvote_button.digits_6 {
-  width: 84px;
-}
-.comment .voting_buttons .upvote_button.voted_up, .comment .voting_buttons .downvote_button.voted_up {
-  color: green;
-  font-weight: bold;
-}
-.comment .voting_buttons .upvote_button.voted_down, .comment .voting_buttons .downvote_button.voted_down {
-  color: darkred;
-  font-weight: bold;
-}
-.comment .voting_buttons .downvote_button {
-  margin-top: 5px;
-}
-.comment .voting_buttons a {
   text-decoration: none;
 }
 .comment .comment_actions {

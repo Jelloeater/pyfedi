@@ -148,6 +148,52 @@ nav, etc which are used site-wide */
   padding-right: 5px;
 }
 
+.voting_buttons {
+  float: right;
+  display: block;
+  width: 60px;
+  padding: 5px;
+
+  div {
+    border: solid 1px $primary-colour;
+  }
+
+  .upvote_button, .downvote_button {
+    padding-left: 3px;
+    border-radius: 3px;
+    cursor: pointer;
+
+    &.digits_4 {
+      width: 68px;
+    }
+
+    &.digits_5 {
+      width: 76px;
+    }
+
+    &.digits_6 {
+      width: 84px;
+    }
+
+    &.voted_up {
+      color: green;
+      font-weight: bold;
+    }
+    &.voted_down {
+      color: darkred;
+      font-weight: bold;
+    }
+  }
+
+  .downvote_button {
+    margin-top: 5px;
+  }
+
+  a {
+    text-decoration: none;
+  }
+}
+
 .comment {
   clear: both;
   margin-bottom: 20px;
@@ -186,52 +232,6 @@ nav, etc which are used site-wide */
     display: block;
     width: 68px;
     padding: 5px;
-
-    a {
-      text-decoration: none;
-    }
-  }
-
-  .voting_buttons {
-    float: right;
-    display: block;
-    width: 60px;
-    padding: 5px;
-
-    div {
-      border: solid 1px $primary-colour;
-    }
-
-    .upvote_button, .downvote_button {
-      padding-left: 3px;
-      border-radius: 3px;
-      cursor: pointer;
-
-      &.digits_4 {
-        width: 68px;
-      }
-
-      &.digits_5 {
-        width: 76px;
-      }
-
-      &.digits_6 {
-        width: 84px;
-      }
-
-      &.voted_up {
-        color: green;
-        font-weight: bold;
-      }
-      &.voted_down {
-        color: darkred;
-        font-weight: bold;
-      }
-    }
-
-    .downvote_button {
-      margin-top: 5px;
-    }
 
     a {
       text-decoration: none;

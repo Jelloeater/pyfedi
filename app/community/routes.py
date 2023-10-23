@@ -9,10 +9,10 @@ from app import db, constants
 from app.activitypub.signature import RsaKeys, HttpSignature
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost, NewReplyForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, post_replies, \
-    get_comment_branch
+    get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, PostReply, \
-    PostReplyVote
+    PostReplyVote, PostVote
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required
 
@@ -252,6 +252,58 @@ def show_post(post_id: int):
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH)
 
 
+@bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])
+@login_required
+@validation_required
+def post_vote(post_id: int, vote_direction):
+    upvoted_class = downvoted_class = ''
+    post = Post.query.get_or_404(post_id)
+    existing_vote = PostVote.query.filter_by(user_id=current_user.id, post_id=post.id).first()
+    if existing_vote:
+        post.author.reputation -= existing_vote.effect
+        if existing_vote.effect > 0:  # previous vote was up
+            if vote_direction == 'upvote':  # new vote is also up, so remove it
+                db.session.delete(existing_vote)
+                post.up_votes -= 1
+                post.score -= 1
+            else:  # new vote is down while previous vote was up, so reverse their previous vote
+                existing_vote.effect = -1
+                post.up_votes -= 1
+                post.down_votes += 1
+                post.score -= 2
+                downvoted_class = 'voted_down'
+        else:  # previous vote was down
+            if vote_direction == 'upvote':  # new vote is upvote
+                existing_vote.effect = 1
+                post.up_votes += 1
+                post.down_votes -= 1
+                post.score += 1
+                upvoted_class = 'voted_up'
+            else:  # reverse a previous downvote
+                db.session.delete(existing_vote)
+                post.down_votes -= 1
+                post.score += 2
+    else:
+        if vote_direction == 'upvote':
+            effect = 1
+            post.up_votes += 1
+            post.score += 1
+            upvoted_class = 'voted_up'
+        else:
+            effect = -1
+            post.down_votes += 1
+            post.score -= 1
+            downvoted_class = 'voted_down'
+        vote = PostVote(user_id=current_user.id, post_id=post.id, author_id=post.author.id,
+                             effect=effect)
+        post.author.reputation += effect
+        db.session.add(vote)
+    db.session.commit()
+    return render_template('community/_post_voting_buttons.html', post=post,
+                           upvoted_class=upvoted_class,
+                           downvoted_class=downvoted_class)
+
+
 @bp.route('/comment/<int:comment_id>/<vote_direction>', methods=['POST'])
 @login_required
 @validation_required
@@ -293,7 +345,8 @@ def comment_vote(comment_id, vote_direction):
             comment.down_votes += 1
             comment.score -= 1
             downvoted_class = 'voted_down'
-        vote = PostReplyVote(user_id=current_user.id, post_reply_id=comment_id, author_id=comment.user_id, effect=effect)
+        vote = PostReplyVote(user_id=current_user.id, post_reply_id=comment_id, author_id=comment.author.id, effect=effect)
+        comment.author.reputation += effect
         db.session.add(vote)
     db.session.commit()
     return render_template('community/_voting_buttons.html', comment=comment,
@@ -331,6 +384,7 @@ def add_reply(post_id: int, comment_id: int):
         reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
                                    effect=1.0)
         db.session.add(reply_vote)
+        post.reply_count = post_reply_count(post.id)
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')

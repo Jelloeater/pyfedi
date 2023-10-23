@@ -126,3 +126,9 @@ def get_comment_branch(post_id: int, comment_id: int, sort_by: str) -> List[Post
                 parent_comment['replies'].append(comments_dict[comment.id])
 
     return [comment for comment in comments_dict.values() if comment['comment'].id == comment_id]
+
+
+# The number of replies a post has
+def post_reply_count(post_id) -> int:
+    return db.session.execute('SELECT COUNT(id) as c FROM "post_reply" WHERE post_id = :post_id',
+                              {'post_id': post_id}).scalar()

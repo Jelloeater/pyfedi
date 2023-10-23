@@ -9,6 +9,9 @@
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
             </nav>
+            <div class="voting_buttons">
+                {% include "community/_post_voting_buttons.html" %}
+            </div>
             <h1 class="mt-2">{{ post.title }}</h1>
             {% if post.url %}
                 <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}</a>
@@ -29,26 +32,31 @@
             {% endif %}
         </div>
     {% else %}
-        <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-            <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
-            <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}</a></li>
-            <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
-          </ol>
-        </nav>
-        <h1 class="mt-2">{{ post.title }}</h1>
-        {% if post.url %}
-            <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
-            <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  /></a>
-            {% if post.type == post_type_link %}
-                <span class="domain_link">(<a href="/d/{{ post.domain_id }}">domain</a>)</span>
+        <div class="col">
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
+                <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}</a></li>
+                <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
+              </ol>
+            </nav>
+            <div class="voting_buttons">
+                {% include "community/_post_voting_buttons.html" %}
+            </div>
+            <h1 class="mt-2">{{ post.title }}</h1>
+            {% if post.url %}
+                <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
+                <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  /></a>
+                {% if post.type == post_type_link %}
+                    <span class="domain_link">(<a href="/d/{{ post.domain_id }}">domain</a>)</span>
+                {% endif %}
+                </small></p>
             {% endif %}
-            </small></p>
-        {% endif %}
-        <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
-            {{ render_username(post.author) }}
-        </p>
+            <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
+                {{ render_username(post.author) }}
+            </p>
+        </div>
     {% endif %}
 </div>
 
