@@ -5,18 +5,25 @@
 <div class="row">
     <div class="col-12 col-md-8 position-relative">
         {% include 'community/_post_full.html' %}
-
         {% if post.comments_enabled %}
-        <div class="row post_reply_form">
-            <div class="col">
-                <div class="reply_form_inner">
-                    {{ render_form(form) }}
-                </div>
-            </div>
-            <hr class="mt-4" />
-        </div>
+            {% if current_user.is_authenticated %}
+                {% if current_user.verified %}
+                    <div class="row post_reply_form">
+                        <div class="col">
+                            <div class="reply_form_inner">
+                                {{ render_form(form) }}
+                            </div>
+                        </div>
+                        <hr class="mt-4" />
+                    </div>
+                {% else %}
+                    <p><a href="{{ url_for('auth.validation_required') }}">{{ _('Verify your email address to comment') }}</a></p>
+                {% endif %}
+            {% else %}
+                <p><a href="{{ url_for('auth.login') }}">{{ _('Log in to comment') }}</a></p>
+            {% endif %}
         {% else %}
-        <p>{{ _('Comments are disabled for this post.') }}</p>
+            <p>{{ _('Comments are disabled for this post.') }}</p>
         {% endif %}
         <div class="row post_replies">
             <div class="col">
@@ -47,9 +54,11 @@
                                 {{ comment['comment'].body_html | safe }}
                             </div>
                         </div>
-                        <div class="comment_actions hidable">
-                            <a href="{{ url_for('community.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
-                        </div>
+                        {% if current_user.is_authenticated and current_user.verified %}
+                            <div class="comment_actions hidable">
+                                <a href="{{ url_for('community.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
+                            </div>
+                        {% endif %}
                         {% if comment['replies'] %}
                             {% if comment['comment'].depth <= THREAD_CUTOFF_DEPTH %}
                                 <div class="replies hidable">

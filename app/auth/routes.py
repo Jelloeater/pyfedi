@@ -26,6 +26,9 @@ def login():
         if user is None:
             flash(_('No account exists with that user name address'), 'error')
             return redirect(url_for('auth.login'))
+        if user.banned:
+            flash(_('You have been banned.', 'error'))
+            return redirect(url_for('auth.login'))
         if not user.check_password(form.password.data):
             if user.password_hash is None:
                 if "@gmail.com" in user.email:
@@ -133,6 +136,9 @@ def verify_email(token):
     if token != '':
         user = User.query.filter_by(verification_token=token).first()
         if user is not None:
+            if user.banned:
+                flash('You have been banned.', 'error')
+                return redirect(url_for('main.index'))
             if user.verified:   # guard against users double-clicking the link in the email
                 return redirect(url_for('main.index'))
             user.verified = True
@@ -145,3 +151,8 @@ def verify_email(token):
         else:
             flash(_('Email address validation failed.'), 'error')
         return redirect(url_for('main.index'))
+
+
+@bp.route('/validation_required')
+def validation_required():
+    return render_template('auth/validation_required.html')

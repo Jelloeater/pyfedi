@@ -14,10 +14,11 @@ from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LIN
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, PostReply, \
     PostReplyVote
 from app.community import bp
-from app.utils import get_setting, render_template, allowlist_html, markdown_to_html
+from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
+@login_required
 def add_local():
     form = AddLocalCommunity()
     if get_setting('allow_nsfw', False) is False:
@@ -46,6 +47,7 @@ def add_local():
 
 
 @bp.route('/add_remote', methods=['GET', 'POST'])
+@login_required
 def add_remote():
     form = SearchRemoteCommunity()
     new_community = None
@@ -93,6 +95,7 @@ def show_community(community: Community):
 
 @bp.route('/<actor>/subscribe', methods=['GET'])
 @login_required
+@validation_required
 def subscribe(actor):
     remote = False
     actor = actor.strip()
@@ -173,6 +176,7 @@ def unsubscribe(actor):
 
 @bp.route('/<actor>/submit', methods=['GET', 'POST'])
 @login_required
+@validation_required
 def add_post(actor):
     community = actor_to_community(actor)
     form = CreatePost()
@@ -226,7 +230,7 @@ def show_post(post_id: int):
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     form = NewReplyForm()
-    if form.validate_on_submit():
+    if current_user.is_authenticated and current_user.verified and form.validate_on_submit():
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl)
@@ -249,6 +253,8 @@ def show_post(post_id: int):
 
 
 @bp.route('/comment/<int:comment_id>/<vote_direction>', methods=['POST'])
+@login_required
+@validation_required
 def comment_vote(comment_id, vote_direction):
     upvoted_class = downvoted_class = ''
     comment = PostReply.query.get_or_404(comment_id)
@@ -308,6 +314,7 @@ def continue_discussion(post_id, comment_id):
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
+@login_required
 def add_reply(post_id: int, comment_id: int):
     post = Post.query.get_or_404(post_id)
     comment = PostReply.query.get_or_404(comment_id)

@@ -3,12 +3,13 @@ import markdown2
 import math
 from urllib.parse import urlparse
 import requests
+from functools import wraps
 
 import flask
 from bs4 import BeautifulSoup
 import requests
 import os
-from flask import current_app, json
+from flask import current_app, json, redirect, url_for
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -192,3 +193,13 @@ def retrieve_block_list():
         return None
     if response and response.status_code == 200:
         return response.text
+
+
+def validation_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if current_user.verified:
+            return func(*args, **kwargs)
+        else:
+            return redirect(url_for('auth.validation_required'))
+    return decorated_view

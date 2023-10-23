@@ -26,6 +26,7 @@ def show_profile(user):
 
 
 @bp.route('/u/<actor>/profile', methods=['GET', 'POST'])
+@login_required
 def edit_profile(actor):
     actor = actor.strip()
     user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
@@ -50,6 +51,7 @@ def edit_profile(actor):
 
 
 @bp.route('/u/<actor>/settings', methods=['GET', 'POST'])
+@login_required
 def change_settings(actor):
     actor = actor.strip()
     user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
@@ -83,6 +85,7 @@ def change_settings(actor):
 
 
 @bp.route('/u/<actor>/ban', methods=['GET'])
+@login_required
 def ban_profile(actor):
     if user_access('ban users', current_user.id):
         actor = actor.strip()
@@ -107,6 +110,7 @@ def ban_profile(actor):
 
 
 @bp.route('/u/<actor>/unban', methods=['GET'])
+@login_required
 def unban_profile(actor):
     if user_access('ban users', current_user.id):
         actor = actor.strip()
@@ -131,6 +135,7 @@ def unban_profile(actor):
 
 
 @bp.route('/u/<actor>/delete', methods=['GET'])
+@login_required
 def delete_profile(actor):
     if user_access('manage users', current_user.id):
         actor = actor.strip()
@@ -155,6 +160,7 @@ def delete_profile(actor):
 
 
 @bp.route('/u/<actor>/ban_purge', methods=['GET'])
+@login_required
 def ban_purge_profile(actor):
     if user_access('manage users', current_user.id):
         actor = actor.strip()

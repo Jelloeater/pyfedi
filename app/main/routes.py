@@ -1,4 +1,3 @@
-from datetime import datetime
 
 from app import db
 from app.main import bp
@@ -16,13 +15,13 @@ from app.models import Community, CommunityMember
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
 def index():
-    if hasattr(current_user, 'verified') and current_user.verified is False:
-        flash(_('Please click the link in your email inbox to verify your account.'), 'warning')
+    verification_warning()
     return render_template('index.html')
 
 
 @bp.route('/communities', methods=['GET'])
 def list_communities():
+    verification_warning()
     search_param = request.args.get('search', '')
     if search_param == '':
         communities = Community.query.filter_by(banned=False).all()
@@ -35,11 +34,18 @@ def list_communities():
 
 @bp.route('/communities/local', methods=['GET'])
 def list_local_communities():
+    verification_warning()
     communities = Community.query.filter_by(ap_id=None, banned=False).all()
     return render_template('list_communities.html', communities=communities, title=_('Local communities'))
 
 
 @bp.route('/communities/subscribed', methods=['GET'])
 def list_subscribed_communities():
+    verification_warning()
     communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
     return render_template('list_communities.html', communities=communities, title=_('Subscribed communities'))
+
+
+def verification_warning():
+    if hasattr(current_user, 'verified') and current_user.verified is False:
+        flash(_('Please click the link in your email inbox to verify your account.'), 'warning')
