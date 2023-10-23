@@ -36,6 +36,12 @@
         {% if canonical %}
             <link rel="canonical" href="{{ canonical }}" />
         {% endif %}
+        {% if description %}
+            <meta name="description" content="{{ description }}" />
+        {% endif %}
+        {% if og_image %}
+            <meta property="og:image" content="{{ og_image }}" />
+        {% endif %}
     {% endblock %}
   </head>
   <body class="d-flex flex-column" style="padding-top: 43px;">

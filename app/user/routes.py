@@ -6,7 +6,7 @@ from app import db
 from app.models import Post, Community, CommunityMember, User, PostReply
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
-from app.utils import get_setting, render_template, markdown_to_html, user_access
+from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string
 from sqlalchemy import desc, or_
 
 
@@ -20,9 +20,11 @@ def show_profile(user):
     post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).all()
     canonical = user.ap_public_url if user.ap_public_url else None
     user.about_html = markdown_to_html(user.about)
+    description = shorten_string(markdown_to_text(user.about), 150) if user.about else None
     return render_template('user/show_profile.html', user=user, posts=posts, post_replies=post_replies,
                            moderates=moderates.all(), canonical=canonical, title=_('Posts by %(user_name)s',
-                                                                                   user_name=user.user_name))
+                                                                                   user_name=user.user_name),
+                           description=description)
 
 
 @bp.route('/u/<actor>/profile', methods=['GET', 'POST'])
@@ -32,6 +34,8 @@ def edit_profile(actor):
     user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
     if user is None:
         abort(404)
+    if current_user.id != user.id:
+        abort(401)
     form = ProfileForm()
     if form.validate_on_submit():
         current_user.email = form.email.data
@@ -57,6 +61,8 @@ def change_settings(actor):
     user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
     if user is None:
         abort(404)
+    if current_user.id != user.id:
+        abort(401)
     form = SettingsForm()
     if form.validate_on_submit():
         current_user.newsletter = form.newsletter.data

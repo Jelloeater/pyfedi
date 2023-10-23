@@ -14,7 +14,8 @@ from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LIN
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, PostReply, \
     PostReplyVote, PostVote
 from app.community import bp
-from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required
+from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
+    shorten_string, markdown_to_text
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -89,8 +90,12 @@ def show_community(community: Community):
     else:
         posts = community.posts
 
+    description = shorten_string(community.description, 150) if community.description else None
+    og_image = community.image.source_url if community.image_id else None
+
     return render_template('community/community.html', community=community, title=community.title,
-                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts)
+                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts, description=description,
+                           og_image=og_image)
 
 
 @bp.route('/<actor>/subscribe', methods=['GET'])
@@ -248,8 +253,13 @@ def show_post(post_id: int):
                                 post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
         replies = post_replies(post.id, 'top')
+
+    og_image = post.image.source_url if post.image_id else None
+    description = shorten_string(markdown_to_text(post.body), 150) if post.body else None
+
     return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
-                           canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH)
+                           canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
+                           description=description, og_image=og_image)
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])

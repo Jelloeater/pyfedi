@@ -152,6 +152,10 @@ def markdown_to_html(markdown_text) -> str:
         return ''
 
 
+def markdown_to_text(markdown_text) -> str:
+    return markdown_text.replace("# ", '')
+
+
 def domain_from_url(url: str) -> Domain:
     parsed_url = urlparse(url)
     domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
