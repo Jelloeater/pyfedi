@@ -211,3 +211,18 @@ def validation_required(func):
         else:
             return redirect(url_for('auth.validation_required'))
     return decorated_view
+
+
+def permission_required(permission):
+    def decorator(func):
+        @wraps(func)
+        def decorated_view(*args, **kwargs):
+            if user_access(permission, current_user.id):
+                return func(*args, **kwargs)
+            else:
+                # Handle the case where the user doesn't have the required permission
+                return redirect(url_for('auth.permission_denied'))
+
+        return decorated_view
+
+    return decorator

@@ -67,6 +67,9 @@
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/u/{{ current_user.user_name }}">{{ current_user.user_name }}</a></li>
+                            {% if user_access('change instance settings', current_user.id) %}
+                                <li class="nav-item"><a class="nav-link" href="/admin/">{{ _('Admin') }}</a></li>
+                            {% endif %}
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
                         {% endif %}
                     </ul>

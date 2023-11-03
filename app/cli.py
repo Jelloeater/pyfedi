@@ -100,6 +100,7 @@ def register(app):
             admin_role.permissions.append(RolePermission(permission='change user roles'))
             admin_role.permissions.append(RolePermission(permission='ban users'))
             admin_role.permissions.append(RolePermission(permission='manage users'))
+            admin_role.permissions.append(RolePermission(permission='change instance settings'))
             db.session.add(admin_role)
 
             # Admin user
