@@ -451,6 +451,12 @@ class BannedInstances(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class AllowedInstances(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(256), index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Instance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     domain = db.Column(db.String(256), index=True)

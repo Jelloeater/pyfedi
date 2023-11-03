@@ -5,7 +5,7 @@ When it matures enough, PyFedi will aim to work in a way consistent with the [Co
 Please discuss your ideas in an issue at https://codeberg.org/rimu/pyfedi/issues before 
 starting any large pieces of work to ensure alignment with the roadmap, architecture and processes.
 
-The general style and philosphy behind the way things have been constructed is well described by 
+The general style and philosophy behind the way things have been constructed is well described by 
 [The Grug Brained Developer](https://grugbrain.dev/). If that page resonates with you then you'll
 probably enjoy your time here! The codebase needs to be simple enough that new developers of all
 skill levels can easily understand what's going on and onboard quickly without a lot of upfront 

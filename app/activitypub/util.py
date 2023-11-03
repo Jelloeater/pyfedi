@@ -5,7 +5,7 @@ from typing import Union, Tuple
 from flask import current_app
 from sqlalchemy import text
 from app import db, cache
-from app.models import User, Post, Community, BannedInstances, File, PostReply
+from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances
 import time
 import base64
 import requests
@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
 from urllib.parse import urlparse
 
-from app.utils import get_request, allowlist_html, html_to_markdown
+from app.utils import get_request, allowlist_html, html_to_markdown, get_setting
 
 
 def public_key():
@@ -184,6 +184,15 @@ def instance_blocked(host: str) -> bool:
     return instance is not None
 
 
+@cache.memoize(150)
+def instance_allowed(host: str) -> bool:
+    host = host.lower()
+    if 'https://' in host or 'http://' in host:
+        host = urlparse(host).hostname
+    instance = AllowedInstances.query.filter_by(domain=host.strip()).first()
+    return instance is not None
+
+
 def find_actor_or_create(actor: str) -> Union[User, Community, None]:
     user = None
     # actor parameter must be formatted as https://server/u/actor or https://server/c/actor
@@ -197,8 +206,12 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
             return None
     elif actor.startswith('https://'):
         server, address = extract_domain_and_actor(actor)
-        if instance_blocked(server):
-            return None
+        if get_setting('use_allowlist', False):
+            if not instance_allowed(server):
+                return None
+        else:
+            if instance_blocked(server):
+                return None
         user = User.query.filter_by(
             ap_profile_id=actor).first()  # finds users formatted like https://kbin.social/u/tables
         if user.banned:
