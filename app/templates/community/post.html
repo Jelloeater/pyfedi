@@ -6,18 +6,21 @@
     var toBeHidden = Array();   // this list of comment IDs will be iterated over in setupHideButtons() and the 'hide' button clicked
 </script>
 <div class="row">
-    <div class="col-12 col-md-8 position-relative">
+    <div class="col-12 col-md-8 position-relative main_pane">
         {% include 'community/_post_full.html' %}
         {% if post.comments_enabled %}
             {% if current_user.is_authenticated %}
                 {% if current_user.verified %}
                     <div class="row post_reply_form">
+                        <hr class="mt-1" />
                         <div class="col">
                             <div class="reply_form_inner">
                                 {{ render_form(form) }}
                             </div>
                         </div>
+                        {% if replies %}
                         <hr class="mt-4" />
+                        {% endif %}
                     </div>
                 {% else %}
                     <p><a href="{{ url_for('auth.validation_required') }}">{{ _('Verify your email address to comment') }}</a></p>
@@ -28,6 +31,7 @@
         {% else %}
             <p>{{ _('Comments are disabled for this post.') }}</p>
         {% endif %}
+        {% if replies %}
         <div class="row post_replies">
             <div class="col">
                 {% macro render_comment(comment) %}
@@ -93,6 +97,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <div class="col-12 col-md-4">

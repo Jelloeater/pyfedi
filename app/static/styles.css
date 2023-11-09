@@ -149,11 +149,11 @@
 
 .fe-reply {
   position: relative;
-  top: 2px;
+  top: 1px;
 }
 
 .fe-reply::before {
-  content: "\e991";
+  content: "\e990";
 }
 
 .fe-report::before {
@@ -307,6 +307,14 @@ nav.navbar {
 .alert-error {
   color: #722047;
   background-color: #f8d7da;
+}
+
+.main_pane {
+  border: solid 1px #ddd;
+  border-radius: 5px;
+  background-color: white;
+  padding-top: 8px;
+  padding-bottom: 12px;
 }
 
 .community_icon {

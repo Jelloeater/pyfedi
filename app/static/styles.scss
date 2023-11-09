@@ -73,6 +73,14 @@ nav.navbar {
     background-color: #f8d7da;
 }
 
+.main_pane {
+  border: solid 1px $light-grey;
+  border-radius: 5px;
+  background-color: white;
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
 .community_icon {
   width: 30px;
   height: auto;
