@@ -142,3 +142,19 @@ nav.navbar {
     color: $dark-grey;
   }
 }
+
+.comment_author {
+  a {
+    font-weight: bold;
+  }
+}
+
+.low_score {
+  .hide_button, .comment_author {
+
+    a {
+      font-weight: normal;
+      color: $dark-grey;
+    }
+  }
+}

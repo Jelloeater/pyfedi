@@ -4,7 +4,7 @@ from typing import List
 from app import db
 from app.models import Community, File, BannedInstances, PostReply
 from app.utils import get_request
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 
 
 def search_for_community(address: str):
@@ -130,5 +130,5 @@ def get_comment_branch(post_id: int, comment_id: int, sort_by: str) -> List[Post
 
 # The number of replies a post has
 def post_reply_count(post_id) -> int:
-    return db.session.execute('SELECT COUNT(id) as c FROM "post_reply" WHERE post_id = :post_id',
+    return db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE post_id = :post_id'),
                               {'post_id': post_id}).scalar()

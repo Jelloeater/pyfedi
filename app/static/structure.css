@@ -361,6 +361,7 @@ fieldset legend {
 .post_list .post_teaser h3 {
   font-size: 120%;
   margin-top: 8px;
+  margin-bottom: 0;
 }
 .post_list .post_teaser .meta_row a, .post_list .post_teaser .main_row a, .post_list .post_teaser .utilities_row a {
   text-decoration: none;
@@ -368,6 +369,12 @@ fieldset legend {
 
 .comments > .comment {
   margin-left: 0;
+  border-top: solid 1px #bbb;
+  margin-right: 8px;
+}
+.comments > .comment:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 
 #replies {
@@ -381,8 +388,9 @@ fieldset legend {
 .voting_buttons {
   float: right;
   display: block;
-  width: 60px;
+  width: 55px;
   padding: 5px;
+  padding-right: 0;
 }
 .voting_buttons div {
   border: solid 1px #0071CE;
@@ -419,7 +427,8 @@ fieldset legend {
 .comment {
   clear: both;
   margin-bottom: 20px;
-  margin-left: 20px;
+  margin-left: 15px;
+  padding-top: 8px;
 }
 .comment .limit_height {
   position: relative;
@@ -460,6 +469,7 @@ fieldset legend {
 .comment .replies {
   margin-top: 15px;
   border-left: solid 1px #ddd;
+  border-top: solid 1px #ddd;
 }
 
 .add_reply .form-control-label {

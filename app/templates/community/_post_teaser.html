@@ -1,9 +1,6 @@
 <div class="post_teaser">
     <div class="row">
         <div class="col col-md-10">
-            <div class="row meta_row small">
-                <div class="col">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</div>
-            </div>
             <div class="row main_row">
                 <div class="col{% if post.image_id %}-8{% endif %}">
                     <h3>
@@ -15,6 +12,7 @@
                             <span class="domain_link">(<a href="/d/{{ post.domain_id }}">{{ post.domain.name }}</a>)</span>
                         {% endif %}
                     </h3>
+                    <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>
                 </div>
                 {% if post.image_id %}
                     <div class="col-4">
