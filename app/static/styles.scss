@@ -58,6 +58,12 @@ nav.navbar {
   font-size: 140%;
 }
 
+.card-header {
+  h2 {
+    margin-bottom: 5px;
+  }
+}
+
 .alert-info, .alert-message, .alert-error {
   color: #0c5460;
   background-color: #d1ecf1;
@@ -157,4 +163,19 @@ nav.navbar {
       color: $dark-grey;
     }
   }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: $dark-grey;
+  }
+
+  nav.navbar {
+    background-color: #eee!important;
+  }
+
+  .main_pane, .card {
+    background-color: #eee;
+  }
+
 }
