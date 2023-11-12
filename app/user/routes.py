@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db
-from app.models import Post, Community, CommunityMember, User, PostReply
+from app.models import Post, Community, CommunityMember, User, PostReply, PostVote
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string
@@ -13,18 +13,21 @@ from sqlalchemy import desc, or_
 def show_profile(user):
     if user.deleted or user.banned and current_user.is_anonymous():
         abort(404)
-    posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.posted_at)).all()
-    moderates = Community.query.filter_by(banned=False).join(CommunityMember).filter(or_(CommunityMember.is_moderator, CommunityMember.is_owner))
+    posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.posted_at)).limit(20).all()
+    moderates = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == user.id)\
+        .filter(or_(CommunityMember.is_moderator, CommunityMember.is_owner))
+    upvoted = Post.query.join(PostVote).filter(Post.id == PostVote.post_id, PostVote.effect > 0).order_by(desc(Post.posted_at)).limit(10).all()
+    subscribed = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == user.id).all()
     if current_user.is_anonymous or user.id != current_user.id:
         moderates = moderates.filter(Community.private_mods == False)
-    post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).all()
+    post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).limit(20).all()
     canonical = user.ap_public_url if user.ap_public_url else None
     user.about_html = markdown_to_html(user.about)
     description = shorten_string(markdown_to_text(user.about), 150) if user.about else None
     return render_template('user/show_profile.html', user=user, posts=posts, post_replies=post_replies,
                            moderates=moderates.all(), canonical=canonical, title=_('Posts by %(user_name)s',
                                                                                    user_name=user.user_name),
-                           description=description)
+                           description=description, subscribed=subscribed, upvoted=upvoted)
 
 
 @bp.route('/u/<actor>/profile', methods=['GET', 'POST'])
