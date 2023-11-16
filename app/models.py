@@ -297,7 +297,6 @@ class User(UserMixin, db.Model):
                            {'user_id': self.id})
 
 
-
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)

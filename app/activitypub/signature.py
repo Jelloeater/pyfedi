@@ -236,6 +236,7 @@ class HttpSignature:
             headers_string,
             public_key,
         )
+        return True
 
     @classmethod
     def signed_request(
@@ -298,7 +299,7 @@ class HttpSignature:
         )
 
         # Announce ourselves with an agent similar to Mastodon
-        headers["User-Agent"] = 'pyfedi'
+        headers["User-Agent"] = 'PieFed'
 
         # Send the request with all those headers except the pseudo one
         del headers["(request-target)"]

@@ -14,6 +14,18 @@ class AddLocalCommunity(FlaskForm):
     nsfw = BooleanField('18+ NSFW')
     submit = SubmitField(_l('Create'))
 
+    def validate(self, extra_validators=None):
+        if not super().validate():
+            return False
+        if self.url.data.strip() == '':
+            self.url.errors.append(_('Url is required.'))
+            return False
+        else:
+            if '-' in self.url.data.strip():
+                self.url.errors.append(_('- cannot be in Url. Use _ instead?'))
+                return False
+        return True
+
 
 class SearchRemoteCommunity(FlaskForm):
     address = StringField(_l('Server address'), validators=[DataRequired()])

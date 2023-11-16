@@ -177,5 +177,5 @@ function setupHideButtons() {
 
 function titleToURL(title) {
   // Convert the title to lowercase and replace spaces with hyphens
-  return title.toLowerCase().replace(/\s+/g, '-');
+  return title.toLowerCase().replace(/\s+/g, '_');
 }

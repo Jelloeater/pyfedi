@@ -77,7 +77,7 @@ def nodeinfo2():
     nodeinfo_data = {
                 "version": "2.0",
                 "software": {
-                    "name": "pyfedi",
+                    "name": "PieFed",
                     "version": "0.1"
                 },
                 "protocols": [
@@ -151,18 +151,18 @@ def community_profile(actor):
         # don't provide activitypub info for remote communities
         if 'application/ld+json' in request.headers.get('Accept', ''):
             abort(404)
-        community = Community.query.filter_by(ap_id=actor, banned=False).first()
+        community: Community = Community.query.filter_by(ap_id=actor, banned=False).first()
     else:
-        community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+        community: Community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
     if community is not None:
         if 'application/ld+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
             actor_data = {"@context": default_context(),
                 "type": "Group",
                 "id": f"https://{server}/c/{actor}",
-                "name": actor.title,
-                "summary": actor.description,
-                "sensitive": True if actor.nsfw or actor.nsfl else False,
+                "name": community.title,
+                "summary": community.description,
+                "sensitive": True if community.nsfw or community.nsfl else False,
                 "preferredUsername": actor,
                 "inbox": f"https://{server}/c/{actor}/inbox",
                 "outbox": f"https://{server}/c/{actor}/outbox",
@@ -170,7 +170,7 @@ def community_profile(actor):
                 "moderators": f"https://{server}/c/{actor}/moderators",
                 "featured": f"https://{server}/c/{actor}/featured",
                 "attributedTo": f"https://{server}/c/{actor}/moderators",
-                "postingRestrictedToMods": actor.restricted_to_mods,
+                "postingRestrictedToMods": community.restricted_to_mods,
                 "url": f"https://{server}/c/{actor}",
                 "publicKey": {
                     "id": f"https://{server}/c/{actor}#main-key",
@@ -180,13 +180,13 @@ def community_profile(actor):
                 "endpoints": {
                     "sharedInbox": f"https://{server}/inbox"
                 },
-                "published": community.created.isoformat(),
+                "published": community.created_at.isoformat(),
                 "updated": community.last_active.isoformat(),
             }
-            if community.avatar_id is not None:
+            if community.icon_id is not None:
                 actor_data["icon"] = {
                     "type": "Image",
-                    "url": f"https://{server}/avatars/{community.avatar.file_path}"
+                    "url": f"https://{server}/avatars/{community.icon.file_path}"
                 }
             resp = jsonify(actor_data)
             resp.content_type = 'application/activity+json'
@@ -411,6 +411,22 @@ def shared_inbox():
                                         community.subscriptions_count += 1
                                         db.session.commit()
                                         activity_log.result = 'success'
+                        elif request_json['type'] == 'Undo':
+                            if request_json['object']['type'] == 'Follow':  # Unsubscribe from a community
+                                community_ap_id = request_json['actor']
+                                user_ap_id = request_json['object']['actor']
+                                user = find_actor_or_create(user_ap_id)
+                                community = find_actor_or_create(community_ap_id)
+                                if user and community:
+                                    member = CommunityMember.query.filter_by(user_id=user.id, community_id=community.id).first()
+                                    db.session.delete(member)
+                                    db.session.commit()
+                                    activity_log.result = 'success'
+                            elif request_json['object']['type'] == 'Like':  # Undoing an upvote
+                                ...
+                            elif request_json['object']['type'] == 'Dislike':  # Undoing a downvote
+                                ...
+
                     else:
                         activity_log.exception_message = 'Instance banned'
             else:
@@ -422,6 +438,7 @@ def shared_inbox():
             activity_log.result = 'failure'
         db.session.add(activity_log)
         db.session.commit()
+        return ''
 
 
 @bp.route('/c/<actor>/outbox', methods=['GET'])

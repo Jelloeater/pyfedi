@@ -33,8 +33,12 @@ def getmtime(filename):
 
 # do a GET request to a uri, return the result
 def get_request(uri, params=None, headers=None) -> requests.Response:
+    if headers is None:
+        headers = {'User-Agent': 'PieFed/1.0'}
+    else:
+        headers.update({'User-Agent': 'PieFed/1.0'})
     try:
-        response = requests.get(uri, params=params, headers=headers, timeout=1, allow_redirects=True)
+        response = requests.get(uri, params=params, headers=headers, timeout=5, allow_redirects=True)
     except requests.exceptions.SSLError as invalid_cert:
         # Not our problem if the other end doesn't have proper SSL
         current_app.logger.info(f"{uri} {invalid_cert}")

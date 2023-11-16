@@ -214,7 +214,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                 return None
         user = User.query.filter_by(
             ap_profile_id=actor).first()  # finds users formatted like https://kbin.social/u/tables
-        if user.banned:
+        if user and user.banned:
             return None
         if user is None:
             user = Community.query.filter_by(ap_profile_id=actor).first()
@@ -225,6 +225,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                                      params={'resource': f"acct:{address}@{server}"})
         if webfinger_data.status_code == 200:
             webfinger_json = webfinger_data.json()
+            webfinger_data.close()
             for links in webfinger_json['links']:
                 if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
                     type = links['type'] if 'type' in links else 'application/activity+json'
@@ -233,11 +234,12 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                     # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
                     if actor_data.status_code == 200:
                         activity_json = actor_data.json()
+                        actor_data.close()
                         if activity_json['type'] == 'Person':
                             user = User(user_name=activity_json['preferredUsername'],
                                         email=f"{address}@{server}",
                                         about=parse_summary(activity_json),
-                                        created_at=activity_json['published'],
+                                        created=activity_json['published'],
                                         ap_id=f"{address}@{server}",
                                         ap_public_url=activity_json['id'],
                                         ap_profile_id=activity_json['id'],
