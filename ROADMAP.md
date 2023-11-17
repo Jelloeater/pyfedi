@@ -16,8 +16,9 @@ The following are the goals for a 1.0 release, good enough for production use. I
 
 ### Activitypub-enabled
 
-- follow remote community
+- ✅ follow remote community
 - post content in remote community
+- edit & delete content
 - vote
 
 ### Search
