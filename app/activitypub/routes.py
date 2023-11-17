@@ -419,7 +419,12 @@ def shared_inbox():
                                 community = find_actor_or_create(community_ap_id)
                                 if user and community:
                                     member = CommunityMember.query.filter_by(user_id=user.id, community_id=community.id).first()
-                                    db.session.delete(member)
+                                    join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
+                                                                                        community_id=community.id).first()
+                                    if member:
+                                        db.session.delete(member)
+                                    if join_request:
+                                        db.session.delete(join_request)
                                     db.session.commit()
                                     activity_log.result = 'success'
                             elif request_json['object']['type'] == 'Like':  # Undoing an upvote

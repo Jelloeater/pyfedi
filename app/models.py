@@ -264,6 +264,9 @@ class User(UserMixin, db.Model):
         return Community.query.filter(Community.banned == False).\
             join(CommunityMember).filter(CommunityMember.is_banned == False).all()
 
+    def profile_id(self):
+        return self.ap_profile_id if self.ap_profile_id else f"{self.user_name}@{current_app.config['SERVER_NAME']}"
+
     @staticmethod
     def verify_reset_password_token(token):
         try:

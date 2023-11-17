@@ -7,6 +7,7 @@
                 <div class="card mt-5">
                     <div class="card-body p-6">
                         <div class="card-title">{{ _('Search') }}</div>
+                        <p>Type address in the format !community@server.name. Search on <a href="https://lemmyverse.net/communities" target='_blank'>Lemmyverse.net</a> to find some.</p>
                         {{ render_form(form) }}
                     </div>
                 </div>
@@ -22,12 +23,12 @@
                                 <p>
                                     <a href="/c/{{ new_community.link() }}"><img src="{{ new_community.icon_image()}}" class="community_icon rounded-circle" /></a>
                                     <a href="/c/{{ new_community.link() }}">{{ new_community.title }}@{{ new_community.ap_domain }}</a>
-                                    {% if subscribed %}
-                                        <a class="btn btn-primary mt-4" href="/c/{{ new_community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
+                                </p>
+                                <p> {% if subscribed %}
+                                        <a class="btn btn-primary mt-4" href="/community/{{ new_community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
                                     {% else %}
-                                        <a class="btn btn-primary mt-4" href="/c/{{ new_community.link() }}/subscribe">{{ _('Subscribe') }}</a>
+                                        <a class="btn btn-primary mt-4" href="/community/{{ new_community.link() }}/subscribe">{{ _('Subscribe') }}</a>
                                     {% endif %}
-
                                 </p>
                             </div>
                         </div>

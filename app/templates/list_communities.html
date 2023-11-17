@@ -31,7 +31,7 @@
 </div>
 {% if len(communities) > 0 %}
     <div class="table-responsive-md">
-        <table class="table table-striped table-hover w-100">
+        <table class="communities_table table table-striped table-hover w-100">
             <thead>
                 <tr>
                     <th scope="col" colspan="2">{{ _('Name') }}</th>
@@ -45,7 +45,7 @@
                 {% for community in communities %}
                     <tr class="">
                         <td><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
-                        <th scope="row"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></th>
+                        <td scope="row"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>

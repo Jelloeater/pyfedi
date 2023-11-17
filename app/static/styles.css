@@ -391,6 +391,14 @@ nav.navbar {
   color: #777;
 }
 
+.communities_table tr td {
+  vertical-align: middle;
+  padding-top: 6px;
+}
+.communities_table tr td:first-child {
+  padding-top: 8px;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #777;

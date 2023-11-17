@@ -28,7 +28,7 @@ class AddLocalCommunity(FlaskForm):
 
 
 class SearchRemoteCommunity(FlaskForm):
-    address = StringField(_l('Server address'), validators=[DataRequired()])
+    address = StringField(_l('Community address'), render_kw={'placeholder': 'e.g. !name@server'}, validators=[DataRequired()])
     submit = SubmitField(_l('Search'))
 
 

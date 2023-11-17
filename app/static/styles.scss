@@ -165,6 +165,15 @@ nav.navbar {
   }
 }
 
+.communities_table tr td {
+  vertical-align: middle;
+  padding-top: 6px;
+
+  &:first-child {
+    padding-top: 8px;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: $dark-grey;

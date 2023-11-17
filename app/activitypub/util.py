@@ -201,7 +201,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
             ap_profile_id=actor).first()  # finds communities formatted like https://localhost/c/*
 
     if current_app.config['SERVER_NAME'] + '/u/' in actor:
-        user = User.query.filter_by(username=actor.split('/')[-1], ap_id=None, banned=False).first()  # finds local users
+        user = User.query.filter_by(user_name=actor.split('/')[-1], ap_id=None, banned=False).first()  # finds local users
         if user is None:
             return None
     elif actor.startswith('https://'):

@@ -119,14 +119,14 @@ def subscribe(actor):
                 db.session.commit()
                 follow = {
                     "actor": f"https://{current_app.config['SERVER_NAME']}/u/{current_user.user_name}",
-                    "to": [community.ap_id],
-                    "object": community.ap_id,
+                    "to": [community.ap_profile_id],
+                    "object": community.ap_profile_id,
                     "type": "Follow",
                     "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{join_request.id}"
                 }
                 try:
                     message = HttpSignature.signed_request(community.ap_inbox_url, follow, current_user.private_key,
-                                                           current_user.ap_profile_id + '#main-key')
+                                                           current_user.profile_id() + '#main-key')
                     if message.status_code == 200:
                         flash('Your request to subscribe has been sent to ' + community.title)
                     else:
