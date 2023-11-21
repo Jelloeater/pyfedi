@@ -1,4 +1,6 @@
-from app import db
+from datetime import datetime
+
+from app import db, constants
 from app.activitypub import bp
 from flask import request, Response, current_app, abort, jsonify, json
 
@@ -221,7 +223,97 @@ def shared_inbox():
                 if 'type' in request_json:
                     activity_log.activity_type = request_json['type']
                     if not instance_blocked(request_json['id']):
-                        # Announce is new content and votes
+                        # Create is new content and votes, kbin style
+                        if request_json['type'] == 'Create':
+                            activity_log.activity_type = request_json['type'] == 'Create (kbin)'
+                            user_ap_id = request_json['object']['attributedTo']
+                            community_ap_id = request_json['to'][0]
+                            community = find_actor_or_create(community_ap_id)
+                            user = find_actor_or_create(user_ap_id)
+                            if user and community:
+                                object_type = request_json['object']['type']
+                                new_content_types = ['Page', 'Article', 'Link', 'Note']
+                                if object_type in new_content_types:  # create a new post
+                                    in_reply_to = request_json['object']['inReplyTo'] if 'inReplyTo' in \
+                                                                                                   request_json[
+                                                                                                       'object'] else None
+                                    if not in_reply_to:
+                                        post = Post(user_id=user.id, community_id=community.id,
+                                                    title=request_json['object']['name'],
+                                                    comments_enabled=request_json['object'][
+                                                        'commentsEnabled'],
+                                                    sticky=request_json['object']['stickied'] if 'stickied' in
+                                                                                                           request_json[
+                                                                                                               'object'] else False,
+                                                    nsfw=request_json['object']['sensitive'],
+                                                    nsfl=request_json['object']['nsfl'] if 'nsfl' in request_json[
+                                                                                                         'object'] else False,
+                                                    ap_id=request_json['object']['id'],
+                                                    ap_create_id=request_json['id'],
+                                                    ap_announce_id=None,
+                                                    type=constants.POST_TYPE_ARTICLE
+                                                    )
+                                        if 'source' in request_json['object'] and \
+                                                request_json['object']['source'][
+                                                    'mediaType'] == 'text/markdown':
+                                            post.body = request_json['object']['source']['content']
+                                            post.body_html = markdown_to_html(post.body)
+                                        elif 'content' in request_json['object']:
+                                            post.body_html = allowlist_html(request_json['object']['content'])
+                                            post.body = html_to_markdown(post.body_html)
+                                        if 'attachment' in request_json['object'] and \
+                                                len(request_json['object']['attachment']) > 0 and \
+                                                'type' in request_json['object']['attachment'][0]:
+                                            if request_json['object']['attachment'][0]['type'] == 'Link':
+                                                post.url = request_json['object']['attachment'][0]['href']
+                                                if is_image_url(post.url):
+                                                    post.type = POST_TYPE_IMAGE
+                                                else:
+                                                    post.type = POST_TYPE_LINK
+                                                domain = domain_from_url(post.url)
+                                                if not domain.banned:
+                                                    post.domain_id = domain.id
+                                                else:
+                                                    post = None
+                                                    activity_log.exception_message = domain.name + ' is blocked by admin'
+                                                    activity_log.result = 'failure'
+                                        if 'image' in request_json['object']:
+                                            image = File(source_url=request_json['object']['image']['url'])
+                                            db.session.add(image)
+                                            post.image = image
+
+                                        if post is not None:
+                                            db.session.add(post)
+                                            community.post_count += 1
+                                            db.session.commit()
+                                    else:
+                                        post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
+                                        post_reply = PostReply(user_id=user.id, community_id=community.id,
+                                                               post_id=post_id, parent_id=parent_comment_id,
+                                                               root_id=root_id,
+                                                               nsfw=community.nsfw,
+                                                               nsfl=community.nsfl,
+                                                               ap_id=request_json['object']['id'],
+                                                               ap_create_id=request_json['id'],
+                                                               ap_announce_id=None)
+                                        if 'source' in request_json['object'] and \
+                                                request_json['object']['source'][
+                                                    'mediaType'] == 'text/markdown':
+                                            post_reply.body = request_json['object']['source']['content']
+                                            post_reply.body_html = markdown_to_html(post_reply.body)
+                                        elif 'content' in request_json['object']:
+                                            post_reply.body_html = allowlist_html(
+                                                request_json['object']['content'])
+                                            post_reply.body = html_to_markdown(post_reply.body_html)
+
+                                        if post_reply is not None:
+                                            db.session.add(post_reply)
+                                            community.post_reply_count += 1
+                                            db.session.commit()
+                                else:
+                                    activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
+
+                        # Announce is new content and votes, lemmy style
                         if request_json['type'] == 'Announce':
                             if request_json['object']['type'] == 'Create':
                                 activity_log.activity_type = request_json['object']['type']
@@ -246,6 +338,7 @@ def shared_inbox():
                                                         ap_id=request_json['object']['object']['id'],
                                                         ap_create_id=request_json['object']['id'],
                                                         ap_announce_id=request_json['id'],
+                                                        type=constants.POST_TYPE_ARTICLE
                                                         )
                                             if 'source' in request_json['object']['object'] and \
                                                     request_json['object']['object']['source']['mediaType'] == 'text/markdown':
@@ -431,7 +524,32 @@ def shared_inbox():
                                 ...
                             elif request_json['object']['type'] == 'Dislike':  # Undoing a downvote
                                 ...
-
+                        elif request_json['type'] == 'Update':
+                            if request_json['object']['type'] == 'Page':    # Editing a post
+                                post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
+                                if post:
+                                    if 'source' in request_json['object'] and \
+                                            request_json['object']['source']['mediaType'] == 'text/markdown':
+                                        post.body = request_json['object']['source']['content']
+                                        post.body_html = markdown_to_html(post.body)
+                                    elif 'content' in request_json['object']:
+                                        post.body_html = allowlist_html(request_json['object']['content'])
+                                        post.body = html_to_markdown(post.body_html)
+                                    post.edited_at = datetime.utcnow()
+                                    db.session.commit()
+                                    activity_log.result = 'success'
+                        elif request_json['type'] == 'Delete':
+                            post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
+                            if post:
+                                post.delete_dependencies()
+                                db.session.delete(post)
+                            else:
+                                reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
+                                if reply:
+                                    reply.body_html = '<p><em>deleted</em></p>'
+                                    reply.body = 'deleted'
+                            db.session.commit()
+                            activity_log.result = 'success'
                     else:
                         activity_log.exception_message = 'Instance banned'
             else:

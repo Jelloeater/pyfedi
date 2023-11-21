@@ -353,6 +353,12 @@ class Post(db.Model):
     def get_by_ap_id(cls, ap_id):
         return cls.query.filter_by(ap_id=ap_id).first()
 
+    def delete_dependencies(self):
+        db.session.execute(text('DELETE FROM post_reply_vote WHERE post_reply_id IN (SELECT id FROM post_reply WHERE post_id = :post_id)'),
+                           {'post_id': self.id})
+        db.session.execute(text('DELETE FROM post_reply WHERE post_id = :post_id'), {'post_id': self.id})
+        db.session.execute(text('DELETE FROM post_vote WHERE post_id = :post_id'), {'post_id': self.id})
+
 
 class PostReply(db.Model):
     query_class = FullTextSearchQuery

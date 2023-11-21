@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
-from sqlalchemy import or_
+from sqlalchemy import or_, desc
 
 from app import db, constants
 from app.activitypub.signature import RsaKeys, HttpSignature
@@ -86,9 +86,9 @@ def show_community(community: Community):
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
     if current_user.is_anonymous or current_user.ignore_bots:
-        posts = community.posts.filter(Post.from_bot == False).all()
+        posts = community.posts.filter(Post.from_bot == False).order_by(desc(Post.last_active)).all()
     else:
-        posts = community.posts
+        posts = community.posts.order_by(desc(Post.last_active))
 
     description = shorten_string(community.description, 150) if community.description else None
     og_image = community.image.source_url if community.image_id else None

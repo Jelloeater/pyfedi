@@ -18,7 +18,9 @@
                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
                 </a></small></p>
             {% endif %}
-            <p><small>submitted {{ moment(post.posted_at).fromNow() }} by {{ render_username(post.author) }}</small></p>
+            <p><small>submitted {{ moment(post.posted_at).fromNow() }} by {{ render_username(post.author) }}
+                {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
+            </small></p>
         </div>
         <div class="col-4">
             {% if post.url %}
@@ -50,6 +52,7 @@
             {% endif %}
             <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
                 {{ render_username(post.author) }}
+                {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
             </p>
         </div>
     {% endif %}
