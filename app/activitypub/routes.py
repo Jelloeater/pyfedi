@@ -157,7 +157,7 @@ def community_profile(actor):
     else:
         community: Community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
     if community is not None:
-        if 'application/ld+json' in request.headers.get('Accept', ''):
+        if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
             actor_data = {"@context": default_context(),
                 "type": "Group",
@@ -177,13 +177,13 @@ def community_profile(actor):
                 "publicKey": {
                     "id": f"https://{server}/c/{actor}#main-key",
                     "owner": f"https://{server}/c/{actor}",
-                    "publicKeyPem": community.public_key.replace("\n", "\\n")
+                    "publicKeyPem": community.public_key
                 },
                 "endpoints": {
                     "sharedInbox": f"https://{server}/inbox"
                 },
-                "published": community.created_at.isoformat(),
-                "updated": community.last_active.isoformat(),
+                "published": community.created_at.isoformat() + '+00:00',
+                "updated": community.last_active.isoformat() + '+00:00',
             }
             if community.icon_id is not None:
                 actor_data["icon"] = {
