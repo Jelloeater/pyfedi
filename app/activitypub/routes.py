@@ -228,6 +228,9 @@ def shared_inbox():
                             activity_log.activity_type = request_json['type'] == 'Create (kbin)'
                             user_ap_id = request_json['object']['attributedTo']
                             community_ap_id = request_json['to'][0]
+                            if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public':   # kbin does this when posting a reply
+                                if 'cc' in request_json['object'] and request_json['object']['cc']:
+                                    community_ap_id = request_json['object']['cc'][0]
                             community = find_actor_or_create(community_ap_id)
                             user = find_actor_or_create(user_ap_id)
                             if user and community:
@@ -253,12 +256,7 @@ def shared_inbox():
                                                     ap_announce_id=None,
                                                     type=constants.POST_TYPE_ARTICLE
                                                     )
-                                        if 'source' in request_json['object'] and \
-                                                request_json['object']['source'][
-                                                    'mediaType'] == 'text/markdown':
-                                            post.body = request_json['object']['source']['content']
-                                            post.body_html = markdown_to_html(post.body)
-                                        elif 'content' in request_json['object']:
+                                        if 'content' in request_json['object'] and request_json['object']['content'] is not None:
                                             post.body_html = allowlist_html(request_json['object']['content'])
                                             post.body = html_to_markdown(post.body_html)
                                         if 'attachment' in request_json['object'] and \
@@ -285,6 +283,7 @@ def shared_inbox():
                                         if post is not None:
                                             db.session.add(post)
                                             community.post_count += 1
+                                            community.last_active = datetime.utcnow()
                                             db.session.commit()
                                     else:
                                         post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
@@ -307,8 +306,11 @@ def shared_inbox():
                                             post_reply.body = html_to_markdown(post_reply.body_html)
 
                                         if post_reply is not None:
+                                            post = Post.query.get(post_id)
                                             db.session.add(post_reply)
+                                            post.reply_count += 1
                                             community.post_reply_count += 1
+                                            community.last_active = datetime.utcnow()
                                             db.session.commit()
                                 else:
                                     activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
@@ -536,6 +538,19 @@ def shared_inbox():
                                         post.body_html = allowlist_html(request_json['object']['content'])
                                         post.body = html_to_markdown(post.body_html)
                                     post.edited_at = datetime.utcnow()
+                                    db.session.commit()
+                                    activity_log.result = 'success'
+                            elif request_json['object']['type'] == 'Note':  # Editing a reply
+                                reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
+                                if reply:
+                                    if 'source' in request_json['object'] and \
+                                            request_json['object']['source']['mediaType'] == 'text/markdown':
+                                        reply.body = request_json['object']['source']['content']
+                                        reply.body_html = markdown_to_html(reply.body)
+                                    elif 'content' in request_json['object']:
+                                        reply.body_html = allowlist_html(request_json['object']['content'])
+                                        reply.body = html_to_markdown(reply.body_html)
+                                    reply.edited_at = datetime.utcnow()
                                     db.session.commit()
                                     activity_log.result = 'success'
                         elif request_json['type'] == 'Delete':

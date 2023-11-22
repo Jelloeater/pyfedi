@@ -61,7 +61,7 @@
                                             {{ comment['comment'].author.user_name }}</a>
                                 {% endif %}
                                 {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter" class="small">[OP]</span>{% endif %}
-                                <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}</span>
+                                <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
                             </div>
                             <div class="comment_body hidable">
                                 {{ comment['comment'].body_html | safe }}

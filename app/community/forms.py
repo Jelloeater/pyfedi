@@ -64,7 +64,7 @@ class CreatePost(FlaskForm):
             if self.link_url.data == '':
                 self.link_url.errors.append(_('URL is required.'))
                 return False
-            domain = domain_from_url(self.link_url.data)
+            domain = domain_from_url(self.link_url.data, create=False)
             if domain and domain.banned:
                 self.link_url.errors.append(_(f"Links to %s are not allowed.".format(domain.name)))
                 return False

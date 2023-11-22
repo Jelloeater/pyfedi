@@ -205,7 +205,7 @@ def add_post(actor):
             post.title = form.link_title.data
             post.url = form.link_url.data
             post.type = POST_TYPE_LINK
-            domain = domain_from_url(form.link_url.data, create=True)
+            domain = domain_from_url(form.link_url.data)
             domain.post_count += 1
             post.domain = domain
         elif form.type.data == 'image':

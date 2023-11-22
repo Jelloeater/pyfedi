@@ -160,7 +160,7 @@ def markdown_to_text(markdown_text) -> str:
     return markdown_text.replace("# ", '')
 
 
-def domain_from_url(url: str, create=False) -> Domain:
+def domain_from_url(url: str, create=True) -> Domain:
     parsed_url = urlparse(url)
     domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
     if create and domain is None:

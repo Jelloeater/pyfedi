@@ -22,7 +22,7 @@ def login():
         return redirect(next_page)
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(user_name=form.user_name.data).first()
+        user = User.query.filter_by(user_name=form.user_name.data, ap_id=None).first()
         if user is None:
             flash(_('No account exists with that user name address'), 'error')
             return redirect(url_for('auth.login'))
