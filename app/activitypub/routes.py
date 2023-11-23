@@ -9,9 +9,10 @@ from app.community.routes import show_community
 from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
-    PostReply, Instance, PostVote, PostReplyVote, File
+    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
-    post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object
+    post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
+    lemmy_site_data
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html
 import werkzeug.exceptions
@@ -74,6 +75,7 @@ def nodeinfo():
 
 
 @bp.route('/nodeinfo/2.0')
+@bp.route('/nodeinfo/2.0.json')
 def nodeinfo2():
 
     nodeinfo_data = {
@@ -97,6 +99,37 @@ def nodeinfo2():
                 "openRegistrations": True
             }
     return jsonify(nodeinfo_data)
+
+
+@bp.route('/api/v3/site')
+def lemmy_site():
+    return jsonify(lemmy_site_data())
+
+
+@bp.route('/api/v3/federated_instances')
+def lemmy_federated_instances():
+    instances = Instance.query.all()
+    linked = []
+    allowed = []
+    blocked = []
+    for instance in instances:
+        instance_data = {"id": instance.id, "domain": instance.domain, "published": instance.created_at.isoformat(), "updated": instance.updated_at.isoformat()}
+        if instance.software:
+            instance_data['software'] = instance.software
+        if instance.version:
+            instance_data['version'] = instance.version
+        linked.append(instance_data)
+    for instance in AllowedInstances.query.all():
+        allowed.append({"id": instance.id, "domain": instance.domain, "published": datetime.utcnow(), "updated": datetime.utcnow()})
+    for instance in BannedInstances.query.all():
+        blocked.append({"id": instance.id, "domain": instance.domain, "published": datetime.utcnow(), "updated": datetime.utcnow()})
+    return jsonify({
+        "federated_instances": {
+            "linked": linked,
+            "allowed": allowed,
+            "blocked": blocked
+        }
+    })
 
 
 @bp.route('/u/<actor>', methods=['GET'])

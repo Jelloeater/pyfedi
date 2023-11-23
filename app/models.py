@@ -472,6 +472,10 @@ class Instance(db.Model):
     shared_inbox = db.Column(db.String(256))
     outbox = db.Column(db.String(256))
     vote_weight = db.Column(db.Float, default=1.0)
+    software = db.Column(db.String(50))
+    version = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Settings(db.Model):
