@@ -256,13 +256,17 @@ def shared_inbox():
                 if 'type' in request_json:
                     activity_log.activity_type = request_json['type']
                     if not instance_blocked(request_json['id']):
-                        # Create is new content and votes, kbin style
+                        # Create is new content
                         if request_json['type'] == 'Create':
-                            activity_log.activity_type = request_json['type'] == 'Create (kbin)'
+                            activity_log.activity_type = 'Create'
                             user_ap_id = request_json['object']['attributedTo']
                             community_ap_id = request_json['to'][0]
                             if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public':   # kbin does this when posting a reply
-                                if 'cc' in request_json['object'] and request_json['object']['cc']:
+                                if 'to' in request_json['object'] and request_json['object']['to']:
+                                    community_ap_id = request_json['object']['to'][0]
+                                    if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public' and 'cc' in request_json['object'] and request_json['object']['cc']:
+                                        community_ap_id = request_json['object']['cc'][0]
+                                elif 'cc' in request_json['object'] and request_json['object']['cc']:
                                     community_ap_id = request_json['object']['cc'][0]
                             community = find_actor_or_create(community_ap_id)
                             user = find_actor_or_create(user_ap_id)
@@ -289,7 +293,12 @@ def shared_inbox():
                                                     ap_announce_id=None,
                                                     type=constants.POST_TYPE_ARTICLE
                                                     )
-                                        if 'content' in request_json['object'] and request_json['object']['content'] is not None:
+                                        if 'source' in request_json['object'] and \
+                                                request_json['object']['source'][
+                                                    'mediaType'] == 'text/markdown':
+                                            post.body = request_json['object']['source']['content']
+                                            post.body_html = markdown_to_html(post.body)
+                                        elif 'content' in request_json['object'] and request_json['object']['content'] is not None:
                                             post.body_html = allowlist_html(request_json['object']['content'])
                                             post.body = html_to_markdown(post.body_html)
                                         if 'attachment' in request_json['object'] and \
@@ -556,9 +565,60 @@ def shared_inbox():
                                     db.session.commit()
                                     activity_log.result = 'success'
                             elif request_json['object']['type'] == 'Like':  # Undoing an upvote
-                                ...
+                                activity_log.activity_type = request_json['object']['type']
+                                user_ap_id = request_json['actor']
+                                user = find_actor_or_create(user_ap_id)
+                                post = None
+                                comment = None
+                                target_ap_id = request_json['object']['object']
+                                if '/comment/' in target_ap_id:
+                                    comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
+                                if '/post/' in target_ap_id:
+                                    post = Post.query.filter_by(ap_id=target_ap_id).first()
+                                if user and post:
+                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+                                    if existing_vote:
+                                        post.author.reputation -= existing_vote.effect
+                                        post.up_votes -= 1
+                                        post.score -= 1
+                                        db.session.delete(existing_vote)
+                                if user and comment:
+                                    existing_vote = PostReplyVote.query.filter_by(user_id=user.id, post_reply_id=comment.id).first()
+                                    if existing_vote:
+                                        comment.author.reputation -= existing_vote.effect
+                                        comment.up_votes -= 1
+                                        comment.score -= 1
+                                        db.session.delete(existing_vote)
+                                        activity_log.result = 'success'
+
                             elif request_json['object']['type'] == 'Dislike':  # Undoing a downvote
-                                ...
+                                activity_log.activity_type = request_json['object']['type']
+                                user_ap_id = request_json['actor']
+                                user = find_actor_or_create(user_ap_id)
+                                post = None
+                                comment = None
+                                target_ap_id = request_json['object']['object']
+                                if '/comment/' in target_ap_id:
+                                    comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
+                                if '/post/' in target_ap_id:
+                                    post = Post.query.filter_by(ap_id=target_ap_id).first()
+                                if user and post:
+                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+                                    if existing_vote:
+                                        post.author.reputation += existing_vote.effect
+                                        post.up_votes += 1
+                                        post.score += 1
+                                        db.session.delete(existing_vote)
+                                if user and comment:
+                                    existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
+                                                                                  post_reply_id=comment.id).first()
+                                    if existing_vote:
+                                        comment.author.reputation += existing_vote.effect
+                                        comment.up_votes += 1
+                                        comment.score += 1
+                                        db.session.delete(existing_vote)
+                                        activity_log.result = 'success'
+
                         elif request_json['type'] == 'Update':
                             if request_json['object']['type'] == 'Page':    # Editing a post
                                 post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
@@ -587,17 +647,124 @@ def shared_inbox():
                                     db.session.commit()
                                     activity_log.result = 'success'
                         elif request_json['type'] == 'Delete':
-                            post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
+                            if isinstance(request_json['object'], str):
+                                ap_id = request_json['object']          # lemmy
+                            else:
+                                ap_id = request_json['object']['id']    # kbin
+                            post = Post.query.filter_by(ap_id=ap_id).first()
                             if post:
                                 post.delete_dependencies()
                                 db.session.delete(post)
                             else:
-                                reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
+                                reply = PostReply.query.filter_by(ap_id=ap_id).first()
                                 if reply:
                                     reply.body_html = '<p><em>deleted</em></p>'
                                     reply.body = 'deleted'
                             db.session.commit()
                             activity_log.result = 'success'
+                        elif request_json['type'] == 'Like':
+                            activity_log.activity_type = request_json['type']
+                            user_ap_id = request_json['actor']
+                            user = find_actor_or_create(user_ap_id)
+                            target_ap_id = request_json['object']
+                            post = None
+                            comment = None
+                            if '/comment/' in target_ap_id:
+                                comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
+                            if '/post/' in target_ap_id:
+                                post = Post.query.filter_by(ap_id=target_ap_id).first()
+                            if user and post:
+                                effect = 1
+                                post.up_votes += 1
+                                post.score += 1
+                                vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                                                effect=effect)
+                                post.author.reputation += effect
+                                db.session.add(vote)
+                                activity_log.result = 'success'
+                            elif user and comment:
+                                effect = 1
+                                comment.up_votes += 1
+                                comment.score += 1
+                                vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                                                     author_id=comment.author.id, effect=effect)
+                                comment.author.reputation += effect
+                                db.session.add(vote)
+                                activity_log.result = 'success'
+
+                        elif request_json['type'] == 'Dislike':
+                            activity_log.activity_type = request_json['type']
+                            user_ap_id = request_json['actor']
+                            user = find_actor_or_create(user_ap_id)
+                            target_ap_id = request_json['object']
+                            post = None
+                            comment = None
+                            if '/comment/' in target_ap_id:
+                                comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
+                            if '/post/' in target_ap_id:
+                                post = Post.query.filter_by(ap_id=target_ap_id).first()
+                            if user and comment:
+                                #
+                                existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
+                                                                              post_reply_id=comment.id).first()
+                                if not existing_vote:
+                                    effect = -1
+                                    comment.down_votes += 1
+                                    comment.score -= 1
+                                    vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                                                         author_id=comment.author.id, effect=effect)
+                                    comment.author.reputation += effect
+                                    db.session.add(vote)
+                                else:
+                                    # remove previously cast upvote
+                                    if existing_vote.effect > 0:
+                                        comment.author.reputation -= existing_vote.effect
+                                        comment.up_votes -= 1
+                                        comment.score -= 1
+                                        db.session.delete(existing_vote)
+
+                                        # apply down vote
+                                        effect = -1
+                                        comment.down_votes += 1
+                                        comment.score -= 1
+                                        vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                                                             author_id=comment.author.id, effect=effect)
+                                        comment.author.reputation += effect
+                                        db.session.add(vote)
+                                    else:
+                                        pass    # they have already downvoted this reply
+                                activity_log.result = 'success'
+                            elif user and post:
+                                existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+                                if not existing_vote:
+                                    effect = -1
+                                    post.down_votes += 1
+                                    post.score -= 1
+                                    vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                                                    effect=effect)
+                                    post.author.reputation += effect
+                                    db.session.add(vote)
+                                else:
+                                    # remove previously cast upvote
+                                    if existing_vote.effect > 0:
+                                        post.author.reputation -= existing_vote.effect
+                                        post.up_votes -= 1
+                                        post.score -= 1
+                                        db.session.delete(existing_vote)
+
+                                        # apply down vote
+                                        effect = -1
+                                        post.down_votes += 1
+                                        post.score -= 1
+                                        vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                                                        effect=effect)
+                                        post.author.reputation += effect
+                                        db.session.add(vote)
+                                    else:
+                                        pass  # they have already downvoted this post
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'Could not find user or content for vote'
                     else:
                         activity_log.exception_message = 'Instance banned'
             else:
