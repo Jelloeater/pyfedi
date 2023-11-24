@@ -12,7 +12,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
     PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
-    lemmy_site_data
+    lemmy_site_data, instance_weight
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html
 import werkzeug.exceptions
@@ -295,7 +295,9 @@ def shared_inbox():
                                                     ap_id=request_json['object']['id'],
                                                     ap_create_id=request_json['id'],
                                                     ap_announce_id=None,
-                                                    type=constants.POST_TYPE_ARTICLE
+                                                    type=constants.POST_TYPE_ARTICLE,
+                                                    up_votes=1,
+                                                    score=instance_weight(user.ap_domain)
                                                     )
                                         if 'source' in request_json['object'] and \
                                                 request_json['object']['source'][
@@ -330,7 +332,12 @@ def shared_inbox():
                                             db.session.add(post)
                                             community.post_count += 1
                                             community.last_active = datetime.utcnow()
+                                            activity_log.result = 'success'
                                             db.session.commit()
+                                            vote = PostVote(user_id=user.id, author_id=post.user_id,
+                                                                 post_id=post.id,
+                                                                 effect=instance_weight(user.ap_domain))
+                                            db.session.add(vote)
                                     else:
                                         post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
                                         post_reply = PostReply(user_id=user.id, community_id=community.id,
@@ -338,6 +345,8 @@ def shared_inbox():
                                                                root_id=root_id,
                                                                nsfw=community.nsfw,
                                                                nsfl=community.nsfl,
+                                                               up_votes=1,
+                                                               score=instance_weight(user.ap_domain),
                                                                ap_id=request_json['object']['id'],
                                                                ap_create_id=request_json['id'],
                                                                ap_announce_id=None)
@@ -357,7 +366,11 @@ def shared_inbox():
                                             post.reply_count += 1
                                             community.post_reply_count += 1
                                             community.last_active = datetime.utcnow()
+                                            activity_log.result = 'success'
                                             db.session.commit()
+                                            vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id, post_reply_id=post_reply.id,
+                                                                effect=instance_weight(user.ap_domain))
+                                            db.session.add(vote)
                                 else:
                                     activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
 
@@ -457,11 +470,7 @@ def shared_inbox():
                                     liked_ap_id = request_json['object']['object']
                                     user = find_actor_or_create(user_ap_id)
                                     if user:
-                                        vote_weight = 1.0
-                                        if user.ap_domain:
-                                            instance = Instance.query.filter_by(domain=user.ap_domain).fetch()
-                                            if instance:
-                                                vote_weight = instance.vote_weight
+                                        vote_weight = instance_weight(user.ap_domain)
                                         liked = find_liked_object(liked_ap_id)
                                         # insert into voted table
                                         if liked is not None and isinstance(liked, Post):
@@ -594,7 +603,10 @@ def shared_inbox():
                                     existing_vote = PostReplyVote.query.filter_by(user_id=user.id, post_reply_id=comment.id).first()
                                     if existing_vote:
                                         comment.author.reputation -= existing_vote.effect
-                                        comment.up_votes -= 1
+                                        if existing_vote.effect < 0:  # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
+                                            comment.down_votes -= 1
+                                        else:
+                                            comment.up_votes -= 1
                                         comment.score -= existing_vote.effect
                                         db.session.delete(existing_vote)
                                         activity_log.result = 'success'
@@ -671,23 +683,18 @@ def shared_inbox():
                                     reply.body = 'deleted'
                             db.session.commit()
                             activity_log.result = 'success'
-                        elif request_json['type'] == 'Like':
+                        elif request_json['type'] == 'Like':                    # Upvote
                             activity_log.activity_type = request_json['type']
                             user_ap_id = request_json['actor']
                             user = find_actor_or_create(user_ap_id)
                             target_ap_id = request_json['object']
                             post = None
                             comment = None
-                            effect = 1.0
+                            effect = instance_weight(user.ap_domain)
                             if '/comment/' in target_ap_id:
                                 comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                             if '/post/' in target_ap_id:
                                 post = Post.query.filter_by(ap_id=target_ap_id).first()
-                            if user.ap_domain:
-                                # alter the effect of upvotes based on their instance
-                                instance = Instance.query.filter_by(domain=user.ap_domain).first()
-                                if instance:
-                                    effect = instance.vote_weight
                             if user and post:
                                 existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                 if not existing_vote:
@@ -742,7 +749,7 @@ def shared_inbox():
                                         pass    # they have already upvoted this reply
                                 activity_log.result = 'success'
 
-                        elif request_json['type'] == 'Dislike':
+                        elif request_json['type'] == 'Dislike':                 # Downvote
                             if get_setting('allow_dislike', True) is False:
                                 activity_log.exception_message = 'Dislike ignored because of allow_dislike setting'
                             else:

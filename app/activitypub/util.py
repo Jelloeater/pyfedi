@@ -5,7 +5,7 @@ from typing import Union, Tuple
 from flask import current_app
 from sqlalchemy import text
 from app import db, cache
-from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances
+from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance
 import time
 import base64
 import requests
@@ -392,6 +392,16 @@ def find_liked_object(ap_id) -> Union[Post, PostReply, None]:
         if post_reply:
             return post_reply
     return None
+
+
+# alter the effect of upvotes based on their instance. Default to 1.0
+@cache.memoize(timeout=50)
+def instance_weight(domain):
+    if domain:
+        instance = Instance.query.filter_by(domain=domain).first()
+        if instance:
+            return instance.vote_weight
+    return 1.0
 
 
 def lemmy_site_data():

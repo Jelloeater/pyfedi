@@ -512,8 +512,8 @@ class PostVote(db.Model):
 
 class PostReplyVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))   # who voted
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id')) # the author of the reply voted on - who's reputation is affected
     post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     effect = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
