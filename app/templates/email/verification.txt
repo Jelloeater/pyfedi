@@ -6,4 +6,4 @@ To verify your email address:
 
 Thanks,
 
-The PyFedi Team
+The PieFed Team
