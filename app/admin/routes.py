@@ -1,11 +1,11 @@
 from flask import request, flash
 from flask_login import login_required, current_user
 from flask_babel import _
-from sqlalchemy import text
+from sqlalchemy import text, desc
 
 from app import db
 from app.admin.forms import AdminForm
-from app.models import AllowedInstances, BannedInstances
+from app.models import AllowedInstances, BannedInstances, ActivityPubLog
 from app.utils import render_template, permission_required, set_setting, get_setting
 from app.admin import bp
 
@@ -41,3 +41,10 @@ def admin_home():
 
     return render_template('admin/home.html', title=_('Admin settings'), form=form)
 
+
+@bp.route('/activities', methods=['GET'])
+@login_required
+@permission_required('change instance settings')
+def admin_activities():
+    return render_template('admin/activities.html', title=_('ActivityPub Log'),
+                           activities=ActivityPubLog.query.order_by(desc(ActivityPubLog.created_at)).all())

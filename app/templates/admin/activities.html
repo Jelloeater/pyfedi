@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        <table class="table">
+            <tr>
+               <th>When</th>
+               <th>Direction</th>
+               <th>ID</th>
+               <th>Type</th>
+               <th>Result</th>
+               <th>Message</th>
+               <th>JSON</th>
+            </tr>
+            {% for activity in activities %}
+                <tr>
+                    <td>{{ moment(activity.created_at).fromNow() }}</td>
+                    <td>{{ activity.direction }}</td>
+                    <td>{{ activity.activity_id }}</td>
+                    <td>{{ activity.activity_type }}</td>
+                    <td>{{ activity.result }}</td>
+                    <td>{{ activity.exception_message }}</td>
+                    <td><pre> </pre></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
