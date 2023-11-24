@@ -26,7 +26,7 @@
                     <a href="{{ url_for('community.show_post', post_id=post.id, _anchor='replies') }}"><span class="fe fe-reply"></span></a>
                     <a href="{{ url_for('community.show_post', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
                 </div>
-                <div class="col-2">...</div>
+                <div class="col-2">{{ post.score }}</div>
             </div>
         </div>
         <div class="col col-md-2">

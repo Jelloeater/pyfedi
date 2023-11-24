@@ -4,7 +4,7 @@ from flask_babel import get_locale
 
 from app import create_app, db, cli
 import os, click
-from flask import session, g
+from flask import session, g, json
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
 from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access
 
@@ -29,6 +29,7 @@ with app.app_context():
     app.jinja_env.globals['len'] = len
     app.jinja_env.globals['digits'] = digits
     app.jinja_env.globals['str'] = str
+    app.jinja_env.globals['json_loads'] = json.loads
     app.jinja_env.globals['user_access'] = user_access
     app.jinja_env.filters['shorten'] = shorten_string
     app.jinja_env.filters['shorten_url'] = shorten_url
