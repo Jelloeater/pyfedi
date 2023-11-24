@@ -2,7 +2,7 @@
 {% if user.deleted %}
     [deleted]
 {% else %}
-    <a href="{{ url_for('activitypub.user_profile', actor=user.user_name) }}">{{ user.user_name }}</a>
+    <a href="/u/{{ user.link() }}">{{ user.user_name if user.ap_id == none else user.ap_id }}</a>
 {% endif %}
 {% endmacro %}
 <!doctype html>

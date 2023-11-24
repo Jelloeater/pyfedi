@@ -15,14 +15,14 @@
                 </nav>
             </div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ user.avatar_image() }}" />
-            <h1 class="mt-2">{{ user.user_name }}</h1>
+            <h1 class="mt-2">{{ user.user_name if user.ap_id == none else user.ap_id }}</h1>
         {% elif user.avatar_image() != '' %}
             <div class="row">
                 <div class="col-2">
                     <img class="community_icon_big rounded-circle" src="{{ user.avatar_image() }}" />
                 </div>
                 <div class="col-10">
-                    <h1 class="mt-3">{{ user.user_name }}</h1>
+                    <h1 class="mt-3">{{ user.user_name if user.ap_id == none else user.ap_id }}</h1>
                 </div>
             </div>
         {% else %}
@@ -33,7 +33,7 @@
                 <li class="breadcrumb-item active">{{ user.user_name|shorten }}</li>
               </ol>
             </nav>
-            <h1 class="mt-2">{{ user.user_name }}</h1>
+            <h1 class="mt-2">{{ user.user_name if user.ap_id == none else user.ap_id }}</h1>
             {{ user.about_html|safe }}
         {% endif %}
 

@@ -137,7 +137,11 @@ def user_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the user, or a HTML rendering of their profile.
     The two types of requests are differentiated by the header """
     actor = actor.strip()
-    user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
+    if '@' in actor:
+        user = User.query.filter_by(ap_id=actor, deleted=False, banned=False).first()
+    else:
+        user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
+
     if user is not None:
         if 'application/ld+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
