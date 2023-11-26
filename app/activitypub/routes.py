@@ -859,6 +859,27 @@ def community_outbox(actor):
         return jsonify(community_data)
 
 
+@bp.route('/c/<actor>/moderators', methods=['GET'])
+def community_moderators(actor):
+    actor = actor.strip()
+    community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    if community is not None:
+        moderator_ids = community.moderators()
+        moderators = User.query.filter(User.id.in_([mod.user_id for mod in moderator_ids])).all()
+        community_data = {
+            "@context": default_context(),
+            "type": "OrderedCollection",
+            "id": f"https://{current_app.config['SERVER_NAME']}/c/{actor}/moderators",
+            "totalItems": len(moderators),
+            "orderedItems": []
+        }
+
+        for moderator in moderators:
+            community_data['orderedItems'].append(moderator.ap_profile_id)
+
+        return jsonify(community_data)
+
+
 @bp.route('/inspect')
 def inspect():
     return Response(b'<br><br>'.join(INBOX), status=200)
