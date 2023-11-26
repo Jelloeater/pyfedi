@@ -1,5 +1,7 @@
 # if commands in this file are not working (e.g. 'flask translate') make sure you set the FLASK_APP environment variable.
 # e.g. export FLASK_APP=pyfedi.py
+from datetime import datetime, timedelta
+
 from flask import json
 
 from app import db
@@ -8,7 +10,7 @@ import os
 
 from app.auth.email import send_verification_email
 from app.auth.util import random_token
-from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain
+from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain, ActivityPubLog
 from app.utils import file_get_contents, retrieve_block_list
 
 
@@ -116,6 +118,14 @@ def register(app):
 
             db.session.commit()
             print("Initial setup is finished.")
+
+    @app.cli.command('daily-maintenance')
+    def daily_maintenance():
+        with app.app_context():
+            """Remove activity older than 3 days"""
+            db.session.query(ActivityPubLog).filter(
+                ActivityPubLog.created_at < datetime.utcnow() - timedelta(days=3)).delete()
+            db.session.commit()
 
 
 def parse_communities(interests_source, segment):

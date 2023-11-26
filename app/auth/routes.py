@@ -71,6 +71,7 @@ def register():
                 flash(_('Sorry, you cannot use that email address'), 'error')
             else:
                 verification_token = random_token(16)
+                form.user_name.data = form.user_name.data.strip()
                 user = User(user_name=form.user_name.data, email=form.real_email.data,
                             verification_token=verification_token)
                 user.set_password(form.password.data)
@@ -146,8 +147,11 @@ def verify_email(token):
             private_key, public_key = RsaKeys.generate_keypair()
             user.private_key = private_key
             user.public_key = public_key
+            user.ap_profile_id = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
+            user.ap_public_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
+            user.ap_inbox_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}/inbox"
             db.session.commit()
-            flash(_('Thank you for verifying your email address. You can now post content and vote.'))
+            flash(_('Thank you for verifying your email address.'))
         else:
             flash(_('Email address validation failed.'), 'error')
         return redirect(url_for('main.index'))

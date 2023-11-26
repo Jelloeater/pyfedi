@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from flask import request, flash
 from flask_login import login_required, current_user
 from flask_babel import _
@@ -46,5 +48,9 @@ def admin_home():
 @login_required
 @permission_required('change instance settings')
 def admin_activities():
+    db.session.query(ActivityPubLog).filter(
+        ActivityPubLog.created_at < datetime.utcnow() - timedelta(days=3)).delete()
+    db.session.commit()
+
     return render_template('admin/activities.html', title=_('ActivityPub Log'),
                            activities=ActivityPubLog.query.order_by(desc(ActivityPubLog.created_at)).all())
