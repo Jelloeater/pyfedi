@@ -31,6 +31,22 @@ class File(db.Model):
     height = db.Column(db.Integer)
     alt_text = db.Column(db.String(256))
     source_url = db.Column(db.String(256))
+    thumbnail_path = db.Column(db.String(255))
+    thumbnail_width = db.Column(db.Integer)
+    thumbnail_height = db.Column(db.Integer)
+
+    def view_url(self):
+        if self.source_url:
+            return self.source_url
+        elif self.file_path:
+            file_path = self.file_path[4:] if self.file_path.startswith('app/') else self.file_path
+            return f"https://{current_app.config['SERVER_NAME']}/{file_path}"
+        else:
+            return ''
+
+    def thumbnail_url(self):
+        thumbnail_path = self.thumbnail_path[4:] if self.thumbnail_path.startswith('app/') else self.thumbnail_path
+        return f"https://{current_app.config['SERVER_NAME']}/{thumbnail_path}"
 
 
 class Community(db.Model):

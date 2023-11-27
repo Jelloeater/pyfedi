@@ -156,6 +156,15 @@ nav, etc which are used site-wide */
   padding-right: 5px;
 }
 
+.post_type_image {
+  .post_image {
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  }
+}
+
 .voting_buttons {
   float: right;
   display: block;

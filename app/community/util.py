@@ -5,6 +5,7 @@ from app import db
 from app.models import Community, File, BannedInstances, PostReply
 from app.utils import get_request
 from sqlalchemy import desc, text
+import os
 
 
 def search_for_community(address: str):
@@ -132,3 +133,13 @@ def get_comment_branch(post_id: int, comment_id: int, sort_by: str) -> List[Post
 def post_reply_count(post_id) -> int:
     return db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE post_id = :post_id'),
                               {'post_id': post_id}).scalar()
+
+
+def ensure_directory_exists(directory):
+    parts = directory.split('/')
+    rebuild_directory = ''
+    for part in parts:
+        rebuild_directory += part
+        if not os.path.isdir(rebuild_directory):
+            os.mkdir(rebuild_directory)
+        rebuild_directory += '/'

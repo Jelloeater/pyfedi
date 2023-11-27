@@ -169,6 +169,10 @@ nav, etc which are used site-wide */
   content: "\e935";
 }
 
+.fe-camera::before {
+  content: "\e928";
+}
+
 a.no-underline {
   text-decoration: none;
 }
@@ -383,6 +387,11 @@ fieldset legend {
 
 .post_replies > .col {
   padding-right: 5px;
+}
+
+.post_type_image .post_image img {
+  max-width: 100%;
+  height: auto;
 }
 
 .voting_buttons {

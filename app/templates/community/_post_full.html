@@ -1,6 +1,6 @@
 <div class="row">
-    {% if post.image_id %}
-        <div class="col-8">
+    {% if post.type == POST_TYPE_IMAGE %}
+        <div class="col post_type_image">
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
@@ -21,15 +21,10 @@
             <p><small>submitted {{ moment(post.posted_at).fromNow() }} by {{ render_username(post.author) }}
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
             </small></p>
-        </div>
-        <div class="col-4">
-            {% if post.url %}
-                <a href="post.url" rel="nofollow ugc"><img src="{{ post.image.source_url }}" alt="{{ post.image.alt_text }}"
-                     width="100" /></a>
-            {% else %}
-                <a href="post.image.source_url"><img src="{{ post.image.source_url }}" alt="{{ post.image.alt_text }}"
-                     width="100" /></a>
-            {% endif %}
+            <div class="post_image">
+                <a href="{{ post.image.view_url() }}"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                     width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
+            </div>
         </div>
     {% else %}
         <div class="col">
@@ -54,6 +49,12 @@
                 {{ render_username(post.author) }}
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
             </p>
+            {% if post.image_id %}
+                <div class="post_image">
+                    <a href="{{ post.image.view_url() }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                        width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
+                </div>
+            {% endif %}
         </div>
     {% endif %}
 </div>

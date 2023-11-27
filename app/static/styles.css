@@ -168,6 +168,10 @@
   content: "\e935";
 }
 
+.fe-camera::before {
+  content: "\e928";
+}
+
 a.no-underline {
   text-decoration: none;
 }
@@ -397,6 +401,10 @@ nav.navbar {
 }
 .communities_table tr td:first-child {
   padding-top: 8px;
+}
+
+.text-right {
+  text-align: right;
 }
 
 @media (prefers-color-scheme: dark) {

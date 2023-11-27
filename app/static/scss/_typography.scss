@@ -166,6 +166,10 @@
   content: "\e935";
 }
 
+.fe-camera::before {
+  content: "\e928";
+}
+
 a.no-underline {
   text-decoration: none;
   &:hover {

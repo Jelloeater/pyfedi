@@ -4,11 +4,11 @@ import math
 from urllib.parse import urlparse
 import requests
 from functools import wraps
-
 import flask
 from bs4 import BeautifulSoup
 import requests
 import os
+import imghdr
 from flask import current_app, json, redirect, url_for
 from flask_login import current_user
 from sqlalchemy import text
@@ -205,6 +205,15 @@ def retrieve_block_list():
         return None
     if response and response.status_code == 200:
         return response.text
+
+
+def validate_image(stream):
+        header = stream.read(512)
+        stream.seek(0)
+        format = imghdr.what(None, header)
+        if not format:
+            return None
+        return '.' + (format if format != 'jpeg' else 'jpg')
 
 
 def validation_required(func):

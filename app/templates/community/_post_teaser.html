@@ -4,9 +4,10 @@
             <div class="row main_row">
                 <div class="col{% if post.image_id %}-8{% endif %}">
                     <h3>
-                        <a href="{{ url_for('community.show_post', post_id=post.id) }}">{{ post.title }}</a>
-                        {% if post.type == post_type_link and post.domain_id %}
-                            <a href="{{ post.url }}" rel="nofollow ugc">
+                        <a href="{{ url_for('community.show_post', post_id=post.id) }}">{{ post.title }}
+                            {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-camera"> </span>{% endif %}</a>
+                        {% if post.type == POST_TYPE_LINK and post.domain_id %}
+                            <a href="{{ post.url }}" rel="nofollow ugc" target="_blank">
                                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
                             </a>
                             <span class="domain_link">(<a href="/d/{{ post.domain_id }}">{{ post.domain.name }}</a>)</span>
@@ -15,9 +16,9 @@
                     <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>
                 </div>
                 {% if post.image_id %}
-                    <div class="col-4">
-                        <img src="{{ post.image.source_url}}" alt="{{ post.image.alt_text }}"
-                             width="100" />
+                    <div class="col-4 text-right">
+                        <a href="{{ url_for('community.show_post', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                                                                                             width="100" /></a>
                     </div>
                 {% endif %}
             </div>

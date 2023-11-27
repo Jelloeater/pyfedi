@@ -22,3 +22,5 @@ boto3==1.28.35
 markdown2==2.4.10
 beautifulsoup4==4.12.2
 flask-caching==2.0.2
+Pillow
+pillow-heif
