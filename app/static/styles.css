@@ -168,7 +168,15 @@
   content: "\e935";
 }
 
-.fe-camera::before {
+.fe-report::before {
+  content: "\e967";
+}
+
+.fe-image {
+  position: relative;
+  top: 2px;
+}
+.fe-image:before {
   content: "\e97a";
 }
 
@@ -178,6 +186,25 @@
 }
 .fe-new-account:before {
   content: "\e986";
+}
+
+.fe-video {
+  position: relative;
+  top: 2px;
+  left: 1px;
+}
+.fe-video:before {
+  content: "\ea05";
+}
+
+.fe-poll {
+  position: relative;
+  top: 2px;
+  left: 1px;
+}
+.fe-poll:before {
+  content: "\e91b";
+  /* possibly e985 */
 }
 
 a.no-underline {

@@ -166,8 +166,17 @@
   content: "\e935";
 }
 
-.fe-camera::before {
-  content: "\e97a";
+.fe-report::before {
+  content: "\e967";
+}
+
+.fe-image {
+  position: relative;
+  top: 2px;
+
+  &:before {
+    content: "\e97a";
+  }
 }
 
 .fe-new-account {
@@ -177,8 +186,23 @@
     content: "\e986";
   }
 }
-.fe-new-account::before {
 
+.fe-video {
+  position: relative;
+  top: 2px;
+  left: 1px;
+  &:before {
+    content: "\ea05";
+  }
+}
+
+.fe-poll {
+  position: relative;
+  top: 2px;
+  left: 1px;
+  &:before {
+    content: "\e91b"; /* possibly e985 */
+  }
 }
 
 a.no-underline {
@@ -197,3 +221,4 @@ $small_text: 87%;
 fieldset legend {
   font-size: inherit;
 }
+
