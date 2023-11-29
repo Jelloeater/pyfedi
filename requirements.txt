@@ -24,3 +24,4 @@ beautifulsoup4==4.12.2
 flask-caching==2.0.2
 Pillow
 pillow-heif
+opengraph-parse=0.0.6

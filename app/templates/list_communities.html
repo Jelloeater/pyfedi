@@ -34,7 +34,7 @@
         <table class="communities_table table table-striped table-hover w-100">
             <thead>
                 <tr>
-                    <th scope="col" colspan="2">{{ _('Name') }}</th>
+                    <th scope="col" colspan="2">{{ _('Community') }}</th>
                     <th scope="col">{{ _('Posts') }}</th>
                     <th scope="col">{{ _('Comments') }}</th>
                     <th scope="col">{{ _('Active') }}</th>
@@ -44,8 +44,8 @@
             <tbody>
                 {% for community in communities %}
                     <tr class="">
-                        <td><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
-                        <td scope="row"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
+                        <td width="46"><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
+                        <td scope="row" class="pl-0"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>

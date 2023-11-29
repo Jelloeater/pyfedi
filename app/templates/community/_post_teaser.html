@@ -2,7 +2,7 @@
     <div class="row">
         <div class="col col-md-10">
             <div class="row main_row">
-                <div class="col{% if post.image_id %}-8{% endif %}">
+                <div class="col">
                     <h3>
                         <a href="{{ url_for('community.show_post', post_id=post.id) }}">{{ post.title }}
                             {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-camera"> </span>{% endif %}</a>
@@ -14,13 +14,14 @@
                         {% endif %}
                     </h3>
                     <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>
-                </div>
                 {% if post.image_id %}
-                    <div class="col-4 text-right">
+                    <div class="thumbnail">
                         <a href="{{ url_for('community.show_post', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
-                                                                                             width="100" /></a>
+                                                                                             height="50" /></a>
                     </div>
                 {% endif %}
+                </div>
+
             </div>
             <div class="row utilities_row">
                 <div class="col-6">

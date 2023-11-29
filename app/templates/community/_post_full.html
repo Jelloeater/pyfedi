@@ -39,22 +39,37 @@
             <div class="voting_buttons">
                 {% include "community/_post_voting_buttons.html" %}
             </div>
-            <h1 class="mt-2">{{ post.title }}</h1>
-            {% if post.url %}
-                <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
-                <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  /></a>
-                </small></p>
+            {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
+                <div class="url_thumbnail">
+                    <img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                            width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" />
+                </div>
             {% endif %}
+            <h1 class="mt-2">{{ post.title }}</h1>
             <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
                 {{ render_username(post.author) }}
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
             </p>
-            {% if post.image_id %}
+            {% if post.type == POST_TYPE_LINK %}
+                <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
+                <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  /></a>
+                </small></p>
+                {% if 'youtube.com' in post.url %}
+                    <div style="padding-bottom: 56.25%; position: relative;"><iframe style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%;" src="https://www.youtube.com/embed/{{ post.youtube_embed() }}?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"  width="100%" height="100%" frameborder="0"></iframe></div>
+                {% endif %}
+            {% elif post.type == POST_TYPE_IMAGE %}
                 <div class="post_image">
-                    <a href="{{ post.image.view_url() }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
-                        width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
+                    <a href="{{ post.image.view_url() }}"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                            width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
                 </div>
+            {% else %}
+                {% if post.image_id and not (post.url and 'youtube.com' in post.url) %}
+                        <a href="{{ post.image.view_url() }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                            width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
+                {% endif %}
             {% endif %}
+
+
         </div>
     {% endif %}
 </div>

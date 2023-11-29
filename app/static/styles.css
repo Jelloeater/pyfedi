@@ -1,6 +1,6 @@
 /* */
 .pl-0 {
-  padding-left: 0;
+  padding-left: 0 !important;
 }
 
 /* for more info about the feather font used for icons see https://at-ui.github.io/feather-font/ */

@@ -1,11 +1,15 @@
 from datetime import datetime
 from typing import List
 
-from app import db
+import requests
+from PIL import Image, ImageOps
+
+from app import db, cache
 from app.models import Community, File, BannedInstances, PostReply
-from app.utils import get_request
+from app.utils import get_request, gibberish
 from sqlalchemy import desc, text
 import os
+from opengraph_parse import parse_page
 
 
 def search_for_community(address: str):
@@ -143,3 +147,32 @@ def ensure_directory_exists(directory):
         if not os.path.isdir(rebuild_directory):
             os.mkdir(rebuild_directory)
         rebuild_directory += '/'
+
+
+@cache.memoize(timeout=50)
+def opengraph_parse(url):
+    try:
+        return parse_page(url)
+    except Exception as ex:
+        return None
+
+
+def url_to_thumbnail_file(filename) -> File:
+    unused, file_extension = os.path.splitext(filename)
+    response = requests.get(filename, timeout=5)
+    if response.status_code == 200:
+        new_filename = gibberish(15)
+        directory = 'app/static/media/posts/' + new_filename[0:2] + '/' + new_filename[2:4]
+        ensure_directory_exists(directory)
+        final_place = os.path.join(directory, new_filename + file_extension)
+        with open(final_place, 'wb') as f:
+            f.write(response.content)
+        with Image.open(final_place) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail((150, 150))
+            img.save(final_place)
+            thumbnail_width = img.width
+            thumbnail_height = img.height
+        return File(file_name=new_filename + file_extension, thumbnail_width=thumbnail_width,
+                    thumbnail_height=thumbnail_height, thumbnail_path=final_place,
+                    source_url=filename)

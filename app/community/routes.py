@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 
+import requests
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
@@ -10,7 +11,7 @@ from app import db, constants
 from app.activitypub.signature import RsaKeys, HttpSignature
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost, NewReplyForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, post_replies, \
-    get_comment_branch, post_reply_count, ensure_directory_exists
+    get_comment_branch, post_reply_count, ensure_directory_exists, opengraph_parse, url_to_thumbnail_file
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, PostReply, \
     PostReplyVote, PostVote, File
@@ -211,6 +212,28 @@ def add_post(actor):
             domain = domain_from_url(form.link_url.data)
             domain.post_count += 1
             post.domain = domain
+            valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+            unused, file_extension = os.path.splitext(form.link_url.data)   # do not use _ here instead of 'unused'
+            # this url is a link to an image - generate a thumbnail of it
+            if file_extension in valid_extensions:
+                file = url_to_thumbnail_file(form.link_url.data)
+                if file:
+                    post.image = file
+                    db.session.add(file)
+            else:
+                # check opengraph tags on the page and make a thumbnail if an image is available in the og:image meta tag
+                opengraph = opengraph_parse(form.link_url.data)
+                if opengraph and opengraph.get('og:image', '') != '':
+                    filename = opengraph.get('og:image')
+                    valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+                    unused, file_extension = os.path.splitext(filename)
+                    if file_extension.lower() in valid_extensions:
+                        file = url_to_thumbnail_file(filename)
+                        if file:
+                            file.alt_text = opengraph.get('og:title')
+                            post.image = file
+                            db.session.add(file)
+
         elif form.type.data == 'image':
             allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
             post.title = form.image_title.data
@@ -304,7 +327,8 @@ def show_post(post_id: int):
 
     return render_template('community/post.html', title=post.title, post=post, is_moderator=is_moderator,
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
-                           description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE)
+                           description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
+                           POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE)
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])

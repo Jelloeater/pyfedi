@@ -1,7 +1,7 @@
 /* This file contains SCSS used for creating the general structure of pages. Selectors should be things like body, h1,
 nav, etc which are used site-wide */
 .pl-0 {
-  padding-left: 0;
+  padding-left: 0 !important;
 }
 
 /* for more info about the feather font used for icons see https://at-ui.github.io/feather-font/ */
@@ -303,7 +303,7 @@ fieldset legend {
 }
 
 #breadcrumb_nav {
-  display: none;
+  font-size: 87%;
 }
 
 @media (min-width: 992px) {
@@ -369,6 +369,26 @@ fieldset legend {
 }
 .post_list .post_teaser .meta_row a, .post_list .post_teaser .main_row a, .post_list .post_teaser .utilities_row a {
   text-decoration: none;
+}
+.post_list .post_teaser .thumbnail {
+  padding-left: 0;
+  padding-right: 0;
+}
+.post_list .post_teaser .thumbnail img {
+  position: absolute;
+  right: 70px;
+  height: 70px;
+  margin-top: -47px;
+}
+
+.url_thumbnail {
+  float: right;
+  margin-top: 6px;
+  margin-right: 6px;
+}
+
+.post_image img {
+  max-width: 100%;
 }
 
 .comments > .comment {

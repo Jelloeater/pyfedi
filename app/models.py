@@ -375,6 +375,12 @@ class Post(db.Model):
         db.session.execute(text('DELETE FROM post_reply WHERE post_id = :post_id'), {'post_id': self.id})
         db.session.execute(text('DELETE FROM post_vote WHERE post_id = :post_id'), {'post_id': self.id})
 
+    def youtube_embed(self):
+        if self.url:
+            vpos = self.url.find('v=')
+            if vpos != -1:
+                return self.url[vpos + 2:vpos + 13]
+
 
 class PostReply(db.Model):
     query_class = FullTextSearchQuery

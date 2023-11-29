@@ -52,7 +52,7 @@ nav, etc which are used site-wide */
 }
 
 #breadcrumb_nav {
-  display: none;
+  font-size: 87%;
 }
 
 @include breakpoint(tablet) {
@@ -131,9 +131,32 @@ nav, etc which are used site-wide */
       }
     }
 
+    .thumbnail {
+      padding-left: 0;
+      padding-right: 0;
+      img {
+        position: absolute;
+        right: 70px;
+        height: 70px;
+        margin-top: -47px;
+      }
+    }
+
     border-bottom: solid 2px $light-grey;
     padding-top: 8px;
     padding-bottom: 8px;
+  }
+}
+
+.url_thumbnail {
+  float: right;
+  margin-top: 6px;
+  margin-right: 6px;
+}
+
+.post_image {
+  img {
+    max-width: 100%;
   }
 }
 
