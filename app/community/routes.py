@@ -92,7 +92,7 @@ def show_community(community: Community):
     if current_user.is_anonymous or current_user.ignore_bots:
         posts = community.posts.filter(Post.from_bot == False).order_by(desc(Post.last_active)).all()
     else:
-        posts = community.posts.order_by(desc(Post.last_active))
+        posts = community.posts.order_by(desc(Post.last_active)).all()
 
     description = shorten_string(community.description, 150) if community.description else None
     og_image = community.image.source_url if community.image_id else None
