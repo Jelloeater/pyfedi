@@ -81,7 +81,3 @@ class CreatePost(FlaskForm):
 
         return True
 
-
-class NewReplyForm(FlaskForm):
-    body = TextAreaField(_l('Body'), render_kw={'placeholder': 'What are your thoughts?', 'rows': 3}, validators={DataRequired(), Length(min=3, max=5000)})
-    submit = SubmitField(_l('Comment'))

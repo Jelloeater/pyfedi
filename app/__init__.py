@@ -62,6 +62,9 @@ def create_app(config_class=Config):
     from app.community import bp as community_bp
     app.register_blueprint(community_bp, url_prefix='/community')
 
+    from app.post import bp as post_bp
+    app.register_blueprint(post_bp)
+
     from app.user import bp as user_bp
     app.register_blueprint(user_bp)
 

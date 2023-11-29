@@ -168,6 +168,18 @@
   content: "\e935";
 }
 
+.fe-options::before {
+  content: "\e99b";
+}
+
+.fe-edit::before {
+  content: "\e95a";
+}
+
+.fe-delete::before {
+  content: "\ea03";
+}
+
 .fe-report::before {
   content: "\e967";
 }

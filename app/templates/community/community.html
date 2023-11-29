@@ -37,7 +37,7 @@
         {% endif %}
         <div class="post_list">
             {% for post in posts %}
-                {% include 'community/_post_teaser.html' %}
+                {% include 'post/_post_teaser.html' %}
             {% else %}
                 <p>{{ _('No posts in this community yet.') }}</p>
             {% endfor %}

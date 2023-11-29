@@ -1,11 +1,11 @@
 {% if current_user.is_authenticated and current_user.verified %}
 <div class="upvote_button digits_{{ digits(post.up_votes) }} {{ upvoted_class }}"
- hx-post="/community/post/{{ post.id }}/upvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
+ hx-post="/post/{{ post.id }}/upvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
         <span class="fe fe-arrow-up"></span>
         {{ post.up_votes }}
 </div>
 <div class="downvote_button digits_{{ digits(post.down_votes) }} {{ downvoted_class }}"
- hx-post="/community/post/{{ post.id }}/downvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
+ hx-post="/post/{{ post.id }}/downvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
         <span class="fe fe-arrow-down"></span>
         {{ post.down_votes }}
 </div>

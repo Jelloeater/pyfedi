@@ -4,7 +4,7 @@ from time import time
 from typing import List
 
 from flask import current_app, escape, url_for
-from flask_login import UserMixin
+from flask_login import UserMixin, current_user
 from sqlalchemy import or_, text
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_babel import _, lazy_gettext as _l
@@ -128,6 +128,9 @@ class Community(db.Model):
                                          CommunityMember.is_moderator
                                      ))
                                      ).all()
+
+    def is_moderator(self):
+        return any(moderator.user_id == current_user.id for moderator in self.moderators())
 
 
 user_role = db.Table('user_role',

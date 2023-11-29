@@ -7,7 +7,7 @@
 </script>
 <div class="row">
     <div class="col-12 col-md-8 position-relative main_pane">
-        {% include 'community/_post_full.html' %}
+        {% include 'post/_post_full.html' %}
         {% if post.comments_enabled %}
             {% if current_user.is_authenticated %}
                 {% if current_user.verified %}
@@ -39,7 +39,7 @@
                         <div class="limit_height">
                             <div class="voting_buttons">
                                 {% with comment=comment['comment'] %}
-                                    {% include "community/_voting_buttons.html" %}
+                                    {% include "post/_voting_buttons.html" %}
                                 {% endwith %}
                             </div>
                             <div class="hide_button">
@@ -72,7 +72,7 @@
                         </div>
                         {% if current_user.is_authenticated and current_user.verified %}
                             <div class="comment_actions hidable">
-                                <a href="{{ url_for('community.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
+                                <a href="{{ url_for('post.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
                             </div>
                         {% endif %}
                         {% if comment['replies'] %}
@@ -84,7 +84,7 @@
                                 </div>
                             {% else %}
                                 <div class="continue_thread hidable">
-                                    <a href="{{ url_for('community.continue_discussion', post_id=post.id, comment_id=comment['comment'].id, _anchor='replies') }}">
+                                    <a href="{{ url_for('post.continue_discussion', post_id=post.id, comment_id=comment['comment'].id, _anchor='replies') }}">
                                         Continue thread</a>
                                 </div>
                             {% endif %}

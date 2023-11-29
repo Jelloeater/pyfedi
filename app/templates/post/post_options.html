@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6">
+                    <div class="card-title">{{ _('Options for "%(post_title)s"', post_title=post.title) }}</div>
+                    <ul>
+                        {% if post.user_id == current_user.id or post.community.is_moderator() %}
+                            <li><a href="#" class="no-underline"><span class="fe fe-edit"></span> Edit</a></li>
+                            <li><a href="#" class="no-underline confirm_first"><span class="fe fe-delete"></span> Delete</a></li>
+                        {% endif %}
+                        {% if post.user_id != current_user.id %}
+                            <li><a href="#" class="no-underline"><span class="fe fe-report"></span> Report</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -14,7 +14,7 @@
         <h1 class="mt-2">{{ domain.name }}</h1>
         <div class="post_list">
             {% for post in posts %}
-                {% include 'community/_post_teaser.html' %}
+                {% include 'post/_post_teaser.html' %}
             {% else %}
                 <p>{{ _('No posts in this domain yet.') }}</p>
             {% endfor %}

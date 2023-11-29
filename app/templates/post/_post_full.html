@@ -10,7 +10,7 @@
               </ol>
             </nav>
             <div class="voting_buttons">
-                {% include "community/_post_voting_buttons.html" %}
+                {% include "post/_post_voting_buttons.html" %}
             </div>
             <h1 class="mt-2">{{ post.title }}</h1>
             {% if post.url %}
@@ -37,7 +37,7 @@
               </ol>
             </nav>
             <div class="voting_buttons">
-                {% include "community/_post_voting_buttons.html" %}
+                {% include "post/_post_voting_buttons.html" %}
             </div>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">

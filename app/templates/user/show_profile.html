@@ -42,7 +42,7 @@
             <h2 class="mt-4">Posts</h2>
             <div class="post_list">
                 {% for post in posts %}
-                    {% include 'community/_post_teaser.html' %}
+                    {% include 'post/_post_teaser.html' %}
                 {% endfor %}
             </div>
         {% endif %}
@@ -51,7 +51,7 @@
             <h2 class="mt-4">Comments</h2>
             <div class="post_list">
                 {% for post_reply in post_replies %}
-                    {% include 'community/_post_reply_teaser.html' %}
+                    {% include 'post/_post_reply_teaser.html' %}
                 {% endfor %}
             </div>
         {% endif %}
@@ -143,7 +143,7 @@
 
                         <ul>
                             {% for post in upvoted %}
-                                <li><a href="{{ url_for('community.show_post', post_id=post.id) }}">{{ post.title }}</a></li>
+                                <li><a href="{{ url_for('post.show_post', post_id=post.id) }}">{{ post.title }}</a></li>
                             {% endfor %}
                         </ul>
 
