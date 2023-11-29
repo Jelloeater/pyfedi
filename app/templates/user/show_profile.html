@@ -34,6 +34,7 @@
               </ol>
             </nav>
             <h1 class="mt-2">{{ user.user_name if user.ap_id == none else user.ap_id }}</h1>
+            <p class="small">{{ _('Joined') }}: {{ moment(user.created).fromNow(refresh=True) }}
             {{ user.about_html|safe }}
         {% endif %}
 

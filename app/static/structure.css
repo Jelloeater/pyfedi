@@ -170,7 +170,15 @@ nav, etc which are used site-wide */
 }
 
 .fe-camera::before {
-  content: "\e928";
+  content: "\e97a";
+}
+
+.fe-new-account {
+  position: relative;
+  top: 1px;
+}
+.fe-new-account:before {
+  content: "\e986";
 }
 
 a.no-underline {

@@ -283,6 +283,9 @@ class User(UserMixin, db.Model):
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"{self.user_name}@{current_app.config['SERVER_NAME']}"
 
+    def created_recently(self):
+        return self.created and self.created > datetime.utcnow() - timedelta(days=7)
+
     @staticmethod
     def verify_reset_password_token(token):
         try:

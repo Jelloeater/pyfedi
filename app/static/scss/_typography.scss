@@ -167,7 +167,18 @@
 }
 
 .fe-camera::before {
-  content: "\e928";
+  content: "\e97a";
+}
+
+.fe-new-account {
+  position: relative;
+  top: 1px;
+  &:before {
+    content: "\e986";
+  }
+}
+.fe-new-account::before {
+
 }
 
 a.no-underline {
