@@ -27,3 +27,4 @@ class Config(object):
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_THRESHOLD = 1000
     CACHE_KEY_PREFIX = 'pyfedi'
+    SQLALCHEMY_ECHO = False     # set to true to see SQL in console

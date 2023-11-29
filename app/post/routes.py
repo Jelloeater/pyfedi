@@ -194,6 +194,7 @@ def add_reply(post_id: int, comment_id: int):
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
                                is_moderator=is_moderator, form=form, comment=comment)
 
+
 @bp.route('/post/<int:post_id>/options', methods=['GET', 'POST'])
 def post_options(post_id: int):
     post = Post.query.get_or_404(post_id)

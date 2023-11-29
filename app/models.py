@@ -12,7 +12,7 @@ from sqlalchemy.orm import backref
 from sqlalchemy_utils.types import TSVectorType # https://sqlalchemy-searchable.readthedocs.io/en/latest/installation.html
 from flask_sqlalchemy import BaseQuery
 from sqlalchemy_searchable import SearchQueryMixin
-from app import db, login
+from app import db, login, cache
 import jwt
 
 from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER, \
@@ -35,6 +35,7 @@ class File(db.Model):
     thumbnail_width = db.Column(db.Integer)
     thumbnail_height = db.Column(db.Integer)
 
+    @cache.memoize(timeout=500)
     def view_url(self):
         if self.source_url:
             return self.source_url
@@ -44,6 +45,7 @@ class File(db.Model):
         else:
             return ''
 
+    @cache.memoize(timeout=500)
     def thumbnail_url(self):
         thumbnail_path = self.thumbnail_path[4:] if self.thumbnail_path.startswith('app/') else self.thumbnail_path
         return f"https://{current_app.config['SERVER_NAME']}/{thumbnail_path}"
@@ -92,6 +94,7 @@ class Community(db.Model):
     icon = db.relationship('File', foreign_keys=[icon_id], single_parent=True, backref='community', cascade="all, delete-orphan")
     image = db.relationship('File', foreign_keys=[image_id], single_parent=True, cascade="all, delete-orphan")
 
+    @cache.memoize(timeout=500)
     def icon_image(self) -> str:
         if self.icon_id is not None:
             if self.icon.file_path is not None:
@@ -100,7 +103,7 @@ class Community(db.Model):
                 return self.icon.source_url
         return ''
 
-
+    @cache.memoize(timeout=500)
     def header_image(self) -> str:
         if self.image_id is not None:
             if self.image.file_path is not None:
@@ -187,7 +190,7 @@ class User(UserMixin, db.Model):
 
     search_vector = db.Column(TSVectorType('user_name', 'bio', 'keywords'))
     activity = db.relationship('ActivityLog', backref='account', lazy='dynamic', cascade="all, delete-orphan")
-    posts = db.relationship('Post', backref='author', lazy='dynamic', cascade="all, delete-orphan")
+    posts = db.relationship('Post', lazy='dynamic', cascade="all, delete-orphan")
     post_replies = db.relationship('PostReply', backref='author', lazy='dynamic', cascade="all, delete-orphan")
 
     roles = db.relationship('Role', secondary=user_role, lazy='dynamic', cascade="all, delete")
@@ -216,6 +219,7 @@ class User(UserMixin, db.Model):
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
 
+    @cache.memoize(timeout=500)
     def avatar_image(self) -> str:
         if self.avatar_id is not None:
             if self.avatar.file_path is not None:
@@ -224,6 +228,7 @@ class User(UserMixin, db.Model):
                 return self.avatar.source_url
         return ''
 
+    @cache.memoize(timeout=500)
     def cover_image(self) -> str:
         if self.cover_id is not None:
             if self.cover.file_path is not None:
@@ -263,6 +268,7 @@ class User(UserMixin, db.Model):
             return True
         return self.expires < datetime(2019, 9, 1)
 
+    @cache.memoize(timeout=50)
     def subscribed(self, community: Community) -> int:
         if community is None:
             return False
@@ -368,8 +374,9 @@ class Post(db.Model):
 
     search_vector = db.Column(TSVectorType('title', 'body'))
 
-    image = db.relationship(File, foreign_keys=[image_id], cascade="all, delete")
-    domain = db.relationship('Domain', foreign_keys=[domain_id])
+    image = db.relationship(File, lazy='joined', foreign_keys=[image_id], cascade="all, delete")
+    domain = db.relationship('Domain', lazy='joined', foreign_keys=[domain_id])
+    author = db.relationship('User', lazy='joined', foreign_keys=[user_id])
 
     @classmethod
     def get_by_ap_id(cls, ap_id):
