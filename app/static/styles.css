@@ -454,6 +454,10 @@ nav.navbar {
   text-align: right;
 }
 
+#timeSpent {
+  cursor: wait;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #777;

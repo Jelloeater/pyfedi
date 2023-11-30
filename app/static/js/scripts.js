@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupCommunityNameInput();
     setupShowMoreLinks();
     setupConfirmFirst();
+    setupTimeTracking();
 });
 
 
@@ -150,7 +151,7 @@ function setupHideButtons() {
         });
     });
 
-    if(toBeHidden) {
+    if(typeof toBeHidden !== "undefined" && toBeHidden) {
         toBeHidden.forEach((arrayElement) => {
           // Build the ID of the outer div
           const divId = "comment_" + arrayElement;
@@ -178,4 +179,87 @@ function setupHideButtons() {
 function titleToURL(title) {
   // Convert the title to lowercase and replace spaces with hyphens
   return title.toLowerCase().replace(/\s+/g, '_');
+}
+
+var timeTrackingInterval;
+var currentlyVisible = true;
+
+function setupTimeTracking() {
+    // Check for Page Visibility API support
+    if (document.visibilityState) {
+        const lastUpdate = new Date(localStorage.getItem('lastUpdate')) || new Date();
+
+       // Initialize variables to track time
+       let timeSpent = parseInt(localStorage.getItem('timeSpent')) || 0;
+
+       displayTimeTracked();
+
+       timeTrackingInterval = setInterval(() => {
+          timeSpent += 2;
+          localStorage.setItem('timeSpent', timeSpent);
+          // Display timeSpent
+          displayTimeTracked();
+       }, 2000)
+
+
+       // Event listener for visibility changes
+       document.addEventListener("visibilitychange", function() {
+          const currentDate = new Date();
+
+          if (currentDate.getMonth() !== lastUpdate.getMonth() || currentDate.getFullYear() !== lastUpdate.getFullYear()) {
+            // Reset counter for a new month
+            timeSpent = 0;
+            localStorage.setItem('timeSpent', timeSpent);
+            localStorage.setItem('lastUpdate', currentDate.toString());
+            displayTimeTracked();
+          }
+
+          if (document.visibilityState === "visible") {
+              console.log('visible')
+              currentlyVisible = true
+              timeTrackingInterval = setInterval(() => {
+                  timeSpent += 2;
+                  localStorage.setItem('timeSpent', timeSpent);
+                  displayTimeTracked();
+              }, 2000)
+          } else {
+              currentlyVisible = false;
+              if(timeTrackingInterval) {
+                 clearInterval(timeTrackingInterval);
+              }
+          }
+       });
+    }
+}
+
+function formatTime(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  let result = '';
+
+  if (hours > 0) {
+    result += `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  }
+
+  if (minutes > 0) {
+    if (result !== '') {
+      result += ' ';
+    }
+    result += `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+  }
+
+  if (result === '') {
+    result = 'Less than a minute';
+  }
+
+  return result;
+}
+
+function displayTimeTracked() {
+    const timeSpentElement = document.getElementById('timeSpent');
+    let timeSpent = parseInt(localStorage.getItem('timeSpent')) || 0;
+    if(timeSpentElement && timeSpent) {
+        timeSpentElement.textContent = formatTime(timeSpent)
+    }
 }

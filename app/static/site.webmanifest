@@ -1,6 +1,6 @@
 {
-    "name": "PyFedi",
-    "short_name": "PyFedi",
+    "name": "PieFed",
+    "short_name": "PieFed",
     "icons": [
         {
             "src": "/static/images/logo_square_192.png",
