@@ -115,7 +115,30 @@ nav, etc which are used site-wide */
   label {
     display: none;
   }
+
+  .form-check {
+    position: absolute;
+    bottom: -14px;
+    left: 122px;
+
+    label {
+      display: inherit;
+    }
+  }
 }
+
+.add_reply {
+  .form-control-label {
+    display: none;
+  }
+
+  .form-check {
+    position: absolute;
+    bottom: -14px;
+    left: 122px;
+  }
+}
+
 .post_list {
   .post_teaser {
 
@@ -294,8 +317,8 @@ nav, etc which are used site-wide */
   }
 }
 
-.add_reply {
-  .form-control-label {
-    display: none;
+.table {
+  tr th {
+    vertical-align: middle;
   }
 }

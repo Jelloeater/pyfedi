@@ -180,6 +180,7 @@ class User(UserMixin, db.Model):
     indexable = db.Column(db.Boolean, default=False)
     bot = db.Column(db.Boolean, default=False)
     ignore_bots = db.Column(db.Boolean, default=False)
+    unread_notifications = db.Column(db.Integer, default=0)
 
     avatar = db.relationship('File', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
@@ -312,6 +313,9 @@ class User(UserMixin, db.Model):
         return User.query.get(id)
 
     def purge_content(self):
+        files = File.query.join(Post).filter(Post.user_id == self.id).all()
+        for file in files:
+            file.delete_from_disk()
         db.session.query(ActivityLog).filter(ActivityLog.user_id == self.id).delete()
         db.session.query(PostVote).filter(PostVote.user_id == self.id).delete()
         db.session.query(PostReplyVote).filter(PostReplyVote.user_id == self.id).delete()

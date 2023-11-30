@@ -44,7 +44,7 @@ class CreatePostForm(FlaskForm):
     # flair = SelectField(_l('Flair'), coerce=int)
     nsfw = BooleanField(_l('NSFW'))
     nsfl = BooleanField(_l('NSFL'))
-    notify_author = BooleanField(_l('Send me post reply notifications'))
+    notify_author = BooleanField(_l('Notify about replies'))
     submit = SubmitField(_l('Post'))
 
     def validate(self, extra_validators=None) -> bool:

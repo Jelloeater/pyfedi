@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+            <li class="breadcrumb-item"><a href="/users">{{ _('People') }}</a></li>
+            <li class="breadcrumb-item active">{{ user.user_name|shorten }}</li>
+          </ol>
+        </nav>
+        <h1 class="mt-2">{{ _('Notifications') }}</h1>
+
+        {% if notifications %}
+            <table class="table table-striped">
+                <tr>
+                    <th>Notification</th>
+                    <th>When</th>
+                    <th><a href="{{ url_for('user.notifications_all_read') }}" class="btn btn-primary btn-sm">Mark all read</a></th>
+                </tr>
+                {% for notification in notifications %}
+                    <tr>
+                        <td>{% if not notification.read %}<strong>{% endif %}
+                            <a href="{{ url_for('user.notification_goto', notification_id=notification.id) }}">{{ notification.title }}</a>
+                            {% if not notification.read %}</strong>{% endif %}
+                        </td>
+                        <td>{{ moment(notification.created_at).fromNow(refresh=True) }}</td>
+                        <td>
+                            <a href="{{ url_for('user.notification_delete', notification_id=notification.id) }}" class="no-underline"><span class="fe fe-delete"> Delete</span></a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No notifications to show.</p>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-md-4">
+
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('Manage') }}</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <a class="w-100 btn btn-primary" href="/u/{{ current_user.user_name }}/profile">{{ _('Profile') }}</a>
+                    </div>
+                    <div class="col-6">
+                        <a class="w-100 btn btn-primary" href="/u/{{ current_user.user_name }}/settings">{{ _('Settings') }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if len(subscribed) > 0 or len(moderates) > 0 %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Communities') }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if len(subscribed) > 0 %}
+                        <h4>Subscribed to</h4>
+                        <ul>
+                            {% for community in subscribed %}
+                                <li>
+                                    <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />{{ community.display_name() }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if len(moderates) > 0 %}
+                        <h4>Moderates</h4>
+                        <ul>
+                            {% for community in moderates %}
+                                <li>
+                                    <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />{{ community.display_name() }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        {% if upvoted %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Upvoted') }}</h2>
+                </div>
+                <div class="card-body">
+                        <ul>
+                            {% for post in upvoted %}
+                                <li><a href="{{ url_for('post.show_post', post_id=post.id) }}">{{ post.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

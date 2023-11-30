@@ -185,6 +185,10 @@ nav, etc which are used site-wide */
   content: "\e967";
 }
 
+.fe-bell::before {
+  content: "\e91e";
+}
+
 .fe-image {
   position: relative;
   top: 2px;
@@ -403,6 +407,23 @@ fieldset legend {
 .post_reply_form label {
   display: none;
 }
+.post_reply_form .form-check {
+  position: absolute;
+  bottom: -14px;
+  left: 122px;
+}
+.post_reply_form .form-check label {
+  display: inherit;
+}
+
+.add_reply .form-control-label {
+  display: none;
+}
+.add_reply .form-check {
+  position: absolute;
+  bottom: -14px;
+  left: 122px;
+}
 
 .post_list .post_teaser {
   border-bottom: solid 2px #ddd;
@@ -548,8 +569,8 @@ fieldset legend {
   border-top: solid 1px #ddd;
 }
 
-.add_reply .form-control-label {
-  display: none;
+.table tr th {
+  vertical-align: middle;
 }
 
 /*# sourceMappingURL=structure.css.map */

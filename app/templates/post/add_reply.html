@@ -12,7 +12,9 @@
         <fieldset class="coolfieldset mt-4"><legend class="w-auto">Comment you are replying to</legend>
         {{ comment.body_html | safe}}
         </fieldset>
-        {{ render_form(form) }}
+        <div class="position-relative">
+            {{ render_form(form) }}
+        </div>
     </div>
     <div class="col-12 col-md-4">
         <div class="card">

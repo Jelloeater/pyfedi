@@ -1,13 +1,15 @@
+from datetime import datetime, timedelta
+
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db
-from app.models import Post, Community, CommunityMember, User, PostReply, PostVote
+from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string
-from sqlalchemy import desc, or_
+from sqlalchemy import desc, or_, text
 
 
 def show_profile(user):
@@ -105,7 +107,7 @@ def ban_profile(actor):
                 abort(404)
 
         if user.id == current_user.id:
-            flash('You cannot ban yourself.', 'error')
+            flash(_('You cannot ban yourself.'), 'error')
         else:
             user.banned = True
             db.session.commit()
@@ -130,7 +132,7 @@ def unban_profile(actor):
                 abort(404)
 
         if user.id == current_user.id:
-            flash('You cannot unban yourself.', 'error')
+            flash(_('You cannot unban yourself.'), 'error')
         else:
             user.banned = False
             db.session.commit()
@@ -154,7 +156,7 @@ def delete_profile(actor):
             if user is None:
                 abort(404)
         if user.id == current_user.id:
-            flash('You cannot delete yourself.', 'error')
+            flash(_('You cannot delete yourself.'), 'error')
         else:
             user.banned = True
             user.deleted = True
@@ -180,7 +182,7 @@ def ban_purge_profile(actor):
                 abort(404)
 
         if user.id == current_user.id:
-            flash('You cannot purge yourself.', 'error')
+            flash(_('You cannot purge yourself.'), 'error')
         else:
             user.banned = True
             user.deleted = True
@@ -199,3 +201,56 @@ def ban_purge_profile(actor):
 
     goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
     return redirect(goto)
+
+
+@bp.route('/notifications', methods=['GET', 'POST'])
+@login_required
+def notifications():
+    """Remove notifications older than 30 days"""
+    db.session.query(Notification).filter(
+        Notification.created_at < datetime.utcnow() - timedelta(days=30)).delete()
+    db.session.commit()
+
+    # Update unread notifications count
+    current_user.unread_notifications = Notification.query.filter_by(user_id=current_user.id, read=False).count()
+    db.session.commit()
+
+    notification_list = Notification.query.filter_by(user_id=current_user.id).order_by(desc(Notification.created_at)).all()
+
+    return render_template('user/notifications.html', title=_('Notifications'), notifications=notification_list, user=current_user)
+
+
+@bp.route('/notification/<int:notification_id>/goto', methods=['GET', 'POST'])
+@login_required
+def notification_goto(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+    if notification.user_id == current_user.id:
+        if not notification.read:
+            current_user.unread_notifications -= 1
+        notification.read = True
+        db.session.commit()
+        return redirect(notification.url)
+    else:
+        abort(403)
+
+
+@bp.route('/notification/<int:notification_id>/delete', methods=['GET', 'POST'])
+@login_required
+def notification_delete(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+    if notification.user_id == current_user.id:
+        if not notification.read:
+            current_user.unread_notifications -= 1
+        db.session.delete(notification)
+        db.session.commit()
+    return redirect(url_for('user.notifications'))
+
+
+@bp.route('/notifications/all_read', methods=['GET', 'POST'])
+@login_required
+def notifications_all_read():
+    db.session.execute(text('UPDATE notification SET read=true WHERE user_id = :user_id'), {'user_id': current_user.id})
+    current_user.unread_notifications = 0
+    db.session.commit()
+    flash(_('All notifications marked as read.'))
+    return redirect(url_for('user.notifications'))

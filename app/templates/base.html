@@ -71,11 +71,13 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/u/{{ current_user.user_name }}">{{ current_user.user_name }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/u/{{ current_user.user_name }}">{{ _('Account') }}</a></li>
                             {% if user_access('change instance settings', current_user.id) %}
                                 <li class="nav-item"><a class="nav-link" href="/admin/">{{ _('Admin') }}</a></li>
                             {% endif %}
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/notifications"><span class="fe fe-bell"></span>
+                                {{ current_user.unread_notifications if current_user.unread_notifications else '' }}</a></li>
                         {% endif %}
                     </ul>
             </div>

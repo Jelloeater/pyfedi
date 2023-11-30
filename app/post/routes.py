@@ -12,7 +12,7 @@ from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import Post, PostReply, \
-    PostReplyVote, PostVote
+    PostReplyVote, PostVote, Notification
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish
@@ -27,7 +27,12 @@ def show_post(post_id: int):
     if current_user.is_authenticated and current_user.verified and form.validate_on_submit():
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
-                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl)
+                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
+                          notify_author=form.notify_author.data)
+        if post.notify_author and current_user.id != post.user_id:    # todo: check if replier is blocked
+            notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=post.user_id,
+                                        author_id=current_user.id, url=url_for('post.show_post', post_id=post.id))
+            db.session.add(notification)
         db.session.add(reply)
         db.session.commit()
         reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
@@ -42,6 +47,7 @@ def show_post(post_id: int):
                                 post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
         replies = post_replies(post.id, 'top')
+        form.notify_author.data = True
 
     og_image = post.image.source_url if post.image_id else None
     description = shorten_string(markdown_to_text(post.body), 150) if post.body else None
@@ -178,8 +184,13 @@ def add_reply(post_id: int, comment_id: int):
         reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=comment.id, depth=comment.depth + 1,
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
-                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl)
+                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
+                          notify_author=form.notify_author.data)
         db.session.add(reply)
+        if comment.notify_author and current_user.id != comment.user_id:    # todo: check if replier is blocked
+            notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=comment.user_id,
+                                        author_id=current_user.id, url=url_for('post.show_post', post_id=post.id))
+            db.session.add(notification)
         db.session.commit()
         reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
                                    effect=1.0)
@@ -195,6 +206,7 @@ def add_reply(post_id: int, comment_id: int):
         else:
             return redirect(url_for('post.continue_discussion', post_id=post_id, comment_id=reply.parent_id))
     else:
+        form.notify_author.data = True
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
                                is_moderator=is_moderator, form=form, comment=comment)
 
