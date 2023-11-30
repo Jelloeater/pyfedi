@@ -2,9 +2,33 @@
 {% from 'bootstrap/form.html' import render_form, render_field %}
 
 {% block app_content %}
+<script nonce="{{ session['nonce'] }}" type="text/javascript">
+    window.addEventListener("load", function () {
+        var type = document.forms[0].elements['type'].value;
+        var toClick = undefined;
+        switch(type) {
+            case '':
+            case 'discussion':
+                toClick = document.getElementById('discussion-tab');
+                break;
+            case 'link':
+                toClick = document.getElementById('link-tab');
+                break;
+            case 'image':
+                toClick = document.getElementById('image-tab');
+                break;
+            case 'poll':
+                toClick = document.getElementById('poll-tab');
+                break;
+        }
+        if(toClick) {
+            toClick.click();
+        }
+    });
+</script>
 <div class="row">
     <div class="col-8 position-relative main_pane">
-        <h1>{{ _('Create post') }}</h1>
+        <h1>{{ _('Edit post') }}</h1>
         <form method="post" enctype="multipart/form-data">
             {{ form.csrf_token() }}
             {{ render_field(form.communities) }}
@@ -57,11 +81,11 @@
     <div class="col-4">
         <div class="card mt-3">
             <div class="card-header">
-                 <h2>{{ community.title }}</h2>
+                 <h2>{{ post.community.title }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ community.description|safe }}</p>
-                <p>{{ community.rules|safe }}</p>
+                <p>{{ post.community.description|safe }}</p>
+                <p>{{ post.community.rules|safe }}</p>
             </div>
         </div>
     </div>

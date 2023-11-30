@@ -15,7 +15,6 @@ from app.models import Community, CommunityMember
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
 def index():
-    raise Exception('cowbell')
     verification_warning()
     return render_template('index.html')
 

@@ -7,13 +7,13 @@
             <div class="card mt-5">
                 <div class="card-body p-6">
                     <div class="card-title">{{ _('Options for "%(post_title)s"', post_title=post.title) }}</div>
-                    <ul>
-                        {% if post.user_id == current_user.id or post.community.is_moderator() %}
-                            <li><a href="#" class="no-underline"><span class="fe fe-edit"></span> Edit</a></li>
-                            <li><a href="#" class="no-underline confirm_first"><span class="fe fe-delete"></span> Delete</a></li>
+                    <ul class="option_list">
+                        {% if current_user.is_authenticated and (post.user_id == current_user.id or post.community.is_moderator()) %}
+                            <li><a href="{{ url_for('post.post_edit', post_id=post.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-edit"></span> Edit</a></li>
+                            <li><a href="{{ url_for('post.post_delete', post_id=post.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span> Delete</a></li>
                         {% endif %}
                         {% if post.user_id != current_user.id %}
-                            <li><a href="#" class="no-underline"><span class="fe fe-report"></span> Report</a></li>
+                            <li><a href="{{ url_for('post.post_report', post_id=post.id) }}" class="no-underline"><span class="fe fe-report"></span> Report</a></li>
                         {% endif %}
                     </ul>
                 </div>

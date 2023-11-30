@@ -3,10 +3,14 @@ from typing import List
 
 import requests
 from PIL import Image, ImageOps
+from flask import request, abort
+from flask_login import current_user
+from pillow_heif import register_heif_opener
 
 from app import db, cache
-from app.models import Community, File, BannedInstances, PostReply
-from app.utils import get_request, gibberish
+from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
+from app.models import Community, File, BannedInstances, PostReply, PostVote
+from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image
 from sqlalchemy import desc, text
 import os
 from opengraph_parse import parse_page
@@ -124,3 +128,111 @@ def url_to_thumbnail_file(filename) -> File:
         return File(file_name=new_filename + file_extension, thumbnail_width=thumbnail_width,
                     thumbnail_height=thumbnail_height, thumbnail_path=final_place,
                     source_url=filename)
+
+
+def save_post(form, post):
+    post.nsfw = form.nsfw.data
+    post.nsfl = form.nsfl.data
+    post.notify_author = form.notify_author.data
+    if form.type.data == '' or form.type.data == 'discussion':
+        post.title = form.discussion_title.data
+        post.body = form.discussion_body.data
+        post.body_html = markdown_to_html(post.body)
+        post.type = POST_TYPE_ARTICLE
+    elif form.type.data == 'link':
+        post.title = form.link_title.data
+        url_changed = post.id is None or form.link_url.data != post.url
+        post.url = form.link_url.data
+        post.type = POST_TYPE_LINK
+        domain = domain_from_url(form.link_url.data)
+        domain.post_count += 1
+        post.domain = domain
+
+        if url_changed:
+            if post.image_id:
+                remove_old_file(post.image_id)
+                post.image_id = None
+            valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+            unused, file_extension = os.path.splitext(form.link_url.data)  # do not use _ here instead of 'unused'
+            # this url is a link to an image - generate a thumbnail of it
+            if file_extension in valid_extensions:
+                file = url_to_thumbnail_file(form.link_url.data)
+                if file:
+                    post.image = file
+                    db.session.add(file)
+            else:
+                # check opengraph tags on the page and make a thumbnail if an image is available in the og:image meta tag
+                opengraph = opengraph_parse(form.link_url.data)
+                if opengraph and opengraph.get('og:image', '') != '':
+                    filename = opengraph.get('og:image')
+                    valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+                    unused, file_extension = os.path.splitext(filename)
+                    if file_extension.lower() in valid_extensions:
+                        file = url_to_thumbnail_file(filename)
+                        if file:
+                            file.alt_text = opengraph.get('og:title')
+                            post.image = file
+                            db.session.add(file)
+
+    elif form.type.data == 'image':
+        allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
+        post.title = form.image_title.data
+        post.type = POST_TYPE_IMAGE
+        uploaded_file = request.files['image_file']
+        if uploaded_file and uploaded_file.filename != '':
+            if post.image_id:
+                remove_old_file(post.image_id)
+                post.image_id = None
+
+            file_ext = os.path.splitext(uploaded_file.filename)[1]
+            if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
+                    uploaded_file.stream):
+                abort(400)
+            new_filename = gibberish(15)
+
+            directory = 'app/static/media/posts/' + new_filename[0:2] + '/' + new_filename[2:4]
+            ensure_directory_exists(directory)
+
+            final_place = os.path.join(directory, new_filename + file_ext)
+            final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
+            uploaded_file.save(final_place)
+
+            if file_ext.lower() == '.heic':
+                register_heif_opener()
+
+            # resize if necessary
+            img = Image.open(final_place)
+            img_width = img.width
+            img_height = img.height
+            img = ImageOps.exif_transpose(img)
+            if img.width > 2000 or img.height > 2000:
+                img.thumbnail((2000, 2000))
+                img.save(final_place)
+                img_width = img.width
+                img_height = img.height
+            img.thumbnail((256, 256))
+            img.save(final_place_thumbnail, format="WebP", quality=93)
+            thumbnail_width = img.width
+            thumbnail_height = img.height
+
+            file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=form.image_title.data,
+                        width=img_width, height=img_height, thumbnail_width=thumbnail_width,
+                        thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
+            post.image = file
+            db.session.add(file)
+
+    elif form.type.data == 'poll':
+        ...
+    else:
+        raise Exception('invalid post type')
+    if post.id is None:
+        postvote = PostVote(user_id=current_user.id, author_id=current_user.id, post=post, effect=1.0)
+        post.up_votes = 1
+        post.score = 1
+        db.session.add(postvote)
+        db.session.add(post)
+
+
+def remove_old_file(file_id):
+    remove_file = File.query.get(file_id)
+    remove_file.delete_from_disk()

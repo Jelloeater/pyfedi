@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import requests
 import os
 import imghdr
-from flask import current_app, json, redirect, url_for
+from flask import current_app, json, redirect, url_for, request
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -239,3 +239,16 @@ def permission_required(permission):
         return decorated_view
 
     return decorator
+
+
+# sends the user back to where they came from
+def back(default_url):
+    # Get the referrer from the request headers
+    referrer = request.referrer
+
+    # If the referrer exists and is not the same as the current request URL, redirect to the referrer
+    if referrer and referrer != request.url:
+        return redirect(referrer)
+
+    # If referrer is not available or is the same as the current request URL, redirect to the default URL
+    return redirect(default_url)

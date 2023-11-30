@@ -1,10 +1,14 @@
+from datetime import datetime
+
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
 
 from app import db, constants
+from app.community.util import save_post
 from app.post.forms import NewReplyForm
+from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import Post, PostReply, \
@@ -195,8 +199,65 @@ def add_reply(post_id: int, comment_id: int):
                                is_moderator=is_moderator, form=form, comment=comment)
 
 
-@bp.route('/post/<int:post_id>/options', methods=['GET', 'POST'])
+@bp.route('/post/<int:post_id>/options', methods=['GET'])
 def post_options(post_id: int):
     post = Post.query.get_or_404(post_id)
     return render_template('post/post_options.html', post=post)
+
+@login_required
+@bp.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
+def post_edit(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    form = CreatePostForm()
+    if post.user_id == current_user.id or post.community.is_moderator():
+        if get_setting('allow_nsfw', False) is False:
+            form.nsfw.render_kw = {'disabled': True}
+        if get_setting('allow_nsfl', False) is False:
+            form.nsfl.render_kw = {'disabled': True}
+        images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''
+
+        form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
+
+        if form.validate_on_submit():
+            save_post(form, post)
+            post.community.last_active = datetime.utcnow()
+            post.edited_at = datetime.utcnow()
+            db.session.commit()
+            flash(_('Your changes have been saved.'), 'success')
+            return redirect(url_for('post.show_post', post_id=post.id))
+        else:
+            if post.type == constants.POST_TYPE_ARTICLE:
+                form.type.data = 'discussion'
+                form.discussion_title.data = post.title
+                form.discussion_body.data = post.body
+            elif post.type == constants.POST_TYPE_LINK:
+                form.type.data = 'link'
+                form.link_title.data = post.title
+                form.link_url.data = post.url
+            elif post.type == constants.POST_TYPE_IMAGE:
+                form.type.data = 'image'
+                form.image_title.data = post.title
+            form.notify_author.data = post.notify_author
+            return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post, images_disabled=images_disabled)
+    else:
+        abort(401)
+
+
+@login_required
+@bp.route('/post/<int:post_id>/delete', methods=['GET', 'POST'])
+def post_delete(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    community = post.community
+    if post.user_id == current_user.id or community.is_moderator():
+        post.delete_dependencies()
+        db.session.delete(post)
+        db.session.commit()
+        flash('Post deleted.')
+    return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
+
+
+@login_required
+@bp.route('/post/<int:post_id>/report', methods=['GET', 'POST'])
+def post_report(post_id: int):
+    ...
 

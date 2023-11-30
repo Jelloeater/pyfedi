@@ -458,6 +458,14 @@ nav.navbar {
   cursor: wait;
 }
 
+.option_list {
+  list-style-type: none;
+  margin-bottom: 0;
+}
+.option_list li {
+  margin-bottom: 15px;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #777;

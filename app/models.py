@@ -14,6 +14,7 @@ from flask_sqlalchemy import BaseQuery
 from sqlalchemy_searchable import SearchQueryMixin
 from app import db, login, cache
 import jwt
+import os
 
 from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER, \
     SUBSCRIPTION_BANNED
@@ -49,6 +50,12 @@ class File(db.Model):
     def thumbnail_url(self):
         thumbnail_path = self.thumbnail_path[4:] if self.thumbnail_path.startswith('app/') else self.thumbnail_path
         return f"https://{current_app.config['SERVER_NAME']}/{thumbnail_path}"
+
+    def delete_from_disk(self):
+        if self.file_path and os.path.isfile(self.file_path):
+            os.unlink(self.file_path)
+        if self.thumbnail_path and os.path.isfile(self.thumbnail_path):
+            os.unlink(self.thumbnail_path)
 
 
 class Community(db.Model):
@@ -356,6 +363,7 @@ class Post(db.Model):
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
     sticky = db.Column(db.Boolean, default=False)
+    notify_author = db.Column(db.Boolean, default=True)
     indexable = db.Column(db.Boolean, default=False)
     from_bot = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)    # this is when the content arrived here
@@ -387,6 +395,9 @@ class Post(db.Model):
                            {'post_id': self.id})
         db.session.execute(text('DELETE FROM post_reply WHERE post_id = :post_id'), {'post_id': self.id})
         db.session.execute(text('DELETE FROM post_vote WHERE post_id = :post_id'), {'post_id': self.id})
+        if self.image_id:
+            file = File.query.get(self.image_id)
+            file.delete_from_disk()
 
     def youtube_embed(self):
         if self.url:
@@ -412,6 +423,7 @@ class PostReply(db.Model):
     score = db.Column(db.Integer, default=0, index=True)
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
+    notify_author = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     ip = db.Column(db.String(50))
@@ -543,6 +555,7 @@ class PostVote(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     effect = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    post = db.relationship('Post', foreign_keys=[post_id])
 
 
 class PostReplyVote(db.Model):
@@ -592,6 +605,16 @@ class Role(db.Model):
 class RolePermission(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
     permission = db.Column(db.String, primary_key=True, index=True)
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50))
+    url = db.Column(db.String(512))
+    read = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 @login.user_loader

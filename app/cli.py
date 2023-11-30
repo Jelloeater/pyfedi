@@ -66,6 +66,7 @@ def register(app):
             db.session.add(BannedInstances(domain='exploding-heads.com'))
             db.session.add(BannedInstances(domain='hexbear.net'))
             db.session.add(BannedInstances(domain='threads.net'))
+            db.session.add(BannedInstances(domain='pieville.net'))
             interests = file_get_contents('interests.txt')
             db.session.add(Interest(name='🕊 Chilling', communities=parse_communities(interests, 'chilling')))
             db.session.add(Interest(name='💭 Interesting stuff', communities=parse_communities(interests, 'interesting stuff')))

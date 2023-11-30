@@ -32,7 +32,7 @@ class SearchRemoteCommunity(FlaskForm):
     submit = SubmitField(_l('Search'))
 
 
-class CreatePost(FlaskForm):
+class CreatePostForm(FlaskForm):
     communities = SelectField(_l('Community'), validators=[DataRequired()], coerce=int)
     type = HiddenField() # https://getbootstrap.com/docs/4.6/components/navs/#tabs
     discussion_title = StringField(_l('Title'), validators={Optional(), Length(min=3, max=255)})
@@ -44,7 +44,7 @@ class CreatePost(FlaskForm):
     # flair = SelectField(_l('Flair'), coerce=int)
     nsfw = BooleanField(_l('NSFW'))
     nsfl = BooleanField(_l('NSFL'))
-    notify = BooleanField(_l('Send me post reply notifications'))
+    notify_author = BooleanField(_l('Send me post reply notifications'))
     submit = SubmitField(_l('Post'))
 
     def validate(self, extra_validators=None) -> bool:

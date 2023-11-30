@@ -6,17 +6,18 @@ from sqlalchemy import or_, desc
 
 from app import db, constants
 from app.activitypub.signature import RsaKeys, HttpSignature
-from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePost
+from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
-     ensure_directory_exists, opengraph_parse, url_to_thumbnail_file
+    ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
-     File
+    File, PostVote
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish
 import os
 from PIL import Image, ImageOps
+from datetime import datetime
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -185,7 +186,7 @@ def unsubscribe(actor):
 @validation_required
 def add_post(actor):
     community = actor_to_community(actor)
-    form = CreatePost()
+    form = CreatePostForm()
     if get_setting('allow_nsfw', False) is False:
         form.nsfw.render_kw = {'disabled': True}
     if get_setting('allow_nsfl', False) is False:
@@ -195,92 +196,12 @@ def add_post(actor):
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
     if form.validate_on_submit():
-        post = Post(user_id=current_user.id, community_id=form.communities.data, nsfw=form.nsfw.data,
-                    nsfl=form.nsfl.data)
-        if form.type.data == '' or form.type.data == 'discussion':
-            post.title = form.discussion_title.data
-            post.body = form.discussion_body.data
-            post.body_html = markdown_to_html(post.body)
-            post.type = POST_TYPE_ARTICLE
-        elif form.type.data == 'link':
-            post.title = form.link_title.data
-            post.url = form.link_url.data
-            post.type = POST_TYPE_LINK
-            domain = domain_from_url(form.link_url.data)
-            domain.post_count += 1
-            post.domain = domain
-            valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
-            unused, file_extension = os.path.splitext(form.link_url.data)   # do not use _ here instead of 'unused'
-            # this url is a link to an image - generate a thumbnail of it
-            if file_extension in valid_extensions:
-                file = url_to_thumbnail_file(form.link_url.data)
-                if file:
-                    post.image = file
-                    db.session.add(file)
-            else:
-                # check opengraph tags on the page and make a thumbnail if an image is available in the og:image meta tag
-                opengraph = opengraph_parse(form.link_url.data)
-                if opengraph and opengraph.get('og:image', '') != '':
-                    filename = opengraph.get('og:image')
-                    valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
-                    unused, file_extension = os.path.splitext(filename)
-                    if file_extension.lower() in valid_extensions:
-                        file = url_to_thumbnail_file(filename)
-                        if file:
-                            file.alt_text = opengraph.get('og:title')
-                            post.image = file
-                            db.session.add(file)
-
-        elif form.type.data == 'image':
-            allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
-            post.title = form.image_title.data
-            post.type = POST_TYPE_IMAGE
-            uploaded_file = request.files['image_file']
-            if uploaded_file.filename != '':
-                file_ext = os.path.splitext(uploaded_file.filename)[1]
-                if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
-                        uploaded_file.stream):
-                    abort(400)
-                new_filename = gibberish(15)
-
-                directory = 'app/static/media/posts/' + new_filename[0:2] + '/' + new_filename[2:4]
-                ensure_directory_exists(directory)
-
-                final_place = os.path.join(directory, new_filename + file_ext)
-                final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
-                uploaded_file.save(final_place)
-
-                if file_ext.lower() == '.heic':
-                    register_heif_opener()
-
-                # resize if necessary
-                img = Image.open(final_place)
-                img_width = img.width
-                img_height = img.height
-                img = ImageOps.exif_transpose(img)
-                if img.width > 2000 or img.height > 2000:
-                    img.thumbnail((2000, 2000))
-                    img.save(final_place)
-                    img_width = img.width
-                    img_height = img.height
-                img.thumbnail((256, 256))
-                img.save(final_place_thumbnail, format="WebP", quality=93)
-                thumbnail_width = img.width
-                thumbnail_height = img.height
-
-                file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=form.image_title.data,
-                            width=img_width, height=img_height, thumbnail_width=thumbnail_width,
-                            thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
-                post.image = file
-                db.session.add(file)
-
-        elif form.type.data == 'poll':
-            ...
-        else:
-            raise Exception('invalid post type')
-        db.session.add(post)
+        post = Post(user_id=current_user.id, community_id=form.communities.data)
+        save_post(form, post)
         community.post_count += 1
+        community.last_active = datetime.utcnow()
         db.session.commit()
+
 
         # todo: federate post creation out to followers
 
@@ -288,7 +209,10 @@ def add_post(actor):
         return redirect(f"/c/{community.link()}")
     else:
         form.communities.data = community.id
-        form.notify.data = True
+        form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
                            images_disabled=images_disabled)
+
+
+
