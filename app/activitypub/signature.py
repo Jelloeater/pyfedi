@@ -44,6 +44,7 @@ from datetime import datetime
 from dateutil import parser
 from pyld import jsonld
 
+from app.activitypub.util import default_context
 from app.constants import DATETIME_MS_FORMAT
 
 
@@ -245,7 +246,7 @@ class HttpSignature:
         body: dict | None,
         private_key: str,
         key_id: str,
-        content_type: str = "application/json",
+        content_type: str = "application/activity+json",
         method: Literal["get", "post"] = "post",
         timeout: int = 5,
     ):
@@ -266,33 +267,7 @@ class HttpSignature:
         # If we have a body, add a digest and content type
         if body is not None:
             if '@context' not in body:                          # add a default json-ld context if necessary
-                body['@context'] = [
-                    "https://www.w3.org/ns/activitystreams",
-                    "https://w3id.org/security/v1",
-                    {
-                      "piefed": "https://piefed.social/ns#",
-                      "lemmy": "https://join-lemmy.org/ns#",
-                      "litepub": "http://litepub.social/ns#",
-                      "pt": "https://joinpeertube.org/ns#",
-                      "sc": "http://schema.org/",
-                      "nsfl": "piefed:nsfl",
-                      "ChatMessage": "litepub:ChatMessage",
-                      "commentsEnabled": "pt:commentsEnabled",
-                      "sensitive": "as:sensitive",
-                      "matrixUserId": "lemmy:matrixUserId",
-                      "postingRestrictedToMods": "lemmy:postingRestrictedToMods",
-                      "removeData": "lemmy:removeData",
-                      "stickied": "lemmy:stickied",
-                      "moderators": {
-                        "@type": "@id",
-                        "@id": "lemmy:moderators"
-                      },
-                      "expires": "as:endTime",
-                      "distinguished": "lemmy:distinguished",
-                      "language": "sc:inLanguage",
-                      "identifier": "sc:identifier"
-                    }
-                ]
+                body['@context'] = default_context()
             body_bytes = json.dumps(body).encode("utf8")
             headers["Digest"] = cls.calculate_digest(body_bytes)
             headers["Content-Type"] = content_type

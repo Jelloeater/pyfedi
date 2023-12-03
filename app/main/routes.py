@@ -1,5 +1,6 @@
 
-from app import db
+from app import db, cache
+from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER
 from app.main import bp
 from flask import g, session, flash, request
 from flask_moment import moment
@@ -8,7 +9,6 @@ from flask_babel import _, get_locale
 from sqlalchemy import select
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish
-
 from app.models import Community, CommunityMember
 
 
@@ -29,21 +29,29 @@ def list_communities():
         query = search(select(Community), search_param, sort=True)
         communities = db.session.scalars(query).all()
 
-    return render_template('list_communities.html', communities=communities, search=search_param, title=_('Communities'))
+    return render_template('list_communities.html', communities=communities, search=search_param, title=_('Communities'),
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 
 @bp.route('/communities/local', methods=['GET'])
 def list_local_communities():
     verification_warning()
     communities = Community.query.filter_by(ap_id=None, banned=False).all()
-    return render_template('list_communities.html', communities=communities, title=_('Local communities'))
+    return render_template('list_communities.html', communities=communities, title=_('Local communities'),
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 
 @bp.route('/communities/subscribed', methods=['GET'])
 def list_subscribed_communities():
     verification_warning()
     communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
-    return render_template('list_communities.html', communities=communities, title=_('Subscribed communities'))
+    return render_template('list_communities.html', communities=communities, title=_('Subscribed communities'),
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
+
+
+@bp.route('/test')
+def test():
+    ...
 
 
 def verification_warning():

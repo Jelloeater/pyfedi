@@ -4,17 +4,19 @@ from flask_babel import _
 from pillow_heif import register_heif_opener
 from sqlalchemy import or_, desc
 
-from app import db, constants
+from app import db, constants, cache
 from app.activitypub.signature import RsaKeys, HttpSignature
+from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
     ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post
-from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
+from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
+    SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
     File, PostVote
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish
+    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership
 import os
 from PIL import Image, ImageOps
 from datetime import datetime
@@ -70,7 +72,7 @@ def add_remote():
 
     return render_template('community/add_remote.html',
                            title=_('Add remote community'), form=form, new_community=new_community,
-                           subscribed=current_user.subscribed(new_community) >= SUBSCRIPTION_MEMBER)
+                           subscribed=community_membership(current_user, new_community) >= SUBSCRIPTION_MEMBER)
 
 
 # @bp.route('/c/<actor>', methods=['GET']) - defined in activitypub/routes.py, which calls this function for user requests. A bit weird.
@@ -97,7 +99,8 @@ def show_community(community: Community):
 
     return render_template('community/community.html', community=community, title=community.title,
                            is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts, description=description,
-                           og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK)
+                           og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
+                           SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 
 @bp.route('/<actor>/subscribe', methods=['GET'])
@@ -113,7 +116,7 @@ def subscribe(actor):
         community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
 
     if community is not None:
-        if not current_user.subscribed(community):
+        if community_membership(current_user, community) != SUBSCRIPTION_MEMBER and community_membership(current_user, community) != SUBSCRIPTION_PENDING:
             if remote:
                 # send ActivityPub message to remote community, asking to follow. Accept message will be sent to our shared inbox
                 join_request = CommunityJoinRequest(user_id=current_user.id, community_id=community.id)
@@ -161,12 +164,46 @@ def unsubscribe(actor):
     community = actor_to_community(actor)
 
     if community is not None:
-        subscription = current_user.subscribed(community)
+        subscription = community_membership(current_user, community)
         if subscription:
             if subscription != SUBSCRIPTION_OWNER:
-                db.session.query(CommunityMember).filter_by(user_id=current_user.id, community_id=community.id).delete()
-                db.session.commit()
-                flash('You are unsubscribed from ' + community.title)
+                proceed = True
+                # Undo the Follow
+                if '@' in actor:    # this is a remote community, so activitypub is needed
+                    follow = {
+                        "actor": f"https://{current_app.config['SERVER_NAME']}/u/{current_user.user_name}",
+                        "to": [community.ap_profile_id],
+                        "object": community.ap_profile_id,
+                        "type": "Follow",
+                        "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{gibberish(15)}"
+                    }
+                    undo = {
+                        'actor': current_user.profile_id(),
+                        'to': [community.ap_profile_id],
+                        'type': 'Undo',
+                        'id': f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15),
+                        'object': follow
+                    }
+                    try:
+                        message = HttpSignature.signed_request(community.ap_inbox_url, undo, current_user.private_key,
+                                                               current_user.profile_id() + '#main-key')
+                        if message.status_code != 200:
+                            flash('Response status code was not 200', 'warning')
+                            current_app.logger.error('Response code for unsubscription attempt was ' +
+                                                     str(message.status_code) + ' ' + message.text)
+                            proceed = False
+                    except Exception as ex:
+                        proceed = False
+                        flash('Failed to send request to unsubscribe: ' + str(ex), 'error')
+                        current_app.logger.error("Exception while trying to unsubscribe" + str(ex))
+                if proceed:
+                    db.session.query(CommunityMember).filter_by(user_id=current_user.id, community_id=community.id).delete()
+                    db.session.query(CommunityJoinRequest).filter_by(user_id=current_user.id, community_id=community.id).delete()
+                    db.session.commit()
+
+                    flash('You are unsubscribed from ' + community.title)
+                cache.delete_memoized(community_membership, current_user, community)
+
             else:
                 # todo: community deletion
                 flash('You need to make someone else the owner before unsubscribing.', 'warning')

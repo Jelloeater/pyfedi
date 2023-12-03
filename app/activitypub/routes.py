@@ -1,20 +1,20 @@
 from datetime import datetime
 
-from app import db, constants
+from app import db, constants, cache
 from app.activitypub import bp
 from flask import request, Response, current_app, abort, jsonify, json
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
 from app.user.routes import show_profile
-from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE
+from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, SUBSCRIPTION_MEMBER
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
     PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
-    domain_from_url, markdown_to_html
+    domain_from_url, markdown_to_html, community_membership
 import werkzeug.exceptions
 
 INBOX = []
@@ -143,7 +143,7 @@ def user_profile(actor):
         user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
 
     if user is not None:
-        if 'application/ld+json' in request.headers.get('Accept', ''):
+        if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', ''):
             server = current_app.config['SERVER_NAME']
             actor_data = {  "@context": default_context(),
                             "type": "Person",
@@ -154,12 +154,12 @@ def user_profile(actor):
                             "publicKey": {
                                 "id": f"https://{server}/u/{actor}#main-key",
                                 "owner": f"https://{server}/u/{actor}",
-                                "publicKeyPem": user.public_key.replace("\n", "\\n")
+                                "publicKeyPem": user.public_key      # .replace("\n", "\\n")    #LOOKSWRONG
                             },
                             "endpoints": {
                                 "sharedInbox": f"https://{server}/inbox"
                             },
-                            "published": user.created.isoformat(),
+                            "published": user.created.isoformat() + '+00:00',
                         }
             if user.avatar_id is not None:
                 actor_data["icon"] = {
@@ -188,7 +188,7 @@ def community_profile(actor):
     actor = actor.strip()
     if '@' in actor:
         # don't provide activitypub info for remote communities
-        if 'application/ld+json' in request.headers.get('Accept', ''):
+        if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', ''):
             abort(404)
         community: Community = Community.query.filter_by(ap_id=actor, banned=False).first()
     else:
@@ -374,7 +374,7 @@ def shared_inbox():
                                 else:
                                     activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
 
-                        # Announce is new content and votes, lemmy style
+                        # Announce is new content and votes, mastodon style (?)
                         if request_json['type'] == 'Announce':
                             if request_json['object']['type'] == 'Create':
                                 activity_log.activity_type = request_json['object']['type']
@@ -473,7 +473,9 @@ def shared_inbox():
                                         vote_weight = instance_weight(user.ap_domain)
                                         liked = find_liked_object(liked_ap_id)
                                         # insert into voted table
-                                        if liked is not None and isinstance(liked, Post):
+                                        if liked is None:
+                                            activity_log.exception_message = 'Liked object not found'
+                                        elif liked is not None and isinstance(liked, Post):
                                             existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
                                             if existing_vote:
                                                 existing_vote.effect = vote_effect * vote_weight
@@ -499,7 +501,7 @@ def shared_inbox():
                                             ... # todo: recalculate 'hotness' of liked post/reply
                                                 # todo: if vote was on content in local community, federate the vote out to followers
 
-                        # Follow: remote user wants to follow one of our communities
+                        # Follow: remote user wants to join/follow one of our communities
                         elif request_json['type'] == 'Follow':      # Follow is when someone wants to join a community
                             user_ap_id = request_json['actor']
                             community_ap_id = request_json['object']
@@ -511,10 +513,11 @@ def shared_inbox():
                                 banned = CommunityBan.query.filter_by(user_id=user.id,
                                                                       community_id=community.id).first()
                                 if banned is None:
-                                    if not user.subscribed(community):
+                                    if community_membership(user, community) != SUBSCRIPTION_MEMBER:
                                         member = CommunityMember(user_id=user.id, community_id=community.id)
                                         db.session.add(member)
                                         db.session.commit()
+                                        cache.delete_memoized(community_membership, user, community)
                                     # send accept message to acknowledge the follow
                                     accept = {
                                         "@context": default_context(),
@@ -561,9 +564,11 @@ def shared_inbox():
                                         community.subscriptions_count += 1
                                         db.session.commit()
                                         activity_log.result = 'success'
+                                        cache.delete_memoized(community_membership, user, community)
+
                         elif request_json['type'] == 'Undo':
                             if request_json['object']['type'] == 'Follow':  # Unsubscribe from a community
-                                community_ap_id = request_json['actor']
+                                community_ap_id = request_json['object']['object']
                                 user_ap_id = request_json['object']['actor']
                                 user = find_actor_or_create(user_ap_id)
                                 community = find_actor_or_create(community_ap_id)

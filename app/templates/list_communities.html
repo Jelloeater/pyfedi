@@ -50,8 +50,10 @@
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>
                         <td>{% if current_user.is_authenticated %}
-                                {% if current_user.subscribed(community) %}
+                                {% if community_membership(current_user, community) == SUBSCRIPTION_MEMBER %}
                                     <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Unsubscribe</a>
+                                {% elif community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
+                                    <a class="btn btn-outline-secondary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Pending</a>
                                 {% else %}
                                     <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">Subscribe</a>
                                 {% endif %}

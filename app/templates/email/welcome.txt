@@ -6,7 +6,7 @@ I'd also like to give you the tools and information you need to get the most out
 
     1. Helpful resources go here
 
-I hope this helps. For more information please see the FAQ at https://pyfedi.social/faq.php or ask me anything by replying to this email.
+I hope this helps. For more information please see the FAQ at https://piefed.social/faq.php or ask me anything by replying to this email.
 
 Warm regards,
 

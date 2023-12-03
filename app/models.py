@@ -17,7 +17,7 @@ import jwt
 import os
 
 from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER, \
-    SUBSCRIPTION_BANNED
+    SUBSCRIPTION_BANNED, SUBSCRIPTION_PENDING
 
 
 class FullTextSearchQuery(BaseQuery, SearchQueryMixin):
@@ -87,6 +87,7 @@ class Community(db.Model):
     ap_fetched_at = db.Column(db.DateTime)
     ap_deleted_at = db.Column(db.DateTime)
     ap_inbox_url = db.Column(db.String(255))
+    ap_moderators_url = db.Column(db.String(255))
     ap_domain = db.Column(db.String(255))
 
     banned = db.Column(db.Boolean, default=False)
@@ -276,11 +277,10 @@ class User(UserMixin, db.Model):
             return True
         return self.expires < datetime(2019, 9, 1)
 
-    @cache.memoize(timeout=50)
-    def subscribed(self, community: Community) -> int:
-        if community is None:
+    def subscribed(self, community_id: int) -> int:
+        if community_id is None:
             return False
-        subscription:CommunityMember = CommunityMember.query.filter_by(user_id=self.id, community_id=community.id).first()
+        subscription:CommunityMember = CommunityMember.query.filter_by(user_id=self.id, community_id=community_id).first()
         if subscription:
             if subscription.is_banned:
                 return SUBSCRIPTION_BANNED
@@ -291,7 +291,11 @@ class User(UserMixin, db.Model):
             else:
                 return SUBSCRIPTION_MEMBER
         else:
-            return SUBSCRIPTION_NONMEMBER
+            join_request = CommunityJoinRequest.query.filter_by(user_id=self.id, community_id=community_id).first()
+            if join_request:
+                return SUBSCRIPTION_PENDING
+            else:
+                return SUBSCRIPTION_NONMEMBER
 
     def communities(self) -> List[Community]:
         return Community.query.filter(Community.banned == False).\
@@ -388,7 +392,7 @@ class Post(db.Model):
 
     image = db.relationship(File, lazy='joined', foreign_keys=[image_id], cascade="all, delete")
     domain = db.relationship('Domain', lazy='joined', foreign_keys=[domain_id])
-    author = db.relationship('User', lazy='joined', foreign_keys=[user_id])
+    author = db.relationship('User', lazy='joined', overlaps='posts', foreign_keys=[user_id])
 
     @classmethod
     def get_by_ap_id(cls, ap_id):

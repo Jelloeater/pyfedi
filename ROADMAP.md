@@ -1,4 +1,4 @@
-# PyFedi Roadmap
+# PieFed Roadmap
 
 The following are the goals for a 1.0 release, good enough for production use. Items with a ✅  are complete.
 

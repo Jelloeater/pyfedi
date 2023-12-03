@@ -1,4 +1,4 @@
-# pyfedi
+# PieFed
 
 A lemmy/kbin clone written in Python with Flask.
 

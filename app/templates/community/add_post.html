@@ -26,8 +26,8 @@
                   {{ render_field(form.discussion_body) }}
               </div>
               <div class="tab-pane fade" id="link-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-                  {{ render_field(form.link_title) }}
                   {{ render_field(form.link_url) }}
+                  {{ render_field(form.link_title) }}
               </div>
               <div class="tab-pane fade" id="image-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
                   {{ render_field(form.image_title) }}
@@ -39,6 +39,9 @@
             </div>
             {{ render_field(form.type) }}
             <div class="row mt-4">
+                <div class="col-md-3">
+                    {{ render_field(form.notify_author) }}
+                </div>
                 <div class="col-md-1">
                     {{ render_field(form.nsfw) }}
                 </div>
@@ -49,7 +52,7 @@
 
                 </div>
             </div>
-            {{ render_field(form.notify_author) }}
+
             {{ render_field(form.submit) }}
         </form>
     </div>

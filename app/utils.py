@@ -14,7 +14,7 @@ from flask_login import current_user
 from sqlalchemy import text
 
 from app import db, cache
-from app.models import Settings, Domain, Instance, BannedInstances, User
+from app.models import Settings, Domain, Instance, BannedInstances, User, Community
 
 
 # Flask's render_template function, with support for themes added
@@ -196,6 +196,15 @@ def user_access(permission: str, user_id: int) -> bool:
                                     'WHERE ur.user_id = :user_id AND rp.permission = :permission'),
                                     {'user_id': user_id, 'permission': permission}).first()
     return has_access is not None
+
+
+@cache.memoize(timeout=10)
+def community_membership(user: User, community: Community) -> int:
+    # @cache.memoize works with User.subscribed but cache.delete_memoized does not, making it bad to use on class methods.
+    # however cache.memoize and cache.delete_memoized works fine with normal functions
+    if community is None:
+        return False
+    return user.subscribed(community.id)
 
 
 def retrieve_block_list():

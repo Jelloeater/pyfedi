@@ -1,6 +1,6 @@
-# Contributing to PyFedi
+# Contributing to PieFed
 
-When it matures enough, PyFedi will aim to work in a way consistent with the [Collective Code Construction Contract](https://42ity.org/c4.html).
+When it matures enough, PieFed will aim to work in a way consistent with the [Collective Code Construction Contract](https://42ity.org/c4.html).
 
 Please discuss your ideas in an issue at https://codeberg.org/rimu/pyfedi/issues before 
 starting any large pieces of work to ensure alignment with the roadmap, architecture and processes.
@@ -58,7 +58,7 @@ Changes to this file are turned into changes in the DB by using '[migrations](ht
 
 ## Our Pledge
 
-We, the contributors and maintainers of the PyFedi project, pledge to create a welcoming and harassment-free environment for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
+We, the contributors and maintainers of the PieFed project, pledge to create a welcoming and harassment-free environment for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
 ## Our Standards
 
@@ -102,4 +102,4 @@ This Code of Conduct is adapted from the [Contributor Covenant](https://www.cont
 
 ## Conclusion
 
-We all share the responsibility of upholding these standards. Let's work together to create a welcoming and inclusive environment that fosters collaboration, learning, and the growth of the PyFedi community.
+We all share the responsibility of upholding these standards. Let's work together to create a welcoming and inclusive environment that fosters collaboration, learning, and the growth of the PieFed community.

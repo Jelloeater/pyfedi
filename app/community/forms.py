@@ -45,7 +45,7 @@ class CreatePostForm(FlaskForm):
     nsfw = BooleanField(_l('NSFW'))
     nsfl = BooleanField(_l('NSFL'))
     notify_author = BooleanField(_l('Notify about replies'))
-    submit = SubmitField(_l('Post'))
+    submit = SubmitField(_l('Save'))
 
     def validate(self, extra_validators=None) -> bool:
         if not super().validate():

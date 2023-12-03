@@ -56,6 +56,7 @@ def search_for_community(address: str):
                                                   ap_profile_id=community_json['id'],
                                                   ap_followers_url=community_json['followers'],
                                                   ap_inbox_url=community_json['endpoints']['sharedInbox'],
+                                                  ap_moderators_url=community_json['attributedTo'] if 'attributedTo' in community_json else None,
                                                   ap_fetched_at=datetime.utcnow(),
                                                   ap_domain=server,
                                                   public_key=community_json['publicKey']['publicKeyPem'],
