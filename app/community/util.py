@@ -16,6 +16,8 @@ import os
 from opengraph_parse import parse_page
 
 
+allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
+
 def search_for_community(address: str):
     if address.startswith('!'):
         name, server = address[1:].split('@')
@@ -176,7 +178,6 @@ def save_post(form, post):
                             db.session.add(file)
 
     elif form.type.data == 'image':
-        allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
         post.title = form.image_title.data
         post.type = POST_TYPE_IMAGE
         uploaded_file = request.files['image_file']
@@ -185,15 +186,18 @@ def save_post(form, post):
                 remove_old_file(post.image_id)
                 post.image_id = None
 
+            # check if this is an allowed type of file
             file_ext = os.path.splitext(uploaded_file.filename)[1]
             if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
                     uploaded_file.stream):
                 abort(400)
             new_filename = gibberish(15)
 
+            # set up the storage directory
             directory = 'app/static/media/posts/' + new_filename[0:2] + '/' + new_filename[2:4]
             ensure_directory_exists(directory)
 
+            # save the file
             final_place = os.path.join(directory, new_filename + file_ext)
             final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
             uploaded_file.save(final_place)
@@ -203,14 +207,15 @@ def save_post(form, post):
 
             # resize if necessary
             img = Image.open(final_place)
+            img = ImageOps.exif_transpose(img)
             img_width = img.width
             img_height = img.height
-            img = ImageOps.exif_transpose(img)
             if img.width > 2000 or img.height > 2000:
                 img.thumbnail((2000, 2000))
                 img.save(final_place)
                 img_width = img.width
                 img_height = img.height
+            # save a second, smaller, version as a thumbnail
             img.thumbnail((256, 256))
             img.save(final_place_thumbnail, format="WebP", quality=93)
             thumbnail_width = img.width
@@ -237,3 +242,83 @@ def save_post(form, post):
 def remove_old_file(file_id):
     remove_file = File.query.get(file_id)
     remove_file.delete_from_disk()
+
+
+def save_icon_file(icon_file) -> File:
+    # check if this is an allowed type of file
+    file_ext = os.path.splitext(icon_file.filename)[1]
+    if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
+            icon_file.stream):
+        abort(400)
+    new_filename = gibberish(15)
+
+    # set up the storage directory
+    directory = 'app/static/media/communities/' + new_filename[0:2] + '/' + new_filename[2:4]
+    ensure_directory_exists(directory)
+
+    # save the file
+    final_place = os.path.join(directory, new_filename + file_ext)
+    final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
+    icon_file.save(final_place)
+
+    if file_ext.lower() == '.heic':
+        register_heif_opener()
+
+    # resize if necessary
+    img = Image.open(final_place)
+    img = ImageOps.exif_transpose(img)
+    img_width = img.width
+    img_height = img.height
+    if img.width > 200 or img.height > 200:
+        img.thumbnail((200, 200))
+        img.save(final_place)
+        img_width = img.width
+        img_height = img.height
+    # save a second, smaller, version as a thumbnail
+    img.thumbnail((32, 32))
+    img.save(final_place_thumbnail, format="WebP", quality=93)
+    thumbnail_width = img.width
+    thumbnail_height = img.height
+
+    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text='community icon',
+                width=img_width, height=img_height, thumbnail_width=thumbnail_width,
+                thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
+    db.session.add(file)
+    return file
+
+
+def save_banner_file(banner_file) -> File:
+    # check if this is an allowed type of file
+    file_ext = os.path.splitext(banner_file.filename)[1]
+    if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
+            banner_file.stream):
+        abort(400)
+    new_filename = gibberish(15)
+
+    # set up the storage directory
+    directory = 'app/static/media/communities/' + new_filename[0:2] + '/' + new_filename[2:4]
+    ensure_directory_exists(directory)
+
+    # save the file
+    final_place = os.path.join(directory, new_filename + file_ext)
+    final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
+    banner_file.save(final_place)
+
+    if file_ext.lower() == '.heic':
+        register_heif_opener()
+
+    # resize if necessary
+    img = Image.open(final_place)
+    img = ImageOps.exif_transpose(img)
+    img_width = img.width
+    img_height = img.height
+    if img.width > 1000 or img.height > 300:
+        img.thumbnail((1000, 300))
+        img.save(final_place)
+        img_width = img.width
+        img_height = img.height
+
+    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text='community banner',
+                width=img_width, height=img_height)
+    db.session.add(file)
+    return file

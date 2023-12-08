@@ -470,6 +470,12 @@ nav.navbar {
   margin-bottom: 15px;
 }
 
+.field_hint {
+  margin-top: -15px;
+  display: block;
+  margin-bottom: 10px;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #777;

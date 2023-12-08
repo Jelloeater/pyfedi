@@ -44,7 +44,7 @@
             <tbody>
                 {% for community in communities %}
                     <tr class="">
-                        <td width="46"><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
+                        <td width="46"><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
                         <td scope="row" class="pl-0"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>

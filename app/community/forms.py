@@ -8,8 +8,10 @@ from app.utils import domain_from_url
 
 class AddLocalCommunity(FlaskForm):
     community_name = StringField(_l('Name'), validators=[DataRequired()])
-    url = StringField(_l('Url'), render_kw={'placeholder': '/c/'})
+    url = StringField(_l('Url'))
     description = TextAreaField(_l('Description'))
+    icon_file = FileField(_('Icon image'))
+    banner_file = FileField(_('Banner image'))
     rules = TextAreaField(_l('Rules'))
     nsfw = BooleanField('18+ NSFW')
     submit = SubmitField(_l('Create'))

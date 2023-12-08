@@ -1,4 +1,6 @@
 import random
+from datetime import datetime
+
 import markdown2
 import math
 from urllib.parse import urlparse
@@ -198,7 +200,7 @@ def user_access(permission: str, user_id: int) -> bool:
     return has_access is not None
 
 
-@cache.memoize(timeout=10)
+@cache.memoize(timeout=500)
 def community_membership(user: User, community: Community) -> int:
     # @cache.memoize works with User.subscribed but cache.delete_memoized does not, making it bad to use on class methods.
     # however cache.memoize and cache.delete_memoized works fine with normal functions
@@ -261,3 +263,8 @@ def back(default_url):
 
     # If referrer is not available or is the same as the current request URL, redirect to the default URL
     return redirect(default_url)
+
+
+# format a datetime in a way that is used in ActivityPub
+def ap_datetime(date_time: datetime) -> str:
+    return date_time.isoformat() + '+00:00'

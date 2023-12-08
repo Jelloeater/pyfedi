@@ -9,14 +9,14 @@ from app.activitypub.signature import RsaKeys, HttpSignature
 from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
-    ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post
+    ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
     File, PostVote
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership
+    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime
 import os
 from PIL import Image, ImageOps
 from datetime import datetime
@@ -39,6 +39,16 @@ def add_local():
                               public_key=public_key,
                               ap_profile_id=current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
                               subscriptions_count=1)
+        icon_file = request.files['icon_file']
+        if icon_file and icon_file.filename != '':
+            file = save_icon_file(icon_file)
+            if file:
+                community.icon = file
+        banner_file = request.files['banner_file']
+        if banner_file and banner_file.filename != '':
+            file = save_banner_file(banner_file)
+            if file:
+                community.image = file
         db.session.add(community)
         db.session.commit()
         membership = CommunityMember(user_id=current_user.id, community_id=community.id, is_moderator=True,
@@ -228,7 +238,7 @@ def add_post(actor):
         form.nsfw.render_kw = {'disabled': True}
     if get_setting('allow_nsfl', False) is False:
         form.nsfl.render_kw = {'disabled': True}
-    images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''
+    images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''    # bug: this will disable posting of images to *remote* hosts too
 
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
@@ -239,10 +249,58 @@ def add_post(actor):
         community.last_active = datetime.utcnow()
         db.session.commit()
 
+        if community.ap_id:  # this is a remote community - send the post to the instance that hosts it
+            page = {
+                'type': 'Page',
+                'id': f"https://{current_app.config['SERVER_NAME']}/post/{post.id}",
+                'attributedTo': current_user.ap_profile_id,
+                'to': [
+                    community.ap_profile_id,
+                    'https://www.w3.org/ns/activitystreams#Public'
+                ],
+                'name': post.title,
+                'cc': [],
+                'content': post.body_html,
+                'mediaType': 'text/html',
+                'source': {
+                    'content': post.body,
+                    'mediaType': 'text/markdown'
+                },
+                'attachment': [],
+                'commentsEnabled': post.comments_enabled,
+                'sensitive': post.nsfw,
+                'nsfl': post.nsfl,
+                'published': ap_datetime(datetime.utcnow()),
+                'audience': community.ap_profile_id
+            }
+            create = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}",
+                "actor": current_user.ap_profile_id,
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "cc": [
+                    community.ap_profile_id
+                ],
+                "type": "Create",
+                "audience": community.ap_profile_id,
+                "object": page
+            }
+            try:
+                message = HttpSignature.signed_request(community.ap_inbox_url, create, current_user.private_key,
+                                                       current_user.ap_profile_id + '#main-key')
+                if message.status_code == 200:
+                    flash('Your post has been sent to ' + community.title)
+                else:
+                    flash('Response status code was not 200', 'warning')
+                    current_app.logger.error('Response code for post attempt was ' +
+                                             str(message.status_code) + ' ' + message.text)
+            except Exception as ex:
+                flash('Failed to send request to subscribe: ' + str(ex), 'error')
+                current_app.logger.error("Exception while trying to subscribe" + str(ex))
+        else:   # local community - send post out to followers
+            ...
 
-        # todo: federate post creation out to followers
-
-        flash('Post has been added')
         return redirect(f"/c/{community.link()}")
     else:
         form.communities.data = community.id

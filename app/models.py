@@ -103,21 +103,45 @@ class Community(db.Model):
     image = db.relationship('File', foreign_keys=[image_id], single_parent=True, cascade="all, delete-orphan")
 
     @cache.memoize(timeout=500)
-    def icon_image(self) -> str:
+    def icon_image(self, size='default') -> str:
         if self.icon_id is not None:
-            if self.icon.file_path is not None:
-                return self.icon.file_path
-            if self.icon.source_url is not None:
-                return self.icon.source_url
+            if size == 'default':
+                if self.icon.file_path is not None:
+                    if self.icon.file_path.startswith('app/'):
+                        return self.icon.file_path.replace('app/', '/')
+                    else:
+                        return self.icon.file_path
+                if self.icon.source_url is not None:
+                    if self.icon.source_url.startswith('app/'):
+                        return self.icon.source_url.replace('app/', '/')
+                    else:
+                        return self.icon.source_url
+            elif size == 'tiny':
+                if self.icon.thumbnail_path is not None:
+                    if self.icon.thumbnail_path.startswith('app/'):
+                        return self.icon.thumbnail_path.replace('app/', '/')
+                    else:
+                        return self.icon.thumbnail_path
+                if self.icon.source_url is not None:
+                    if self.icon.source_url.startswith('app/'):
+                        return self.icon.source_url.replace('app/', '/')
+                    else:
+                        return self.icon.source_url
         return ''
 
     @cache.memoize(timeout=500)
     def header_image(self) -> str:
         if self.image_id is not None:
             if self.image.file_path is not None:
-                return self.image.file_path
+                if self.image.file_path.startswith('app/'):
+                    return self.image.file_path.replace('app/', '/')
+                else:
+                    return self.image.file_path
             if self.image.source_url is not None:
-                return self.image.source_url
+                if self.image.source_url.startswith('app/'):
+                    return self.image.source_url.replace('app/', '/')
+                else:
+                    return self.image.source_url
         return ''
 
     def display_name(self) -> str:
@@ -142,6 +166,9 @@ class Community(db.Model):
 
     def is_moderator(self):
         return any(moderator.user_id == current_user.id for moderator in self.moderators())
+
+    def profile_id(self):
+        return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
 
 
 user_role = db.Table('user_role',
@@ -232,18 +259,30 @@ class User(UserMixin, db.Model):
     def avatar_image(self) -> str:
         if self.avatar_id is not None:
             if self.avatar.file_path is not None:
-                return self.avatar.file_path
+                if self.avatar.file_path.startswith('app/'):
+                    return self.avatar.file_path.replace('app/', '/')
+                else:
+                    return self.avatar.file_path
             if self.avatar.source_url is not None:
-                return self.avatar.source_url
+                if self.avatar.source_url.startswith('app/'):
+                    return self.avatar.source_url.replace('app/', '/')
+                else:
+                    return self.avatar.source_url
         return ''
 
     @cache.memoize(timeout=500)
     def cover_image(self) -> str:
         if self.cover_id is not None:
             if self.cover.file_path is not None:
-                return self.cover.file_path
+                if self.cover.file_path.startswith('app/'):
+                    return self.cover.file_path.replace('app/', '/')
+                else:
+                    return self.cover.file_path
             if self.cover.source_url is not None:
-                return self.cover.source_url
+                if self.cover.source_url.startswith('app/'):
+                    return self.cover.source_url.replace('app/', '/')
+                else:
+                    return self.cover.source_url
         return ''
 
     def link(self) -> str:
@@ -302,7 +341,7 @@ class User(UserMixin, db.Model):
             join(CommunityMember).filter(CommunityMember.is_banned == False).all()
 
     def profile_id(self):
-        return self.ap_profile_id if self.ap_profile_id else f"{self.user_name}@{current_app.config['SERVER_NAME']}"
+        return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
 
     def created_recently(self):
         return self.created and self.created > datetime.utcnow() - timedelta(days=7)
@@ -413,6 +452,9 @@ class Post(db.Model):
             if vpos != -1:
                 return self.url[vpos + 2:vpos + 13]
 
+    def profile_id(self):
+        return f"https://{current_app.config['SERVER_NAME']}/post/{self.id}"
+
 
 class PostReply(db.Model):
     query_class = FullTextSearchQuery
@@ -451,6 +493,9 @@ class PostReply(db.Model):
     @classmethod
     def get_by_ap_id(cls, ap_id):
         return cls.query.filter_by(ap_id=ap_id).first()
+
+    def profile_id(self):
+        return f"https://{current_app.config['SERVER_NAME']}/comment/{self.id}"
 
 
 class Domain(db.Model):

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'bootstrap/form.html' import render_form %}
+{% from 'bootstrap/form.html' import render_field %}
 
 {% block app_content %}
     <div class="row">
@@ -7,7 +7,24 @@
             <div class="card mt-5">
                 <div class="card-body p-6">
                     <div class="card-title">{{ _('Create community') }}</div>
-                    {{ render_form(form) }}
+                    <form method="post" enctype="multipart/form-data" id="add_local_community_form">
+                        {{ form.csrf_token() }}
+                        {{ render_field(form.community_name) }}
+                        <div class="form-group">{{ form.url.label(class_="form-control-label required") }}
+                            /c/{{ form.url(class_="form-control", maxlength=255) }}
+                            {% for error in form.url.errors %}
+                            <span style="color: red;">[{{ error }}]</span>
+                            {% endfor %}
+                        </div>
+                        {{ render_field(form.description) }}
+                        {{ render_field(form.icon_file) }}
+                        <small class="field_hint">Provide a square image that looks good when small.</small>
+                        {{ render_field(form.banner_file) }}
+                        <small class="field_hint">Provide a wide image - letterbox orientation.</small>
+                        {{ render_field(form.rules) }}
+                        {{ render_field(form.nsfw) }}
+                        {{ render_field(form.submit) }}
+                    </form>
                 </div>
             </div>
         </div>

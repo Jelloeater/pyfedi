@@ -14,7 +14,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
-    domain_from_url, markdown_to_html, community_membership
+    domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
 
 INBOX = []
@@ -159,12 +159,17 @@ def user_profile(actor):
                             "endpoints": {
                                 "sharedInbox": f"https://{server}/inbox"
                             },
-                            "published": user.created.isoformat() + '+00:00',
+                            "published": ap_datetime(user.created),
                         }
             if user.avatar_id is not None:
                 actor_data["icon"] = {
                     "type": "Image",
-                    "url": f"https://{server}/avatars/{user.avatar.file_path}"
+                    "url": f"https://{current_app.config['SERVER_NAME']}{user.avatar_image()}"
+                }
+            if user.cover_id is not None:
+                actor_data["image"] = {
+                    "type": "Image",
+                    "url": f"https://{current_app.config['SERVER_NAME']}{user.cover_image()}"
                 }
             if user.about:
                 actor_data['source'] = {
@@ -219,13 +224,18 @@ def community_profile(actor):
                 "endpoints": {
                     "sharedInbox": f"https://{server}/inbox"
                 },
-                "published": community.created_at.isoformat() + '+00:00',
-                "updated": community.last_active.isoformat() + '+00:00',
+                "published": ap_datetime(community.created_at),
+                "updated": ap_datetime(community.last_active),
             }
             if community.icon_id is not None:
                 actor_data["icon"] = {
                     "type": "Image",
-                    "url": f"https://{server}/avatars/{community.icon.file_path}"
+                    "url": f"https://{current_app.config['SERVER_NAME']}{community.icon_image()}"
+                }
+            if community.image_id is not None:
+                actor_data["image"] = {
+                    "type": "Image",
+                    "url": f"https://{current_app.config['SERVER_NAME']}{community.header_image()}"
                 }
             resp = jsonify(actor_data)
             resp.content_type = 'application/activity+json'
