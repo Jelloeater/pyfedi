@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
 from urllib.parse import urlparse
 
-from app.utils import get_request, allowlist_html, html_to_markdown, get_setting
+from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime
 
 
 def public_key():
@@ -115,7 +115,7 @@ def post_to_activity(post: Post, community: Community):
                 "attachment": [],
                 "commentsEnabled": True,
                 "sensitive": post.nsfw or post.nsfl,
-                "published": post.created_at,
+                "published": ap_datetime(post.created_at),
                 "audience": f"https://{current_app.config['SERVER_NAME']}/c/{community.name}"
             },
             "cc": [
@@ -244,6 +244,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                                         ap_public_url=activity_json['id'],
                                         ap_profile_id=activity_json['id'],
                                         ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                                        ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
                                         ap_preferred_username=activity_json['preferredUsername'],
                                         ap_fetched_at=datetime.utcnow(),
                                         ap_domain=server,

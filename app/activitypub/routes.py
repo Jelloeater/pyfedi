@@ -6,6 +6,7 @@ from flask import request, Response, current_app, abort, jsonify, json
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
+from app.post.routes import continue_discussion, show_post
 from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, SUBSCRIPTION_MEMBER
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
@@ -132,6 +133,10 @@ def lemmy_federated_instances():
     })
 
 
+def is_activitypub_request():
+    return 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', '')
+
+
 @bp.route('/u/<actor>', methods=['GET'])
 def user_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the user, or a HTML rendering of their profile.
@@ -143,7 +148,7 @@ def user_profile(actor):
         user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
 
     if user is not None:
-        if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', ''):
+        if is_activitypub_request():
             server = current_app.config['SERVER_NAME']
             actor_data = {  "@context": default_context(),
                             "type": "Person",
@@ -199,7 +204,7 @@ def community_profile(actor):
     else:
         community: Community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
     if community is not None:
-        if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', ''):
+        if is_activitypub_request():
             server = current_app.config['SERVER_NAME']
             actor_data = {"@context": default_context(),
                 "type": "Group",
@@ -375,7 +380,7 @@ def shared_inbox():
                                             db.session.add(post_reply)
                                             post.reply_count += 1
                                             community.post_reply_count += 1
-                                            community.last_active = datetime.utcnow()
+                                            community.last_active = post.last_active = datetime.utcnow()
                                             activity_log.result = 'success'
                                             db.session.commit()
                                             vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id, post_reply_id=post_reply.id,
@@ -918,3 +923,56 @@ def inbox(actor):
     if request.method == 'POST':
         INBOX.append(request.data)
         return Response(status=200)
+
+
+@bp.route('/comment/<int:comment_id>', methods=['GET'])
+def comment_ap(comment_id):
+    if is_activitypub_request():
+        reply = PostReply.query.get_or_404(comment_id)
+        reply_data = {
+            "@context": default_context(),
+            "type": "Note",
+            "id": reply.ap_id,
+            "attributedTo": reply.author.profile_id(),
+            "inReplyTo": reply.in_reply_to(),
+            "to": [
+                "https://www.w3.org/ns/activitystreams#Public",
+                reply.to()
+            ],
+            "cc": [
+                reply.community.profile_id(),
+                reply.author.followers_url()
+            ],
+            'content': reply.body_html,
+            'mediaType': 'text/html',
+            'published': ap_datetime(reply.created_at),
+            'distinguished': False,
+            'audience': reply.community.profile_id()
+        }
+        if reply.edited_at:
+            reply_data['updated'] = ap_datetime(reply.edited_at)
+        if reply.body.strip():
+            reply_data['source'] = {
+                'content': reply.body,
+                'mediaType': 'text/markdown'
+            }
+        resp = jsonify(reply_data)
+        resp.content_type = 'application/activity+json'
+        return resp
+    else:
+        reply = PostReply.query.get(comment_id)
+        continue_discussion(reply.post.id, comment_id)
+
+
+@bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
+def post_ap(post_id):
+    if request.method == 'GET' and is_activitypub_request():
+        post = Post.query.get_or_404(post_id)
+        post_data = post_to_activity(post, post.community)
+        post_data = post_data['object']['object']
+        post_data['@context'] = default_context()
+        resp = jsonify(post_data)
+        resp.content_type = 'application/activity+json'
+        return resp
+    else:
+        return show_post(post_id)

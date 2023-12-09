@@ -9,7 +9,7 @@ from pillow_heif import register_heif_opener
 
 from app import db, cache
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
-from app.models import Community, File, BannedInstances, PostReply, PostVote
+from app.models import Community, File, BannedInstances, PostReply, PostVote, Post
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image
 from sqlalchemy import desc, text
 import os
@@ -133,7 +133,7 @@ def url_to_thumbnail_file(filename) -> File:
                     source_url=filename)
 
 
-def save_post(form, post):
+def save_post(form, post: Post):
     post.nsfw = form.nsfw.data
     post.nsfl = form.nsfl.data
     post.notify_author = form.notify_author.data

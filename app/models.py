@@ -170,6 +170,9 @@ class Community(db.Model):
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
 
+    def is_local(self):
+        return self.ap_id is None or self.profile_id().startswith('https://' + current_app.config['SERVER_NAME'])
+
 
 user_role = db.Table('user_role',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
@@ -285,11 +288,20 @@ class User(UserMixin, db.Model):
                     return self.cover.source_url
         return ''
 
+    def is_local(self):
+        return self.ap_id is None or self.ap_profile_id.startswith('https://' + current_app.config['SERVER_NAME'])
+
     def link(self) -> str:
-        if self.ap_id is None:
+        if self.is_local():
             return self.user_name
         else:
             return self.ap_id
+
+    def followers_url(self):
+        if self.ap_followers_url:
+            return self.ap_followers_url
+        else:
+            return self.profile_id() + '/followers'
 
     def get_reset_password_token(self, expires_in=600):
         return jwt.encode(
@@ -342,6 +354,8 @@ class User(UserMixin, db.Model):
 
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
+
+
 
     def created_recently(self):
         return self.created and self.created > datetime.utcnow() - timedelta(days=7)
@@ -433,6 +447,9 @@ class Post(db.Model):
     domain = db.relationship('Domain', lazy='joined', foreign_keys=[domain_id])
     author = db.relationship('User', lazy='joined', overlaps='posts', foreign_keys=[user_id])
 
+    def is_local(self):
+        return self.ap_id is None or self.ap_id.startswith('https://' + current_app.config['SERVER_NAME'])
+
     @classmethod
     def get_by_ap_id(cls, ap_id):
         return cls.query.filter_by(ap_id=ap_id).first()
@@ -490,12 +507,31 @@ class PostReply(db.Model):
 
     search_vector = db.Column(TSVectorType('body'))
 
+    def is_local(self):
+        return self.ap_id is None or self.ap_id.startswith('https://' + current_app.config['SERVER_NAME'])
+
     @classmethod
     def get_by_ap_id(cls, ap_id):
         return cls.query.filter_by(ap_id=ap_id).first()
 
     def profile_id(self):
         return f"https://{current_app.config['SERVER_NAME']}/comment/{self.id}"
+
+    # the ap_id of the parent object, whether it's another PostReply or a Post
+    def in_reply_to(self):
+        if self.parent_id is None:
+            return self.post.ap_id
+        else:
+            parent = PostReply.query.get(self.parent_id)
+            return parent.ap_id
+
+    # the AP profile of the person who wrote the parent object, which could be another PostReply or a Post
+    def to(self):
+        if self.parent_id is None:
+            return self.post.author.profile_id()
+        else:
+            parent = PostReply.query.get(self.parent_id)
+            return parent.author.profile_id()
 
 
 class Domain(db.Model):

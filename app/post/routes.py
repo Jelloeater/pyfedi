@@ -6,6 +6,7 @@ from flask_babel import _
 from sqlalchemy import or_, desc
 
 from app import db, constants
+from app.activitypub.signature import HttpSignature
 from app.community.util import save_post
 from app.post.forms import NewReplyForm
 from app.community.forms import CreatePostForm
@@ -15,14 +16,15 @@ from app.models import Post, PostReply, \
     PostReplyVote, PostVote, Notification
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish
+    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime
 
 
-@bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def show_post(post_id: int):
     post = Post.query.get_or_404(post_id)
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
+
+    # handle top-level comments/replies
     form = NewReplyForm()
     if current_user.is_authenticated and current_user.verified and form.validate_on_submit():
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
@@ -33,8 +35,12 @@ def show_post(post_id: int):
             notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=post.user_id,
                                         author_id=current_user.id, url=url_for('post.show_post', post_id=post.id))
             db.session.add(notification)
+        post.last_active = post.community.last_active = datetime.utcnow()
+        post.reply_count += 1
+        post.community.post_reply_count += 1
         db.session.add(reply)
         db.session.commit()
+        reply.ap_id = reply.profile_id()
         reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
                                    effect=1.0)
         db.session.add(reply_vote)
@@ -42,7 +48,58 @@ def show_post(post_id: int):
         form.body.data = ''
         flash('Your comment has been added.')
         # todo: flush cache
-        # todo: federation
+        # federation
+        if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
+            reply_json = {
+                'type': 'Note',
+                'id': reply.profile_id(),
+                'attributedTo': current_user.profile_id(),
+                'to': [
+                    'https://www.w3.org/ns/activitystreams#Public'
+                ],
+                'cc': [
+                    post.community.profile_id(),
+                ],
+                'content': reply.body_html,
+                'inReplyTo': post.profile_id(),
+                'mediaType': 'text/html',
+                'source': {
+                    'content': reply.body,
+                    'mediaType': 'text/markdown'
+                },
+                'published': ap_datetime(datetime.utcnow()),
+                'distinguished': False,
+                'audience': post.community.profile_id()
+            }
+            create_json = {
+                'type': 'Create',
+                'actor': current_user.profile_id(),
+                'audience': post.community.profile_id(),
+                'to': [
+                    'https://www.w3.org/ns/activitystreams#Public'
+                ],
+                'cc': [
+                    post.community.ap_profile_id
+                ],
+                'object': reply_json,
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
+            }
+
+            try:
+                message = HttpSignature.signed_request(post.community.ap_inbox_url, create_json, current_user.private_key,
+                                                       current_user.ap_profile_id + '#main-key')
+                if message.status_code == 200:
+                    flash('Your reply has been sent to ' + post.community.title)
+                else:
+                    flash('Response status code was not 200', 'warning')
+                    current_app.logger.error('Response code for reply attempt was ' +
+                                             str(message.status_code) + ' ' + message.text)
+            except Exception as ex:
+                flash('Failed to send request to subscribe: ' + str(ex), 'error')
+                current_app.logger.error("Exception while trying to subscribe" + str(ex))
+        else:                       # local community - send it to followers on remote instances
+            ...
+
         return redirect(url_for('post.show_post',
                                 post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
@@ -176,31 +233,101 @@ def continue_discussion(post_id, comment_id):
 @login_required
 def add_reply(post_id: int, comment_id: int):
     post = Post.query.get_or_404(post_id)
-    comment = PostReply.query.get_or_404(comment_id)
+    in_reply_to = PostReply.query.get_or_404(comment_id)
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     form = NewReplyForm()
     if form.validate_on_submit():
-        reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=comment.id, depth=comment.depth + 1,
+        reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, depth=in_reply_to.depth + 1,
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
                           notify_author=form.notify_author.data)
         db.session.add(reply)
-        if comment.notify_author and current_user.id != comment.user_id:    # todo: check if replier is blocked
-            notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=comment.user_id,
+        if in_reply_to.notify_author and current_user.id != in_reply_to.user_id and in_reply_to.author.ap_id is None:    # todo: check if replier is blocked
+            notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=in_reply_to.user_id,
                                         author_id=current_user.id, url=url_for('post.show_post', post_id=post.id))
             db.session.add(notification)
+        db.session.commit()
+        reply.ap_id = reply.profile_id()
         db.session.commit()
         reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
                                    effect=1.0)
         db.session.add(reply_vote)
         post.reply_count = post_reply_count(post.id)
+        post.last_active = post.community.last_active = datetime.utcnow()
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')
         # todo: flush cache
-        # todo: federation
+
+        # federation
+        if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
+            reply_json = {
+                'type': 'Note',
+                'id': reply.profile_id(),
+                'attributedTo': current_user.profile_id(),
+                'to': [
+                    'https://www.w3.org/ns/activitystreams#Public'
+                ],
+                'cc': [
+                    post.community.profile_id(),
+                ],
+                'content': reply.body_html,
+                'inReplyTo': in_reply_to.profile_id(),
+                'mediaType': 'text/html',
+                'source': {
+                    'content': reply.body,
+                    'mediaType': 'text/markdown'
+                },
+                'published': ap_datetime(datetime.utcnow()),
+                'distinguished': False,
+                'audience': post.community.profile_id()
+            }
+            create_json = {
+                'type': 'Create',
+                'actor': current_user.profile_id(),
+                'audience': post.community.profile_id(),
+                'to': [
+                    'https://www.w3.org/ns/activitystreams#Public'
+                ],
+                'cc': [
+                    post.community.ap_profile_id
+                ],
+                'object': reply_json,
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
+            }
+            if in_reply_to.notify_author and in_reply_to.author.ap_id is not None:
+                create_json['cc'].append(in_reply_to.author.ap_profile_id)
+                create_json['tag'] = [
+                    {
+                        'href': in_reply_to.author.ap_profile_id,
+                        'name': '@' + in_reply_to.author.ap_id,
+                        'type': 'Mention'
+                    }
+                ]
+                reply_json['cc'].append(in_reply_to.author.ap_profile_id)
+                reply_json['tag'] = [
+                    {
+                        'href': in_reply_to.author.ap_profile_id,
+                        'name': '@' + in_reply_to.author.ap_id,
+                        'type': 'Mention'
+                    }
+                ]
+            try:
+                message = HttpSignature.signed_request(post.community.ap_inbox_url, create_json, current_user.private_key,
+                                                       current_user.ap_profile_id + '#main-key')
+                if message.status_code == 200:
+                    flash('Your reply has been sent to ' + post.community.title)
+                else:
+                    flash('Response status code was not 200', 'warning')
+                    current_app.logger.error('Response code for reply attempt was ' +
+                                             str(message.status_code) + ' ' + message.text)
+            except Exception as ex:
+                flash('Failed to send request to subscribe: ' + str(ex), 'error')
+                current_app.logger.error("Exception while trying to subscribe" + str(ex))
+        else:                       # local community - send it to followers on remote instances
+            ...
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
             return redirect(url_for('post.show_post', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
         else:
@@ -208,7 +335,7 @@ def add_reply(post_id: int, comment_id: int):
     else:
         form.notify_author.data = True
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                               is_moderator=is_moderator, form=form, comment=comment)
+                               is_moderator=is_moderator, form=form, comment=in_reply_to)
 
 
 @bp.route('/post/<int:post_id>/options', methods=['GET'])

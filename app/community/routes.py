@@ -238,6 +238,12 @@ def add_post(actor):
         form.nsfw.render_kw = {'disabled': True}
     if get_setting('allow_nsfl', False) is False:
         form.nsfl.render_kw = {'disabled': True}
+    if community.nsfw:
+        form.nsfw.data = True
+        form.nsfw.render_kw = {'disabled': True}
+    if community.nsfl:
+        form.nsfl.data = True
+        form.nsfw.render_kw = {'disabled': True}
     images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''    # bug: this will disable posting of images to *remote* hosts too
 
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
@@ -248,11 +254,13 @@ def add_post(actor):
         community.post_count += 1
         community.last_active = datetime.utcnow()
         db.session.commit()
+        post.ap_id = f"https://{current_app.config['SERVER_NAME']}/post/{post.id}"
+        db.session.commit()
 
-        if community.ap_id:  # this is a remote community - send the post to the instance that hosts it
+        if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
             page = {
                 'type': 'Page',
-                'id': f"https://{current_app.config['SERVER_NAME']}/post/{post.id}",
+                'id': post.ap_id,
                 'attributedTo': current_user.ap_profile_id,
                 'to': [
                     community.ap_profile_id,
