@@ -161,6 +161,7 @@ def post_vote(post_id: int, vote_direction):
                              effect=effect)
         post.author.reputation += effect
         db.session.add(vote)
+    current_user.last_seen = datetime.utcnow()
     db.session.commit()
     return render_template('post/_post_voting_buttons.html', post=post,
                            upvoted_class=upvoted_class,
@@ -211,6 +212,7 @@ def comment_vote(comment_id, vote_direction):
         vote = PostReplyVote(user_id=current_user.id, post_reply_id=comment_id, author_id=comment.author.id, effect=effect)
         comment.author.reputation += effect
         db.session.add(vote)
+    current_user.last_seen = datetime.utcnow()
     db.session.commit()
     return render_template('post/_voting_buttons.html', comment=comment,
                            upvoted_class=upvoted_class,
@@ -238,6 +240,7 @@ def add_reply(post_id: int, comment_id: int):
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     form = NewReplyForm()
     if form.validate_on_submit():
+        current_user.last_seen = datetime.utcnow()
         reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, depth=in_reply_to.depth + 1,
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
