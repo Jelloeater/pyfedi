@@ -4,7 +4,7 @@
             <div class="row main_row">
                 <div class="col">
                     <h3>
-                        <a href="{{ url_for('post.show_post', post_id=post.id) }}">{{ post.title }}</a>
+                        <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a>
                         {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image"> </span>{% endif %}
                         {% if post.type == POST_TYPE_LINK and post.domain_id %}
                             {% if post.url and 'youtube.com' in post.url %}
@@ -19,7 +19,7 @@
                     <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>
                 {% if post.image_id %}
                     <div class="thumbnail">
-                        <a href="{{ url_for('post.show_post', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                        <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
                                                                                              height="50" /></a>
                     </div>
                 {% endif %}
@@ -28,8 +28,8 @@
             </div>
             <div class="row utilities_row">
                 <div class="col-6">
-                    <a href="{{ url_for('post.show_post', post_id=post.id, _anchor='replies') }}"><span class="fe fe-reply"></span></a>
-                    <a href="{{ url_for('post.show_post', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
+                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}"><span class="fe fe-reply"></span></a>
+                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
                 </div>
                 <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}"><span class="fe fe-options" title="Options"> </span></a></div>
             </div>

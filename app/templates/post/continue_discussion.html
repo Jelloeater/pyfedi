@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-12 col-md-8 position-relative main_pane">
         {% include 'post/_post_full.html' %}
-        <p><a href="{{ url_for('post.show_post', post_id=post.id, _anchor='replies') }}">Back to main discussion</a></p>
+        <p><a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}">Back to main discussion</a></p>
         <div class="row post_replies">
             <div class="col">
                 {% macro render_comment(comment) %}

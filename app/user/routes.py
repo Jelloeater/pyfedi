@@ -4,7 +4,7 @@ from flask import redirect, url_for, flash, request, make_response, session, Mar
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
-from app import db
+from app import db, cache
 from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
@@ -47,9 +47,11 @@ def edit_profile(actor):
         if form.password_field.data.strip() != '':
             current_user.set_password(form.password_field.data)
         current_user.about = form.about.data
+        current_user.flush_cache()
         db.session.commit()
 
         flash(_('Your changes have been saved.'), 'success')
+
         return redirect(url_for('user.edit_profile', actor=actor))
     elif request.method == 'GET':
         form.email.data = current_user.email

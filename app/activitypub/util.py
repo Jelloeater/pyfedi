@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from typing import Union, Tuple
-from flask import current_app
+from flask import current_app, request
 from sqlalchemy import text
 from app import db, cache
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance
@@ -403,6 +403,15 @@ def instance_weight(domain):
         if instance:
             return instance.vote_weight
     return 1.0
+
+
+def is_activitypub_request():
+    return 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', '')
+
+
+# differentiate between cached JSON and cached HTML by appending is_activitypub_request() to the cache key
+def cache_key_by_ap_header(**kwargs):
+    return request.path + "_" + str(is_activitypub_request())
 
 
 def lemmy_site_data():

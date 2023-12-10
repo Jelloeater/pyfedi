@@ -13,7 +13,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
     PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
-    lemmy_site_data, instance_weight
+    lemmy_site_data, instance_weight, cache_key_by_ap_header, is_activitypub_request
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -69,6 +69,7 @@ def webfinger():
 
 
 @bp.route('/.well-known/nodeinfo')
+@cache.cached(timeout=600)
 def nodeinfo():
     nodeinfo_data = {"links": [{"rel": "http://nodeinfo.diaspora.software/ns/schema/2.0",
                                 "href": f"https://{current_app.config['SERVER_NAME']}/nodeinfo/2.0"}]}
@@ -77,6 +78,7 @@ def nodeinfo():
 
 @bp.route('/nodeinfo/2.0')
 @bp.route('/nodeinfo/2.0.json')
+@cache.cached(timeout=600)
 def nodeinfo2():
 
     nodeinfo_data = {
@@ -103,11 +105,13 @@ def nodeinfo2():
 
 
 @bp.route('/api/v3/site')
+@cache.cached(timeout=600)
 def lemmy_site():
     return jsonify(lemmy_site_data())
 
 
 @bp.route('/api/v3/federated_instances')
+@cache.cached(timeout=600)
 def lemmy_federated_instances():
     instances = Instance.query.all()
     linked = []
@@ -133,11 +137,8 @@ def lemmy_federated_instances():
     })
 
 
-def is_activitypub_request():
-    return 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', '')
-
-
 @bp.route('/u/<actor>', methods=['GET'])
+@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def user_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the user, or a HTML rendering of their profile.
     The two types of requests are differentiated by the header """
@@ -290,7 +291,8 @@ def shared_inbox():
                             community = find_actor_or_create(community_ap_id)
                             user = find_actor_or_create(user_ap_id)
                             if user and community:
-                                user.last_seen = datetime.utcnow()
+                                user.last_seen = community.last_active = datetime.utcnow()
+
                                 object_type = request_json['object']['type']
                                 new_content_types = ['Page', 'Article', 'Link', 'Note']
                                 if object_type in new_content_types:  # create a new post
@@ -399,7 +401,7 @@ def shared_inbox():
                                 community = find_actor_or_create(community_ap_id)
                                 user = find_actor_or_create(user_ap_id)
                                 if user and community:
-                                    user.last_seen = datetime.utcnow()
+                                    user.last_seen = community.last_active = datetime.utcnow()
                                     object_type = request_json['object']['object']['type']
                                     new_content_types = ['Page', 'Article', 'Link', 'Note']
                                     if object_type in new_content_types:      # create a new post
@@ -853,6 +855,13 @@ def shared_inbox():
                                     activity_log.result = 'success'
                                 else:
                                     activity_log.exception_message = 'Could not find user or content for vote'
+                        # Flush the caches of any major object that was created. To be sure.
+                        if 'user' in vars() and user is not None:
+                            user.flush_cache()
+                        #if 'community' in vars() and community is not None:
+                        #    community.flush_cache()
+                        if 'post' in vars() and post is not None:
+                            post.flush_cache()
                     else:
                         activity_log.exception_message = 'Instance banned'
             else:
@@ -889,6 +898,7 @@ def community_outbox(actor):
 
 
 @bp.route('/c/<actor>/moderators', methods=['GET'])
+@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def community_moderators(actor):
     actor = actor.strip()
     community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
@@ -935,6 +945,7 @@ def inbox(actor):
 
 
 @bp.route('/comment/<int:comment_id>', methods=['GET'])
+@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def comment_ap(comment_id):
     if is_activitypub_request():
         reply = PostReply.query.get_or_404(comment_id)
@@ -974,6 +985,7 @@ def comment_ap(comment_id):
 
 
 @bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
+@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def post_ap(post_id):
     if request.method == 'GET' and is_activitypub_request():
         post = Post.query.get_or_404(post_id)

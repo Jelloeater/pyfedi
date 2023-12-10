@@ -355,8 +355,6 @@ class User(UserMixin, db.Model):
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
 
-
-
     def created_recently(self):
         return self.created and self.created > datetime.utcnow() - timedelta(days=7)
 
@@ -368,6 +366,10 @@ class User(UserMixin, db.Model):
         except:
             return
         return User.query.get(id)
+
+    def flush_cache(self):
+        cache.delete('/u/' + self.user_name + '_False')
+        cache.delete('/u/' + self.user_name + '_True')
 
     def purge_content(self):
         files = File.query.join(Post).filter(Post.user_id == self.id).all()
@@ -446,6 +448,7 @@ class Post(db.Model):
     image = db.relationship(File, lazy='joined', foreign_keys=[image_id], cascade="all, delete")
     domain = db.relationship('Domain', lazy='joined', foreign_keys=[domain_id])
     author = db.relationship('User', lazy='joined', overlaps='posts', foreign_keys=[user_id])
+    replies = db.relationship('PostReply', lazy='dynamic', backref='post')
 
     def is_local(self):
         return self.ap_id is None or self.ap_id.startswith('https://' + current_app.config['SERVER_NAME'])
@@ -471,6 +474,10 @@ class Post(db.Model):
 
     def profile_id(self):
         return f"https://{current_app.config['SERVER_NAME']}/post/{self.id}"
+
+    def flush_cache(self):
+        cache.delete(f'/post/{self.id}_False')
+        cache.delete(f'/post/{self.id}_True')
 
 
 class PostReply(db.Model):
@@ -515,7 +522,10 @@ class PostReply(db.Model):
         return cls.query.filter_by(ap_id=ap_id).first()
 
     def profile_id(self):
-        return f"https://{current_app.config['SERVER_NAME']}/comment/{self.id}"
+        if self.ap_id:
+            return self.ap_id
+        else:
+            return f"https://{current_app.config['SERVER_NAME']}/comment/{self.id}"
 
     # the ap_id of the parent object, whether it's another PostReply or a Post
     def in_reply_to(self):

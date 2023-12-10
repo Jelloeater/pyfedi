@@ -16,7 +16,8 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
     File, PostVote
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime
+    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
+    request_etag_matches, return_304
 import os
 from PIL import Image, ImageOps
 from datetime import datetime
@@ -87,6 +88,12 @@ def add_remote():
 
 # @bp.route('/c/<actor>', methods=['GET']) - defined in activitypub/routes.py, which calls this function for user requests. A bit weird.
 def show_community(community: Community):
+
+    # If nothing has changed since their last visit, return HTTP 304
+    current_etag = f"{community.id}_{hash(community.last_active)}"
+    if request_etag_matches(current_etag):
+        return return_304(current_etag)
+
     mods = community.moderators()
 
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
@@ -110,7 +117,7 @@ def show_community(community: Community):
     return render_template('community/community.html', community=community, title=community.title,
                            is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
-                           SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
+                           SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}")
 
 
 @bp.route('/<actor>/subscribe', methods=['GET'])

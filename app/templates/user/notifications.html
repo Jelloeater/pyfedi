@@ -93,7 +93,7 @@
                 <div class="card-body">
                         <ul>
                             {% for post in upvoted %}
-                                <li><a href="{{ url_for('post.show_post', post_id=post.id) }}">{{ post.title }}</a></li>
+                                <li><a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a></li>
                             {% endfor %}
                         </ul>
 

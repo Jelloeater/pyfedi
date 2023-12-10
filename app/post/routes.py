@@ -1,12 +1,13 @@
 from datetime import datetime
 
-from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
+from flask import redirect, url_for, flash, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
 
 from app import db, constants
 from app.activitypub.signature import HttpSignature
+from app.activitypub.util import default_context
 from app.community.util import save_post
 from app.post.forms import NewReplyForm
 from app.community.forms import CreatePostForm
@@ -16,11 +17,18 @@ from app.models import Post, PostReply, \
     PostReplyVote, PostVote, Notification
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime
+    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
+    request_etag_matches
 
 
 def show_post(post_id: int):
     post = Post.query.get_or_404(post_id)
+
+    # If nothing has changed since their last visit, return HTTP 304
+    current_etag = f"{post.id}_{hash(post.last_active)}"
+    if request_etag_matches(current_etag):
+        return return_304(current_etag)
+
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
 
@@ -33,11 +41,12 @@ def show_post(post_id: int):
                           notify_author=form.notify_author.data)
         if post.notify_author and current_user.id != post.user_id:    # todo: check if replier is blocked
             notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=post.user_id,
-                                        author_id=current_user.id, url=url_for('post.show_post', post_id=post.id))
+                                        author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
         post.last_active = post.community.last_active = datetime.utcnow()
         post.reply_count += 1
         post.community.post_reply_count += 1
+
         db.session.add(reply)
         db.session.commit()
         reply.ap_id = reply.profile_id()
@@ -47,7 +56,9 @@ def show_post(post_id: int):
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')
-        # todo: flush cache
+
+        post.flush_cache()
+
         # federation
         if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
             reply_json = {
@@ -100,7 +111,7 @@ def show_post(post_id: int):
         else:                       # local community - send it to followers on remote instances
             ...
 
-        return redirect(url_for('post.show_post',
+        return redirect(url_for('activitypub.post_ap',
                                 post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
         replies = post_replies(post.id, 'top')
@@ -112,7 +123,8 @@ def show_post(post_id: int):
     return render_template('post/post.html', title=post.title, post=post, is_moderator=is_moderator,
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
-                           POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE)
+                           POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
+                           etag=f"{post.id}_{hash(post.last_active)}")
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])
@@ -163,6 +175,7 @@ def post_vote(post_id: int, vote_direction):
         db.session.add(vote)
     current_user.last_seen = datetime.utcnow()
     db.session.commit()
+    post.flush_cache()
     return render_template('post/_post_voting_buttons.html', post=post,
                            upvoted_class=upvoted_class,
                            downvoted_class=downvoted_class)
@@ -214,6 +227,7 @@ def comment_vote(comment_id, vote_direction):
         db.session.add(vote)
     current_user.last_seen = datetime.utcnow()
     db.session.commit()
+    comment.post.flush_cache()
     return render_template('post/_voting_buttons.html', comment=comment,
                            upvoted_class=upvoted_class,
                            downvoted_class=downvoted_class)
@@ -249,7 +263,7 @@ def add_reply(post_id: int, comment_id: int):
         db.session.add(reply)
         if in_reply_to.notify_author and current_user.id != in_reply_to.user_id and in_reply_to.author.ap_id is None:    # todo: check if replier is blocked
             notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=in_reply_to.user_id,
-                                        author_id=current_user.id, url=url_for('post.show_post', post_id=post.id))
+                                        author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
         db.session.commit()
         reply.ap_id = reply.profile_id()
@@ -262,7 +276,8 @@ def add_reply(post_id: int, comment_id: int):
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')
-        # todo: flush cache
+
+        post.flush_cache()
 
         # federation
         if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
@@ -271,13 +286,16 @@ def add_reply(post_id: int, comment_id: int):
                 'id': reply.profile_id(),
                 'attributedTo': current_user.profile_id(),
                 'to': [
-                    'https://www.w3.org/ns/activitystreams#Public'
+                    'https://www.w3.org/ns/activitystreams#Public',
+                    in_reply_to.author.profile_id()
                 ],
                 'cc': [
                     post.community.profile_id(),
+                    current_user.followers_url()
                 ],
                 'content': reply.body_html,
                 'inReplyTo': in_reply_to.profile_id(),
+                'url': reply.profile_id(),
                 'mediaType': 'text/html',
                 'source': {
                     'content': reply.body,
@@ -285,31 +303,28 @@ def add_reply(post_id: int, comment_id: int):
                 },
                 'published': ap_datetime(datetime.utcnow()),
                 'distinguished': False,
-                'audience': post.community.profile_id()
+                'audience': post.community.profile_id(),
+                'contentMap': {
+                    'en': reply.body_html
+                }
             }
             create_json = {
+                '@context': default_context(),
                 'type': 'Create',
                 'actor': current_user.profile_id(),
                 'audience': post.community.profile_id(),
                 'to': [
-                    'https://www.w3.org/ns/activitystreams#Public'
+                    'https://www.w3.org/ns/activitystreams#Public',
+                    in_reply_to.author.profile_id()
                 ],
                 'cc': [
-                    post.community.ap_profile_id
+                    post.community.profile_id(),
+                    current_user.followers_url()
                 ],
                 'object': reply_json,
                 'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
             }
             if in_reply_to.notify_author and in_reply_to.author.ap_id is not None:
-                create_json['cc'].append(in_reply_to.author.ap_profile_id)
-                create_json['tag'] = [
-                    {
-                        'href': in_reply_to.author.ap_profile_id,
-                        'name': '@' + in_reply_to.author.ap_id,
-                        'type': 'Mention'
-                    }
-                ]
-                reply_json['cc'].append(in_reply_to.author.ap_profile_id)
                 reply_json['tag'] = [
                     {
                         'href': in_reply_to.author.ap_profile_id,
@@ -327,12 +342,12 @@ def add_reply(post_id: int, comment_id: int):
                     current_app.logger.error('Response code for reply attempt was ' +
                                              str(message.status_code) + ' ' + message.text)
             except Exception as ex:
-                flash('Failed to send request to subscribe: ' + str(ex), 'error')
-                current_app.logger.error("Exception while trying to subscribe" + str(ex))
+                flash('Failed to send reply: ' + str(ex), 'error')
+                current_app.logger.error("Exception while trying to send reply" + str(ex))
         else:                       # local community - send it to followers on remote instances
             ...
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
-            return redirect(url_for('post.show_post', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
+            return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
         else:
             return redirect(url_for('post.continue_discussion', post_id=post_id, comment_id=reply.parent_id))
     else:
@@ -365,8 +380,9 @@ def post_edit(post_id: int):
             post.community.last_active = datetime.utcnow()
             post.edited_at = datetime.utcnow()
             db.session.commit()
+            post.flush_cache()
             flash(_('Your changes have been saved.'), 'success')
-            return redirect(url_for('post.show_post', post_id=post.id))
+            return redirect(url_for('activitypub.post_ap', post_id=post.id))
         else:
             if post.type == constants.POST_TYPE_ARTICLE:
                 form.type.data = 'discussion'
@@ -392,6 +408,7 @@ def post_delete(post_id: int):
     community = post.community
     if post.user_id == current_user.id or community.is_moderator():
         post.delete_dependencies()
+        post.flush_cache()
         db.session.delete(post)
         db.session.commit()
         flash('Post deleted.')

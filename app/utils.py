@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 import requests
 import os
 import imghdr
-from flask import current_app, json, redirect, url_for, request
+from flask import current_app, json, redirect, url_for, request, make_response, Response
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -20,12 +20,33 @@ from app.models import Settings, Domain, Instance, BannedInstances, User, Commun
 
 
 # Flask's render_template function, with support for themes added
-def render_template(template_name: str, **context) -> str:
+def render_template(template_name: str, **context) -> Response:
     theme = get_setting('theme', '')
     if theme != '':
-        return flask.render_template(f'themes/{theme}/{template_name}', **context)
+        content = flask.render_template(f'themes/{theme}/{template_name}', **context)
     else:
-        return flask.render_template(template_name, **context)
+        content = flask.render_template(template_name, **context)
+
+    # Browser caching using ETags and Cache-Control
+    resp = make_response(content)
+    if 'etag' in context:
+        resp.headers.add_header('ETag', context['etag'])
+    resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+    return resp
+
+
+def request_etag_matches(etag):
+    if 'If-None-Match' in request.headers:
+        old_etag = request.headers['If-None-Match']
+        return old_etag == etag
+    return False
+
+
+def return_304(etag):
+    resp = make_response('', 304)
+    resp.headers.add_header('ETag', request.headers['If-None-Match'])
+    resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+    return resp
 
 
 # Jinja: when a file was modified. Useful for cache-busting
