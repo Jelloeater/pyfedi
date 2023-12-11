@@ -13,7 +13,7 @@ from app.community.util import search_for_community, community_url_exists, actor
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
-    File, PostVote
+    File, PostVote, utcnow
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
@@ -259,7 +259,7 @@ def add_post(actor):
         post = Post(user_id=current_user.id, community_id=form.communities.data)
         save_post(form, post)
         community.post_count += 1
-        community.last_active = datetime.utcnow()
+        community.last_active = utcnow()
         db.session.commit()
         post.ap_id = f"https://{current_app.config['SERVER_NAME']}/post/{post.id}"
         db.session.commit()
@@ -285,7 +285,7 @@ def add_post(actor):
                 'commentsEnabled': post.comments_enabled,
                 'sensitive': post.nsfw,
                 'nsfl': post.nsfl,
-                'published': ap_datetime(datetime.utcnow()),
+                'published': ap_datetime(utcnow()),
                 'audience': community.ap_profile_id
             }
             create = {

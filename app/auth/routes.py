@@ -7,7 +7,7 @@ from app import db
 from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.auth.util import random_token
-from app.models import User
+from app.models import User, utcnow
 from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
 from app.activitypub.signature import RsaKeys
 from app.utils import render_template
@@ -41,7 +41,7 @@ def login():
             flash(_('Invalid password'))
             return redirect(url_for('auth.login'))
         login_user(user, remember=True)
-        current_user.last_seen = datetime.utcnow()
+        current_user.last_seen = utcnow()
         current_user.verification_token = ''
         db.session.commit()
         next_page = request.args.get('next')
@@ -143,7 +143,7 @@ def verify_email(token):
             if user.verified:   # guard against users double-clicking the link in the email
                 return redirect(url_for('main.index'))
             user.verified = True
-            user.last_seen = datetime.utcnow()
+            user.last_seen = utcnow()
             private_key, public_key = RsaKeys.generate_keypair()
             user.private_key = private_key
             user.public_key = public_key

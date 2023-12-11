@@ -49,7 +49,7 @@ def admin_home():
 @permission_required('change instance settings')
 def admin_activities():
     db.session.query(ActivityPubLog).filter(
-        ActivityPubLog.created_at < datetime.utcnow() - timedelta(days=3)).delete()
+        ActivityPubLog.created_at < aware_utcnow() - timedelta(days=3)).delete()
     db.session.commit()
 
     return render_template('admin/activities.html', title=_('ActivityPub Log'),

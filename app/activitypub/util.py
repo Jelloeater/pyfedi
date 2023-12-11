@@ -5,7 +5,7 @@ from typing import Union, Tuple
 from flask import current_app, request
 from sqlalchemy import text
 from app import db, cache
-from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance
+from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow
 import time
 import base64
 import requests
@@ -246,7 +246,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                                         ap_inbox_url=activity_json['endpoints']['sharedInbox'],
                                         ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
                                         ap_preferred_username=activity_json['preferredUsername'],
-                                        ap_fetched_at=datetime.utcnow(),
+                                        ap_fetched_at=utcnow(),
                                         ap_domain=server,
                                         public_key=activity_json['publicKey']['publicKeyPem'],
                                         # language=community_json['language'][0]['identifier'] # todo: language
@@ -277,7 +277,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                                                   ap_profile_id=activity_json['id'],
                                                   ap_followers_url=activity_json['followers'],
                                                   ap_inbox_url=activity_json['endpoints']['sharedInbox'],
-                                                  ap_fetched_at=datetime.utcnow(),
+                                                  ap_fetched_at=utcnow(),
                                                   ap_domain=server,
                                                   public_key=activity_json['publicKey']['publicKeyPem'],
                                                   # language=community_json['language'][0]['identifier'] # todo: language

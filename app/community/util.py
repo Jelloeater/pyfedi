@@ -9,7 +9,7 @@ from pillow_heif import register_heif_opener
 
 from app import db, cache
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
-from app.models import Community, File, BannedInstances, PostReply, PostVote, Post
+from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image
 from sqlalchemy import desc, text
 import os
@@ -59,7 +59,7 @@ def search_for_community(address: str):
                                                   ap_followers_url=community_json['followers'],
                                                   ap_inbox_url=community_json['endpoints']['sharedInbox'],
                                                   ap_moderators_url=community_json['attributedTo'] if 'attributedTo' in community_json else None,
-                                                  ap_fetched_at=datetime.utcnow(),
+                                                  ap_fetched_at=utcnow(),
                                                   ap_domain=server,
                                                   public_key=community_json['publicKey']['publicKeyPem'],
                                                   # language=community_json['language'][0]['identifier'] # todo: language

@@ -46,6 +46,7 @@ from pyld import jsonld
 
 from app.activitypub.util import default_context
 from app.constants import DATETIME_MS_FORMAT
+from app.models import utcnow
 
 
 def http_date(epoch_seconds=None):
@@ -392,7 +393,7 @@ class LDSignature:
         options: dict[str, str] = {
             "@context": "https://w3id.org/identity/v1",
             "creator": key_id,
-            "created": format_ld_date(datetime.utcnow()),
+            "created": format_ld_date(utcnow()),
         }
         # Get the normalised hash of each document
         final_hash = cls.normalized_hash(options) + cls.normalized_hash(document)

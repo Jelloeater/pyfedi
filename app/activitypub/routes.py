@@ -10,7 +10,7 @@ from app.post.routes import continue_discussion, show_post
 from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, SUBSCRIPTION_MEMBER
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
-    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances
+    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request
@@ -125,9 +125,9 @@ def lemmy_federated_instances():
             instance_data['version'] = instance.version
         linked.append(instance_data)
     for instance in AllowedInstances.query.all():
-        allowed.append({"id": instance.id, "domain": instance.domain, "published": datetime.utcnow(), "updated": datetime.utcnow()})
+        allowed.append({"id": instance.id, "domain": instance.domain, "published": utcnow(), "updated": utcnow()})
     for instance in BannedInstances.query.all():
-        blocked.append({"id": instance.id, "domain": instance.domain, "published": datetime.utcnow(), "updated": datetime.utcnow()})
+        blocked.append({"id": instance.id, "domain": instance.domain, "published": utcnow(), "updated": utcnow()})
     return jsonify({
         "federated_instances": {
             "linked": linked,
@@ -290,7 +290,7 @@ def shared_inbox():
                             community = find_actor_or_create(community_ap_id)
                             user = find_actor_or_create(user_ap_id)
                             if user and community:
-                                user.last_seen = community.last_active = datetime.utcnow()
+                                user.last_seen = community.last_active = utcnow()
 
                                 object_type = request_json['object']['type']
                                 new_content_types = ['Page', 'Article', 'Link', 'Note']
@@ -348,7 +348,7 @@ def shared_inbox():
                                         if post is not None:
                                             db.session.add(post)
                                             community.post_count += 1
-                                            community.last_active = datetime.utcnow()
+                                            community.last_active = utcnow()
                                             activity_log.result = 'success'
                                             db.session.commit()
                                             vote = PostVote(user_id=user.id, author_id=post.user_id,
@@ -382,7 +382,7 @@ def shared_inbox():
                                             db.session.add(post_reply)
                                             post.reply_count += 1
                                             community.post_reply_count += 1
-                                            community.last_active = post.last_active = datetime.utcnow()
+                                            community.last_active = post.last_active = utcnow()
                                             activity_log.result = 'success'
                                             db.session.commit()
                                             vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id, post_reply_id=post_reply.id,
@@ -400,7 +400,7 @@ def shared_inbox():
                                 community = find_actor_or_create(community_ap_id)
                                 user = find_actor_or_create(user_ap_id)
                                 if user and community:
-                                    user.last_seen = community.last_active = datetime.utcnow()
+                                    user.last_seen = community.last_active = utcnow()
                                     object_type = request_json['object']['object']['type']
                                     new_content_types = ['Page', 'Article', 'Link', 'Note']
                                     if object_type in new_content_types:      # create a new post
@@ -531,7 +531,7 @@ def shared_inbox():
                                 banned = CommunityBan.query.filter_by(user_id=user.id,
                                                                       community_id=community.id).first()
                                 if banned is None:
-                                    user.last_seen = datetime.utcnow()
+                                    user.last_seen = utcnow()
                                     if community_membership(user, community) != SUBSCRIPTION_MEMBER:
                                         member = CommunityMember(user_id=user.id, community_id=community.id)
                                         db.session.add(member)
@@ -592,7 +592,7 @@ def shared_inbox():
                                 user = find_actor_or_create(user_ap_id)
                                 community = find_actor_or_create(community_ap_id)
                                 if user and community:
-                                    user.last_seen = datetime.utcnow()
+                                    user.last_seen = utcnow()
                                     member = CommunityMember.query.filter_by(user_id=user.id, community_id=community.id).first()
                                     join_request = CommunityJoinRequest.query.filter_by(user_id=user.id,
                                                                                         community_id=community.id).first()
@@ -614,7 +614,7 @@ def shared_inbox():
                                 if '/post/' in target_ap_id:
                                     post = Post.query.filter_by(ap_id=target_ap_id).first()
                                 if user and post:
-                                    user.last_seen = datetime.utcnow()
+                                    user.last_seen = utcnow()
                                     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                     if existing_vote:
                                         post.author.reputation -= existing_vote.effect
@@ -677,7 +677,7 @@ def shared_inbox():
                                     elif 'content' in request_json['object']:
                                         post.body_html = allowlist_html(request_json['object']['content'])
                                         post.body = html_to_markdown(post.body_html)
-                                    post.edited_at = datetime.utcnow()
+                                    post.edited_at = utcnow()
                                     db.session.commit()
                                     activity_log.result = 'success'
                             elif request_json['object']['type'] == 'Note':  # Editing a reply
@@ -690,7 +690,7 @@ def shared_inbox():
                                     elif 'content' in request_json['object']:
                                         reply.body_html = allowlist_html(request_json['object']['content'])
                                         reply.body = html_to_markdown(reply.body_html)
-                                    reply.edited_at = datetime.utcnow()
+                                    reply.edited_at = utcnow()
                                     db.session.commit()
                                     activity_log.result = 'success'
                         elif request_json['type'] == 'Delete':
@@ -722,7 +722,7 @@ def shared_inbox():
                             if '/post/' in target_ap_id:
                                 post = Post.query.filter_by(ap_id=target_ap_id).first()
                             if user and post:
-                                user.last_seen = datetime.utcnow()
+                                user.last_seen = utcnow()
                                 existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                 if not existing_vote:
                                     post.up_votes += 1
@@ -748,7 +748,7 @@ def shared_inbox():
                                         db.session.add(vote)
                                 activity_log.result = 'success'
                             elif user and comment:
-                                user.last_seen = datetime.utcnow()
+                                user.last_seen = utcnow()
                                 existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
                                                                               post_reply_id=comment.id).first()
                                 if not existing_vote:
@@ -792,7 +792,7 @@ def shared_inbox():
                                 if '/post/' in target_ap_id:
                                     post = Post.query.filter_by(ap_id=target_ap_id).first()
                                 if user and comment:
-                                    user.last_seen = datetime.utcnow()
+                                    user.last_seen = utcnow()
                                     existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
                                                                                   post_reply_id=comment.id).first()
                                     if not existing_vote:
@@ -823,7 +823,7 @@ def shared_inbox():
                                             pass    # they have already downvoted this reply
                                     activity_log.result = 'success'
                                 elif user and post:
-                                    user.last_seen = datetime.utcnow()
+                                    user.last_seen = utcnow()
                                     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                     if not existing_vote:
                                         effect = -1.0

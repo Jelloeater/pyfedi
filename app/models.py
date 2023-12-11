@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta, date
-from hashlib import md5
+from datetime import datetime, timedelta, date, timezone
 from time import time
 from typing import List
 
@@ -18,6 +17,11 @@ import os
 
 from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER, \
     SUBSCRIPTION_BANNED, SUBSCRIPTION_PENDING
+
+
+# same as datetime.utcnow() except with the UTC timezone explicitly added. datetime.utcnow() is depreciated in python 3.12+
+def utcnow():
+    return datetime.now(timezone.utc)
 
 
 class FullTextSearchQuery(BaseQuery, SearchQueryMixin):
@@ -71,8 +75,8 @@ class Community(db.Model):
     post_reply_count = db.Column(db.Integer, default=0)
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_active = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    last_active = db.Column(db.DateTime, default=utcnow)
     public_key = db.Column(db.Text)
     private_key = db.Column(db.Text)
 
@@ -193,8 +197,8 @@ class User(UserMixin, db.Model):
     keywords = db.Column(db.String(256))
     show_nsfw = db.Column(db.Boolean, default=False)
     show_nsfl = db.Column(db.Boolean, default=False)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created = db.Column(db.DateTime, default=utcnow)
+    last_seen = db.Column(db.DateTime, default=utcnow, index=True)
     avatar_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     cover_id = db.Column(db.Integer, db.ForeignKey('file.id'))
     public_key = db.Column(db.Text)
@@ -307,12 +311,12 @@ class User(UserMixin, db.Model):
     def expires_soon(self):
         if self.expires is None:
             return False
-        return self.expires < datetime.utcnow() + timedelta(weeks=1)
+        return self.expires < utcnow() + timedelta(weeks=1)
 
     def is_expired(self):
         if self.expires is None:
             return True
-        return self.expires < datetime.utcnow()
+        return self.expires < utcnow()
 
     def expired_ages_ago(self):
         if self.expires is None:
@@ -347,7 +351,9 @@ class User(UserMixin, db.Model):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
 
     def created_recently(self):
-        return self.created and self.created > datetime.utcnow() - timedelta(days=7)
+        if self.created.tzinfo is None:
+            self.created = self.created.replace(tzinfo=timezone.utc)
+        return self.created and self.created > utcnow() - timedelta(days=7)
 
     @staticmethod
     def verify_reset_password_token(token):
@@ -394,7 +400,7 @@ class ActivityLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     activity_type = db.Column(db.String(64))
     activity = db.Column(db.String(255))
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, index=True, default=utcnow)
 
 
 class Post(db.Model):
@@ -420,9 +426,9 @@ class Post(db.Model):
     notify_author = db.Column(db.Boolean, default=True)
     indexable = db.Column(db.Boolean, default=False)
     from_bot = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)    # this is when the content arrived here
-    posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)     # this is when the original server created it
-    last_active = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, index=True, default=utcnow)    # this is when the content arrived here
+    posted_at = db.Column(db.DateTime, index=True, default=utcnow)     # this is when the original server created it
+    last_active = db.Column(db.DateTime, index=True, default=utcnow)
     ip = db.Column(db.String(50))
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
@@ -492,8 +498,8 @@ class PostReply(db.Model):
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
     notify_author = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    posted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, index=True, default=utcnow)
+    posted_at = db.Column(db.DateTime, index=True, default=utcnow)
     ip = db.Column(db.String(50))
     from_bot = db.Column(db.Boolean, default=False)
     up_votes = db.Column(db.Integer, default=0)
@@ -548,13 +554,13 @@ class Domain(db.Model):
 class DomainBlock(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class CommunityBlock(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class CommunityMember(db.Model):
@@ -563,7 +569,7 @@ class CommunityMember(db.Model):
     is_moderator = db.Column(db.Boolean, default=False)
     is_owner = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 # people banned from communities
@@ -572,7 +578,7 @@ class CommunityBan(db.Model):
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), primary_key=True)
     banned_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     reason = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     ban_until = db.Column(db.DateTime)
 
 
@@ -581,14 +587,14 @@ class UserNote(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     target_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     body = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class UserBlock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     blocker_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     blocked_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class BannedInstances(db.Model):
@@ -596,13 +602,13 @@ class BannedInstances(db.Model):
     domain = db.Column(db.String(256), index=True)
     reason = db.Column(db.String(256))
     initiator = db.Column(db.String(256))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class AllowedInstances(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     domain = db.Column(db.String(256), index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class Instance(db.Model):
@@ -614,8 +620,8 @@ class Instance(db.Model):
     vote_weight = db.Column(db.Float, default=1.0)
     software = db.Column(db.String(50))
     version = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow)
 
 
 class Settings(db.Model):
@@ -647,7 +653,7 @@ class PostVote(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     effect = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     post = db.relationship('Post', foreign_keys=[post_id])
 
 
@@ -657,7 +663,7 @@ class PostReplyVote(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id')) # the author of the reply voted on - who's reputation is affected
     post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     effect = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 # save every activity to a log, to aid debugging
@@ -669,7 +675,7 @@ class ActivityPubLog(db.Model):
     activity_json = db.Column(db.Text)          # the full json of the activity
     result = db.Column(db.String(10))           # 'success' or 'failure'
     exception_message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class Filter(db.Model):
@@ -707,7 +713,7 @@ class Notification(db.Model):
     read = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 @login.user_loader

@@ -5,7 +5,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db, cache
-from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification
+from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string
@@ -210,7 +210,7 @@ def ban_purge_profile(actor):
 def notifications():
     """Remove notifications older than 30 days"""
     db.session.query(Notification).filter(
-        Notification.created_at < datetime.utcnow() - timedelta(days=30)).delete()
+        Notification.created_at < utcnow() - timedelta(days=30)).delete()
     db.session.commit()
 
     # Update unread notifications count

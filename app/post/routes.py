@@ -14,7 +14,7 @@ from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import Post, PostReply, \
-    PostReplyVote, PostVote, Notification
+    PostReplyVote, PostVote, Notification, utcnow
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
@@ -43,7 +43,7 @@ def show_post(post_id: int):
             notification = Notification(title=_('Reply: ') + shorten_string(form.body.data), user_id=post.user_id,
                                         author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
-        post.last_active = post.community.last_active = datetime.utcnow()
+        post.last_active = post.community.last_active = utcnow()
         post.reply_count += 1
         post.community.post_reply_count += 1
 
@@ -78,7 +78,7 @@ def show_post(post_id: int):
                     'content': reply.body,
                     'mediaType': 'text/markdown'
                 },
-                'published': ap_datetime(datetime.utcnow()),
+                'published': ap_datetime(utcnow()),
                 'distinguished': False,
                 'audience': post.community.profile_id()
             }
@@ -171,7 +171,7 @@ def post_vote(post_id: int, vote_direction):
                              effect=effect)
         post.author.reputation += effect
         db.session.add(vote)
-    current_user.last_seen = datetime.utcnow()
+    current_user.last_seen = utcnow()
     db.session.commit()
     post.flush_cache()
     return render_template('post/_post_voting_buttons.html', post=post,
@@ -223,7 +223,7 @@ def comment_vote(comment_id, vote_direction):
         vote = PostReplyVote(user_id=current_user.id, post_reply_id=comment_id, author_id=comment.author.id, effect=effect)
         comment.author.reputation += effect
         db.session.add(vote)
-    current_user.last_seen = datetime.utcnow()
+    current_user.last_seen = utcnow()
     db.session.commit()
     comment.post.flush_cache()
     return render_template('post/_voting_buttons.html', comment=comment,
@@ -252,7 +252,7 @@ def add_reply(post_id: int, comment_id: int):
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     form = NewReplyForm()
     if form.validate_on_submit():
-        current_user.last_seen = datetime.utcnow()
+        current_user.last_seen = utcnow()
         reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, depth=in_reply_to.depth + 1,
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
@@ -270,7 +270,7 @@ def add_reply(post_id: int, comment_id: int):
                                    effect=1.0)
         db.session.add(reply_vote)
         post.reply_count = post_reply_count(post.id)
-        post.last_active = post.community.last_active = datetime.utcnow()
+        post.last_active = post.community.last_active = utcnow()
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')
@@ -299,7 +299,7 @@ def add_reply(post_id: int, comment_id: int):
                     'content': reply.body,
                     'mediaType': 'text/markdown'
                 },
-                'published': ap_datetime(datetime.utcnow()),
+                'published': ap_datetime(utcnow()),
                 'distinguished': False,
                 'audience': post.community.profile_id(),
                 'contentMap': {
@@ -373,8 +373,8 @@ def post_edit(post_id: int):
 
         if form.validate_on_submit():
             save_post(form, post)
-            post.community.last_active = datetime.utcnow()
-            post.edited_at = datetime.utcnow()
+            post.community.last_active = utcnow()
+            post.edited_at = utcnow()
             db.session.commit()
             post.flush_cache()
             flash(_('Your changes have been saved.'), 'success')
