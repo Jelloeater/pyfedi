@@ -36,7 +36,6 @@ class File(db.Model):
     thumbnail_width = db.Column(db.Integer)
     thumbnail_height = db.Column(db.Integer)
 
-    @cache.memoize(timeout=500)
     def view_url(self):
         if self.source_url:
             return self.source_url
@@ -46,7 +45,6 @@ class File(db.Model):
         else:
             return ''
 
-    @cache.memoize(timeout=500)
     def thumbnail_url(self):
         thumbnail_path = self.thumbnail_path[4:] if self.thumbnail_path.startswith('app/') else self.thumbnail_path
         return f"https://{current_app.config['SERVER_NAME']}/{thumbnail_path}"
@@ -213,8 +211,8 @@ class User(UserMixin, db.Model):
     ignore_bots = db.Column(db.Boolean, default=False)
     unread_notifications = db.Column(db.Integer, default=0)
 
-    avatar = db.relationship('File', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
-    cover = db.relationship('File', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
+    avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
+    cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
 
     ap_id = db.Column(db.String(255), index=True)           # e.g. username@server
     ap_profile_id = db.Column(db.String(255), index=True)   # e.g. https://server/u/username
@@ -253,12 +251,6 @@ class User(UserMixin, db.Model):
         else:
             return '[deleted]'
 
-    def avatar(self, size):
-        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
-        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
-            digest, size)
-
-    @cache.memoize(timeout=500)
     def avatar_image(self) -> str:
         if self.avatar_id is not None:
             if self.avatar.file_path is not None:
@@ -273,7 +265,6 @@ class User(UserMixin, db.Model):
                     return self.avatar.source_url
         return ''
 
-    @cache.memoize(timeout=500)
     def cover_image(self) -> str:
         if self.cover_id is not None:
             if self.cover.file_path is not None:
@@ -473,7 +464,10 @@ class Post(db.Model):
                 return self.url[vpos + 2:vpos + 13]
 
     def profile_id(self):
-        return f"https://{current_app.config['SERVER_NAME']}/post/{self.id}"
+        if self.ap_id:
+            return self.ap_id
+        else:
+            return f"https://{current_app.config['SERVER_NAME']}/post/{self.id}"
 
     def flush_cache(self):
         cache.delete(f'/post/{self.id}_False')

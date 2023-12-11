@@ -13,7 +13,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
     PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
-    lemmy_site_data, instance_weight, cache_key_by_ap_header, is_activitypub_request
+    lemmy_site_data, instance_weight, is_activitypub_request
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -138,7 +138,6 @@ def lemmy_federated_instances():
 
 
 @bp.route('/u/<actor>', methods=['GET'])
-@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def user_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the user, or a HTML rendering of their profile.
     The two types of requests are differentiated by the header """
@@ -898,7 +897,6 @@ def community_outbox(actor):
 
 
 @bp.route('/c/<actor>/moderators', methods=['GET'])
-@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def community_moderators(actor):
     actor = actor.strip()
     community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
@@ -945,7 +943,6 @@ def inbox(actor):
 
 
 @bp.route('/comment/<int:comment_id>', methods=['GET'])
-@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def comment_ap(comment_id):
     if is_activitypub_request():
         reply = PostReply.query.get_or_404(comment_id)
@@ -985,7 +982,6 @@ def comment_ap(comment_id):
 
 
 @bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
-@cache.cached(timeout=10, make_cache_key=cache_key_by_ap_header)
 def post_ap(post_id):
     if request.method == 'GET' and is_activitypub_request():
         post = Post.query.get_or_404(post_id)

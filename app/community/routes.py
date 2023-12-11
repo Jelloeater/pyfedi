@@ -91,7 +91,7 @@ def show_community(community: Community):
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{community.id}_{hash(community.last_active)}"
-    if request_etag_matches(current_etag):
+    if current_user.is_anonymous and  request_etag_matches(current_etag):
         return return_304(current_etag)
 
     mods = community.moderators()

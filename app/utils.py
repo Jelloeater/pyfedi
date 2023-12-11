@@ -29,9 +29,10 @@ def render_template(template_name: str, **context) -> Response:
 
     # Browser caching using ETags and Cache-Control
     resp = make_response(content)
-    if 'etag' in context:
-        resp.headers.add_header('ETag', context['etag'])
-    resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+    if current_user.is_anonymous:
+        if 'etag' in context:
+            resp.headers.add_header('ETag', context['etag'])
+        resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
     return resp
 
 

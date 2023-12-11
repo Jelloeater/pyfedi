@@ -26,7 +26,7 @@ def show_post(post_id: int):
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{post.id}_{hash(post.last_active)}"
-    if request_etag_matches(current_etag):
+    if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
 
     mods = post.community.moderators()
@@ -99,10 +99,8 @@ def show_post(post_id: int):
             try:
                 message = HttpSignature.signed_request(post.community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
-                if message.status_code == 200:
-                    flash('Your reply has been sent to ' + post.community.title)
-                else:
-                    flash('Response status code was not 200', 'warning')
+                if message.status_code != 200:
+                    flash('Failed to send to remote instance', 'warning')
                     current_app.logger.error('Response code for reply attempt was ' +
                                              str(message.status_code) + ' ' + message.text)
             except Exception as ex:
@@ -335,9 +333,7 @@ def add_reply(post_id: int, comment_id: int):
             try:
                 message = HttpSignature.signed_request(post.community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
-                if message.status_code == 200:
-                    flash('Your reply has been sent to ' + post.community.title)
-                else:
+                if message.status_code != 200:
                     flash('Response status code was not 200', 'warning')
                     current_app.logger.error('Response code for reply attempt was ' +
                                              str(message.status_code) + ' ' + message.text)

@@ -409,11 +409,6 @@ def is_activitypub_request():
     return 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', '')
 
 
-# differentiate between cached JSON and cached HTML by appending is_activitypub_request() to the cache key
-def cache_key_by_ap_header(**kwargs):
-    return request.path + "_" + str(is_activitypub_request())
-
-
 def lemmy_site_data():
     data = {
       "site_view": {
