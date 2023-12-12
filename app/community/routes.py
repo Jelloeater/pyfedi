@@ -19,8 +19,8 @@ from app.utils import get_setting, render_template, allowlist_html, markdown_to_
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
     request_etag_matches, return_304
 import os
-from PIL import Image, ImageOps
-from datetime import datetime
+from feedgen.feed import FeedGenerator
+from datetime import timezone
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -117,7 +117,59 @@ def show_community(community: Community):
     return render_template('community/community.html', community=community, title=community.title,
                            is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
-                           SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}")
+                           SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}",
+                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed")
+
+
+# RSS feed of the community
+@bp.route('/<actor>/feed', methods=['GET'])
+@cache.cached(timeout=600)
+def show_community_rss(actor):
+    actor = actor.strip()
+    if '@' in actor:
+        community: Community = Community.query.filter_by(ap_id=actor, banned=False).first()
+    else:
+        community: Community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    if community is not None:
+        # If nothing has changed since their last visit, return HTTP 304
+        current_etag = f"{community.id}_{hash(community.last_active)}"
+        if request_etag_matches(current_etag):
+            return return_304(current_etag, 'application/rss+xml')
+
+        posts = community.posts.filter(Post.from_bot == False).order_by(desc(Post.created_at)).limit(100).all()
+        description = shorten_string(community.description, 150) if community.description else None
+        og_image = community.image.source_url if community.image_id else None
+        fg = FeedGenerator()
+        fg.id(f"https://{current_app.config['SERVER_NAME']}/c/{actor}")
+        fg.title(community.title)
+        fg.link(href=f"https://{current_app.config['SERVER_NAME']}/c/{actor}", rel='alternate')
+        if og_image:
+            fg.logo(og_image)
+        else:
+            fg.logo(f"https://{current_app.config['SERVER_NAME']}/static/images/apple-touch-icon.png")
+        if description:
+            fg.subtitle(description)
+        else:
+            fg.subtitle(' ')
+        fg.link(href=f"https://{current_app.config['SERVER_NAME']}/c/{actor}/feed", rel='self')
+        fg.language('en')
+
+        for post in posts:
+            fe = fg.add_entry()
+            fe.title(post.title)
+            fe.link(href=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}")
+            fe.description(post.body_html)
+            fe.guid(post.profile_id(), permalink=True)
+            fe.author(name=post.author.user_name)
+            fe.pubDate(post.created_at.replace(tzinfo=timezone.utc))
+
+        response = make_response(fg.rss_str())
+        response.headers.set('Content-Type', 'application/rss+xml')
+        response.headers.add_header('ETag', f"{community.id}_{hash(community.last_active)}")
+        response.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+        return response
+    else:
+        abort(404)
 
 
 @bp.route('/<actor>/subscribe', methods=['GET'])

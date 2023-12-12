@@ -189,6 +189,10 @@ nav, etc which are used site-wide */
   content: "\e91e";
 }
 
+.fe-rss::before {
+  content: "\e9be";
+}
+
 .fe-image {
   position: relative;
   top: 2px;

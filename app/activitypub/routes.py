@@ -199,7 +199,7 @@ def community_profile(actor):
     if '@' in actor:
         # don't provide activitypub info for remote communities
         if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', ''):
-            abort(404)
+            abort(400)
         community: Community = Community.query.filter_by(ap_id=actor, banned=False).first()
     else:
         community: Community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()

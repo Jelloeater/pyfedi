@@ -37,16 +37,19 @@ def render_template(template_name: str, **context) -> Response:
 
 
 def request_etag_matches(etag):
+    print(str(request.headers))
     if 'If-None-Match' in request.headers:
         old_etag = request.headers['If-None-Match']
         return old_etag == etag
     return False
 
 
-def return_304(etag):
+def return_304(etag, content_type=None):
     resp = make_response('', 304)
     resp.headers.add_header('ETag', request.headers['If-None-Match'])
     resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+    if content_type:
+        resp.headers.set('Content-Type', content_type)
     return resp
 
 
