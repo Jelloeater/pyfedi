@@ -325,6 +325,14 @@ nav, etc which are used site-wide */
   }
 }
 
+#reasons {
+  border: none;
+  list-style-type: none;
+  padding: 0;
+  overflow-y: auto;
+  height: 135px;
+}
+
 .table {
   tr th {
     vertical-align: middle;

@@ -1,4 +1,4 @@
-<div class="row">
+<div class="row position-relative">
     {% if post.type == POST_TYPE_IMAGE %}
         <div class="col post_type_image">
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
@@ -72,6 +72,7 @@
 
         </div>
     {% endif %}
+    <a href="{{ url_for('post.post_options', post_id=post.id) }}" class="post_options_link" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a>
 </div>
 
 {% if post.body_html %}

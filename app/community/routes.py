@@ -1,24 +1,22 @@
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
-from pillow_heif import register_heif_opener
 from sqlalchemy import or_, desc
 
 from app import db, constants, cache
 from app.activitypub.signature import RsaKeys, HttpSignature
 from app.activitypub.util import default_context
-from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm
+from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
     ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
-    File, PostVote, utcnow
+    File, PostVote, utcnow, Report, Notification, InstanceBlock
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
     request_etag_matches, return_304
-import os
 from feedgen.feed import FeedGenerator
 from datetime import timezone
 
@@ -38,7 +36,7 @@ def add_local():
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
                               public_key=public_key,
-                              ap_profile_id=current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
+                              ap_profile_id='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
                               subscriptions_count=1)
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':
@@ -377,4 +375,43 @@ def add_post(actor):
                            images_disabled=images_disabled)
 
 
+@login_required
+@bp.route('/community/<int:community_id>/report', methods=['GET', 'POST'])
+def community_report(community_id: int):
+    community = Community.query.get_or_404(community_id)
+    form = ReportCommunityForm()
+    if form.validate_on_submit():
+        report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
+                        type=1, reporter_id=current_user.id, suspect_community_id=community.id)
+        db.session.add(report)
 
+        # Notify admin
+        # todo: find all instance admin(s). for now just load User.id == 1
+        admins = [User.query.get_or_404(1)]
+        for admin in admins:
+            notification = Notification(user_id=admin.id, title=_('A post has been reported'),
+                                            url=community.local_url(),
+                                            author_id=current_user.id)
+            db.session.add(notification)
+        db.session.commit()
+
+        # todo: federate report to originating instance
+        if not community.is_local() and form.report_remote.data:
+            ...
+
+        flash(_('Community has been reported, thank you!'))
+        return redirect(community.local_url())
+
+    return render_template('community/community_report.html', title=_('Report community'), form=form, community=community)
+
+
+@login_required
+@bp.route('/community/<int:community_id>/block_instance', methods=['GET', 'POST'])
+def community_block_instance(community_id: int):
+    community = Community.query.get_or_404(community_id)
+    existing = InstanceBlock.query.filter_by(user_id=current_user.id, instance_id=community.instance_id).first()
+    if not existing:
+        db.session.add(InstanceBlock(user_id=current_user.id, instance_id=community.instance_id))
+        db.session.commit()
+    flash(_('Content from %(name)s will be hidden.', name=community.instance.domain))
+    return redirect(community.local_url())

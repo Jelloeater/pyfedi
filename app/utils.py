@@ -14,7 +14,8 @@ import imghdr
 from flask import current_app, json, redirect, url_for, request, make_response, Response
 from flask_login import current_user
 from sqlalchemy import text
-
+from wtforms.fields  import SelectField, SelectMultipleField
+from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community
 
@@ -293,3 +294,8 @@ def back(default_url):
 # format a datetime in a way that is used in ActivityPub
 def ap_datetime(date_time: datetime) -> str:
     return date_time.isoformat() + '+00:00'
+
+
+class MultiCheckboxField(SelectMultipleField):
+    widget = ListWidget(prefix_label=False)
+    option_widget = CheckboxInput()

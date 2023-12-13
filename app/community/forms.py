@@ -3,7 +3,7 @@ from wtforms import StringField, SubmitField, TextAreaField, BooleanField, Hidde
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Optional
 from flask_babel import _, lazy_gettext as _l
 
-from app.utils import domain_from_url
+from app.utils import domain_from_url, MultiCheckboxField
 
 
 class AddLocalCommunity(FlaskForm):
@@ -83,3 +83,17 @@ class CreatePostForm(FlaskForm):
 
         return True
 
+
+class ReportCommunityForm(FlaskForm):
+    reason_choices = [('1', _l('Breaks instance rules')),
+                      ('2', _l('Abandoned by moderators')),
+                      ('3', _l('Cult')),
+                      ('4', _l('Scam')),
+                      ('5', _l('Alt-right pipeline')),
+                      ('6', _l('Hate / genocide')),
+                      ('7', _l('Other')),
+                      ]
+    reasons = MultiCheckboxField(_l('Reason'), choices=reason_choices)
+    description = StringField(_l('More info'))
+    report_remote = BooleanField('Also send report to originating instance')
+    submit = SubmitField(_l('Report'))

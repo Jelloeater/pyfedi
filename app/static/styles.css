@@ -180,6 +180,10 @@
   content: "\ea03";
 }
 
+.fe-block::before {
+  content: "\ea04";
+}
+
 .fe-report::before {
   content: "\e967";
 }
@@ -478,6 +482,15 @@ nav.navbar {
   margin-top: -15px;
   display: block;
   margin-bottom: 10px;
+}
+
+.post_options_link {
+  display: block;
+  position: absolute;
+  bottom: 0;
+  right: -2px;
+  width: 41px;
+  text-decoration: none;
 }
 
 @media (prefers-color-scheme: dark) {

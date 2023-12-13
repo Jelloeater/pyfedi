@@ -9,12 +9,12 @@ from app import db, constants
 from app.activitypub.signature import HttpSignature
 from app.activitypub.util import default_context
 from app.community.util import save_post
-from app.post.forms import NewReplyForm
+from app.post.forms import NewReplyForm, ReportPostForm
 from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import Post, PostReply, \
-    PostReplyVote, PostVote, Notification, utcnow
+    PostReplyVote, PostVote, Notification, utcnow, UserBlock, DomainBlock, InstanceBlock, Report
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
@@ -407,12 +407,73 @@ def post_delete(post_id: int):
         post.flush_cache()
         db.session.delete(post)
         db.session.commit()
-        flash('Post deleted.')
+        flash(_('Post deleted.'))
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
 
 
 @login_required
 @bp.route('/post/<int:post_id>/report', methods=['GET', 'POST'])
 def post_report(post_id: int):
-    ...
+    post = Post.query.get_or_404(post_id)
+    form = ReportPostForm()
+    if form.validate_on_submit():
+        report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
+                        type=1, reporter_id=current_user.id, suspect_post_id=post.id)
+        db.session.add(report)
 
+        # Notify moderators
+        for mod in post.community.moderators():
+            notification = Notification(user_id=mod.user_id, title=_('A post has been reported'),
+                                        url=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}",
+                                        author_id=current_user.id)
+            db.session.add(notification)
+        # todo: Also notify admins for certain types of report
+        db.session.commit()
+
+        # todo: federate report to originating instance
+        if not post.community.is_local() and form.report_remote.data:
+            ...
+
+        flash(_('Post has been reported, thank you!'))
+        return redirect(post.community.local_url())
+
+    return render_template('post/post_report.html', title=_('Report post'), form=form, post=post)
+
+
+@login_required
+@bp.route('/post/<int:post_id>/block_user', methods=['GET', 'POST'])
+def post_block_user(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    existing = UserBlock.query.filter_by(blocker_id=current_user.id, blocked_id=post.author.id).first()
+    if not existing:
+        db.session.add(UserBlock(blocker_id=current_user.id, blocked_id=post.author.id))
+        db.session.commit()
+    flash(_('%(name)s has been blocked.', name=post.author.user_name))
+
+    # todo: federate block to post author instance
+
+    return redirect(post.community.local_url())
+
+
+@login_required
+@bp.route('/post/<int:post_id>/block_domain', methods=['GET', 'POST'])
+def post_block_domain(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    existing = DomainBlock.query.filter_by(user_id=current_user.id, domain_id=post.domain_id).first()
+    if not existing:
+        db.session.add(DomainBlock(user_id=current_user.id, domain_id=post.domain_id))
+        db.session.commit()
+    flash(_('Posts linking to %(name)s will be hidden.', name=post.domain.name))
+    return redirect(post.community.local_url())
+
+
+@login_required
+@bp.route('/post/<int:post_id>/block_instance', methods=['GET', 'POST'])
+def post_block_instance(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    existing = InstanceBlock.query.filter_by(user_id=current_user.id, instance_id=post.instance_id).first()
+    if not existing:
+        db.session.add(InstanceBlock(user_id=current_user.id, instance_id=post.instance_id))
+        db.session.commit()
+    flash(_('Content from %(name)s will be hidden.', name=post.instance.domain))
+    return redirect(post.community.local_url())

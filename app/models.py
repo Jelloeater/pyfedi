@@ -70,11 +70,14 @@ class Community(db.Model):
     title = db.Column(db.String(256))
     description = db.Column(db.Text)
     rules = db.Column(db.Text)
+    content_warning = db.Column(db.Text)        # "Are you sure you want to view this community?"
     subscriptions_count = db.Column(db.Integer, default=0)
     post_count = db.Column(db.Integer, default=0)
     post_reply_count = db.Column(db.Integer, default=0)
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
+    low_quality = db.Column(db.Boolean, default=False)      # upvotes earned in low quality communities don't improve reputation
     created_at = db.Column(db.DateTime, default=utcnow)
     last_active = db.Column(db.DateTime, default=utcnow)
     public_key = db.Column(db.Text)
@@ -94,6 +97,7 @@ class Community(db.Model):
 
     banned = db.Column(db.Boolean, default=False)
     restricted_to_mods = db.Column(db.Boolean, default=False)
+    new_mods_wanted = db.Column(db.Boolean, default=False)
     searchable = db.Column(db.Boolean, default=True)
     private_mods = db.Column(db.Boolean, default=False)
 
@@ -175,6 +179,12 @@ class Community(db.Model):
     def is_local(self):
         return self.ap_id is None or self.profile_id().startswith('https://' + current_app.config['SERVER_NAME'])
 
+    def local_url(self):
+        if self.is_local():
+            return self.ap_profile_id
+        else:
+            return f"https://{current_app.config['SERVER_NAME']}/c/{self.ap_id}"
+
 
 user_role = db.Table('user_role',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
@@ -207,6 +217,7 @@ class User(UserMixin, db.Model):
     bounces = db.Column(db.SmallInteger, default=0)
     timezone = db.Column(db.String(20))
     reputation = db.Column(db.Float, default=0.0)
+    attitude = db.Column(db.Float, default=1.0)  # (upvotes cast - downvotes cast) / (upvotes + downvotes). A number between 1 and -1 is the ratio between up and down votes they cast
     stripe_customer_id = db.Column(db.String(50))
     stripe_subscription_id = db.Column(db.String(50))
     searchable = db.Column(db.Boolean, default=True)
@@ -410,6 +421,7 @@ class Post(db.Model):
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), index=True)
     image_id = db.Column(db.Integer, db.ForeignKey('file.id'), index=True)
     domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), index=True)
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
     slug = db.Column(db.String(255))
     title = db.Column(db.String(255))
     url = db.Column(db.String(2048))
@@ -623,6 +635,15 @@ class Instance(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow)
 
+    posts = db.relationship('Post', backref='instance', lazy='dynamic')
+    communities = db.relationship('Community', backref='instance', lazy='dynamic')
+
+
+class InstanceBlock(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), primary_key=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
 
 class Settings(db.Model):
     name = db.Column(db.String(50), primary_key=True)
@@ -715,6 +736,20 @@ class Notification(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
 
+
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reasons = db.Column(db.String(256))
+    description = db.Column(db.String(256))
+    status = db.Column(db.Integer, default=0)
+    type = db.Column(db.Integer, default=0)     # 0 = user, 1 = post, 2 = reply, 3 = community
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    suspect_community_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    suspect_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    suspect_post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    suspect_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated = db.Column(db.DateTime, default=utcnow)
 
 @login.user_loader
 def load_user(id):

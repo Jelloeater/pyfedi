@@ -181,6 +181,10 @@ nav, etc which are used site-wide */
   content: "\ea03";
 }
 
+.fe-block::before {
+  content: "\ea04";
+}
+
 .fe-report::before {
   content: "\e967";
 }
@@ -577,6 +581,14 @@ fieldset legend {
   width: 297px;
   display: inline-block;
   padding-left: 3px;
+}
+
+#reasons {
+  border: none;
+  list-style-type: none;
+  padding: 0;
+  overflow-y: auto;
+  height: 135px;
 }
 
 .table tr th {
