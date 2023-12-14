@@ -9,7 +9,7 @@ from app import db, constants
 from app.activitypub.signature import HttpSignature
 from app.activitypub.util import default_context
 from app.community.util import save_post
-from app.post.forms import NewReplyForm, ReportPostForm
+from app.post.forms import NewReplyForm, ReportPostForm, MeaCulpaForm
 from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
@@ -29,12 +29,20 @@ def show_post(post_id: int):
     if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
 
+    if post.mea_culpa:
+        flash(_('%(name)s has indicated they made a mistake in this post.', name=post.author.user_name), 'warning')
+
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
 
     # handle top-level comments/replies
     form = NewReplyForm()
     if current_user.is_authenticated and current_user.verified and form.validate_on_submit():
+
+        if not post.comments_enabled:
+            flash('Comments have been disabled.', 'warning')
+            return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
@@ -247,6 +255,11 @@ def continue_discussion(post_id, comment_id):
 @login_required
 def add_reply(post_id: int, comment_id: int):
     post = Post.query.get_or_404(post_id)
+
+    if not post.comments_enabled:
+        flash('The author of the post has changed their mind so comments have been disabled.', 'warning')
+        return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
     in_reply_to = PostReply.query.get_or_404(comment_id)
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
@@ -477,3 +490,19 @@ def post_block_instance(post_id: int):
         db.session.commit()
     flash(_('Content from %(name)s will be hidden.', name=post.instance.domain))
     return redirect(post.community.local_url())
+
+
+@login_required
+@bp.route('/post/<int:post_id>/mea_culpa', methods=['GET', 'POST'])
+def post_mea_culpa(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    form = MeaCulpaForm()
+    if form.validate_on_submit():
+        post.comments_enabled = False
+        post.mea_culpa = True
+        post.community.last_active = utcnow()
+        post.last_active = utcnow()
+        db.session.commit()
+        return redirect(url_for('activitypub.post_ap', post_id=post.id))
+
+    return render_template('post/post_mea_culpa.html', title=_('I changed my mind'), form=form, post=post)

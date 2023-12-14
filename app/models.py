@@ -429,6 +429,7 @@ class Post(db.Model):
     body_html = db.Column(db.Text)
     type = db.Column(db.Integer)
     comments_enabled = db.Column(db.Boolean, default=True)
+    mea_culpa = db.Column(db.Boolean, default=False)
     has_embed = db.Column(db.Boolean, default=False)
     reply_count = db.Column(db.Integer, default=0)
     score = db.Column(db.Integer, default=0, index=True)

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6">
+                    <div class="card-title">{{ _('I changed my mind') }}</div>
+                    <div class="card-body">
+                        <p>{{ _('If you wish to de-escalate the discussion on your post and now feel like it was a mistake, click the button below.') }}</p>
+                        <p>{{ _('No further comments will be posted and a message saying you made a mistake in this post will be displayed.') }}</p>
+                        <p><a href="https://nickpunt.com/blog/deescalating-social-media/" target="_blank">More about this</a></p>
+                        {{ render_form(form) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

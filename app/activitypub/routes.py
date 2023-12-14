@@ -379,15 +379,18 @@ def shared_inbox():
 
                                         if post_reply is not None:
                                             post = Post.query.get(post_id)
-                                            db.session.add(post_reply)
-                                            post.reply_count += 1
-                                            community.post_reply_count += 1
-                                            community.last_active = post.last_active = utcnow()
-                                            activity_log.result = 'success'
-                                            db.session.commit()
-                                            vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id, post_reply_id=post_reply.id,
-                                                                effect=instance_weight(user.ap_domain))
-                                            db.session.add(vote)
+                                            if post.comments_enabled:
+                                                db.session.add(post_reply)
+                                                post.reply_count += 1
+                                                community.post_reply_count += 1
+                                                community.last_active = post.last_active = utcnow()
+                                                activity_log.result = 'success'
+                                                db.session.commit()
+                                                vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id, post_reply_id=post_reply.id,
+                                                                    effect=instance_weight(user.ap_domain))
+                                                db.session.add(vote)
+                                            else:
+                                                activity_log.exception_message = 'Comments disabled'
                                 else:
                                     activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
 
@@ -472,9 +475,16 @@ def shared_inbox():
                                                 post_reply.body = html_to_markdown(post_reply.body_html)
 
                                             if post_reply is not None:
-                                                db.session.add(post_reply)
-                                                community.post_reply_count += 1
-                                                db.session.commit()
+                                                post = Post.query.get(post_id)
+                                                if post.comments_enabled:
+                                                    db.session.add(post_reply)
+                                                    community.post_reply_count += 1
+                                                    community.last_active = utcnow()
+                                                    post.last_active = utcnow()
+                                                    activity_log.result = 'success'
+                                                    db.session.commit()
+                                                else:
+                                                    activity_log.exception_message = 'Comments disabled'
                                     else:
                                         activity_log.exception_message = 'Unacceptable type: ' + object_type
 

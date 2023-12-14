@@ -8,22 +8,28 @@
                 <div class="card-body p-6">
                     <div class="card-title">{{ _('Options for "%(post_title)s"', post_title=post.title) }}</div>
                     <ul class="option_list">
-                        {% if current_user.is_authenticated and (post.user_id == current_user.id or post.community.is_moderator()) %}
-                            <li><a href="{{ url_for('post.post_edit', post_id=post.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-edit"></span>
-                                {{ _('Edit') }}</a></li>
-                            <li><a href="{{ url_for('post.post_delete', post_id=post.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span>
-                                {{ _('Delete') }}</a></li>
-                        {% endif %}
-                        {% if post.user_id != current_user.id %}
-                            <li><a href="{{ url_for('post.post_block_user', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
-                                {{ _('Block post author @%(author_name)s', author_name=post.author.user_name) }}</a></li>
-                            {% if post.domain_id %}
-                            <li><a href="{{ url_for('post.post_block_domain', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
-                                {{ _('Block domain %(domain)s', domain=post.domain.name) }}</a></li>
+                        {% if current_user.is_authenticated %}
+                            {% if post.user_id == current_user.id or post.community.is_moderator() %}
+                                <li><a href="{{ url_for('post.post_edit', post_id=post.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-edit"></span>
+                                    {{ _('Edit') }}</a></li>
+                                <li><a href="{{ url_for('post.post_delete', post_id=post.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span>
+                                    {{ _('Delete') }}</a></li>
                             {% endif %}
-                            {% if post.instance_id %}
-                            <li><a href="{{ url_for('post.post_block_instance', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
-                                {{ _('Hide every post from %(name)s', name=post.instance.domain) }}</a></li>
+                            {% if post.user_id == current_user.id and not post.mea_culpa %}
+                                <li><a href="{{ url_for('post.post_mea_culpa', post_id=post.id) }}" class="no-underline"><span class="fe fe-mea-culpa"></span>
+                                    {{ _("I changed my mind") }}</a></li>
+                            {% endif %}
+                            {% if post.user_id != current_user.id %}
+                                <li><a href="{{ url_for('post.post_block_user', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
+                                    {{ _('Block post author @%(author_name)s', author_name=post.author.user_name) }}</a></li>
+                                {% if post.domain_id %}
+                                <li><a href="{{ url_for('post.post_block_domain', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
+                                    {{ _('Block domain %(domain)s', domain=post.domain.name) }}</a></li>
+                                {% endif %}
+                                {% if post.instance_id %}
+                                <li><a href="{{ url_for('post.post_block_instance', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
+                                    {{ _('Hide every post from %(name)s', name=post.instance.domain) }}</a></li>
+                                {% endif %}
                             {% endif %}
                             <li><a href="{{ url_for('post.post_report', post_id=post.id) }}" class="no-underline"><span class="fe fe-report"></span>
                                 {{ _('Report to moderators') }}</a></li>

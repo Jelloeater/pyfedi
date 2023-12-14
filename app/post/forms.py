@@ -12,7 +12,6 @@ class NewReplyForm(FlaskForm):
     submit = SubmitField(_l('Comment'))
 
 
-
 class ReportPostForm(FlaskForm):
     reason_choices = [('1', _l('Breaks community rules')), ('7', _l('Spam')), ('2', _l('Harassment')),
                       ('3', _l('Threatening violence')), ('4', _l('Hate / genocide')),
@@ -35,3 +34,7 @@ class ReportPostForm(FlaskForm):
                 if choice[0] == reason_id:
                     result.append(str(choice[1]))
         return ', '.join(result)
+
+
+class MeaCulpaForm(FlaskForm):
+    submit = SubmitField(_l('I changed my mind'))

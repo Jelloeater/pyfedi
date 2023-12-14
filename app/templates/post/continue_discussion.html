@@ -36,7 +36,9 @@
                             </div>
                         </div>
                         <div class="comment_actions hidable">
-                            <a href="{{ url_for('post.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
+                            {% if post.comments_enabled %}
+                                <a href="{{ url_for('post.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
+                            {% endif %}
                         </div>
                         {% if comment['replies'] %}
                             <div class="replies hidable">

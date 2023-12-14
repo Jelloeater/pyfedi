@@ -180,6 +180,10 @@
   content: "\ea03";
 }
 
+.fe-mea-culpa::before {
+  content: "\e997";
+}
+
 .fe-block::before {
   content: "\ea04";
 }
