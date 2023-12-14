@@ -5,10 +5,12 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db, cache
+from app.community.util import save_icon_file, save_banner_file
 from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm
-from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string
+from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
+    is_image_url
 from sqlalchemy import desc, or_, text
 
 
@@ -47,6 +49,17 @@ def edit_profile(actor):
         if form.password_field.data.strip() != '':
             current_user.set_password(form.password_field.data)
         current_user.about = form.about.data
+        current_user.bot = form.bot.data
+        profile_file = request.files['profile_file']
+        if profile_file and profile_file.filename != '':
+            file = save_icon_file(profile_file)
+            if file:
+                current_user.avatar = file
+        banner_file = request.files['banner_file']
+        if banner_file and banner_file.filename != '':
+            file = save_banner_file(banner_file)
+            if file:
+                current_user.cover = file
         current_user.flush_cache()
         db.session.commit()
 
@@ -73,7 +86,6 @@ def change_settings(actor):
     form = SettingsForm()
     if form.validate_on_submit():
         current_user.newsletter = form.newsletter.data
-        current_user.bot = form.bot.data
         current_user.ignore_bots = form.ignore_bots.data
         current_user.show_nsfw = form.nsfw.data
         current_user.show_nsfl = form.nsfl.data

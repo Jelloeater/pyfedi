@@ -11,6 +11,9 @@ class ProfileForm(FlaskForm):
     password_field = PasswordField(_l('Set new password'), validators=[Optional(), Length(min=1, max=50)],
                                    render_kw={"autocomplete": 'Off'})
     about = TextAreaField(_l('Bio'), validators=[Optional(), Length(min=3, max=5000)])
+    profile_file = FileField(_('Avatar image'))
+    banner_file = FileField(_('Top banner image'))
+    bot = BooleanField(_l('This profile is a bot'))
     submit = SubmitField(_l('Save profile'))
 
     def validate_email(self, field):
@@ -20,7 +23,6 @@ class ProfileForm(FlaskForm):
 
 class SettingsForm(FlaskForm):
     newsletter = BooleanField(_l('Subscribe to email newsletter'))
-    bot = BooleanField(_l('This profile is a bot'))
     ignore_bots = BooleanField(_l('Hide posts by bots'))
     nsfw = BooleanField(_l('Show NSFW posts'))
     nsfl = BooleanField(_l('Show NSFL posts'))
