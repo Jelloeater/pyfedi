@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import redirect, url_for, flash, current_app, abort
+from flask import redirect, url_for, flash, current_app, abort, request
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
@@ -449,6 +449,8 @@ def post_report(post_id: int):
 
         flash(_('Post has been reported, thank you!'))
         return redirect(post.community.local_url())
+    elif request.method == 'GET':
+        form.report_remote.data = True
 
     return render_template('post/post_report.html', title=_('Report post'), form=form, post=post)
 

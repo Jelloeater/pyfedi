@@ -42,6 +42,19 @@
                 <p>{{ _('No posts in this community yet.') }}</p>
             {% endfor %}
         </div>
+
+        <nav aria-label="Pagination" class="mt-4">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}" class="btn btn-primary">
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                    </a>
+                {% endif %}
+                {% if next_url %}
+                    <a href="{{ next_url }}" class="btn btn-primary">
+                        {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+        </nav>
     </div>
 
     <div class="col-12 col-md-4">

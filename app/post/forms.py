@@ -15,7 +15,9 @@ class NewReplyForm(FlaskForm):
 class ReportPostForm(FlaskForm):
     reason_choices = [('1', _l('Breaks community rules')), ('7', _l('Spam')), ('2', _l('Harassment')),
                       ('3', _l('Threatening violence')), ('4', _l('Hate / genocide')),
-                      ('6', _l('Sharing personal information')),
+                      ('15', _l('Misinformation / disinformation')),
+                      ('16', _l('Racism, sexism, transphobia')),
+                      ('6', _l('Sharing personal info - doxing')),
                       ('5', _l('Minor abuse or sexualization')),
                       ('8', _l('Non-consensual intimate media')),
                       ('9', _l('Prohibited transaction')), ('10', _l('Impersonation')),

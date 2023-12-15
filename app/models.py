@@ -432,7 +432,7 @@ class Post(db.Model):
     mea_culpa = db.Column(db.Boolean, default=False)
     has_embed = db.Column(db.Boolean, default=False)
     reply_count = db.Column(db.Integer, default=0)
-    score = db.Column(db.Integer, default=0, index=True)
+    score = db.Column(db.Integer, default=0, index=True)                # used for 'top' ranking
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
     sticky = db.Column(db.Boolean, default=False)
@@ -445,7 +445,7 @@ class Post(db.Model):
     ip = db.Column(db.String(50))
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
-    ranking = db.Column(db.Integer, default=0)
+    ranking = db.Column(db.Integer, default=0)                          # used for 'hot' ranking
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
 
@@ -507,7 +507,7 @@ class PostReply(db.Model):
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     body_html_safe = db.Column(db.Boolean, default=False)
-    score = db.Column(db.Integer, default=0, index=True)
+    score = db.Column(db.Integer, default=0, index=True)    # used for 'top' sorting
     nsfw = db.Column(db.Boolean, default=False)
     nsfl = db.Column(db.Boolean, default=False)
     notify_author = db.Column(db.Boolean, default=True)
@@ -517,7 +517,7 @@ class PostReply(db.Model):
     from_bot = db.Column(db.Boolean, default=False)
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
-    ranking = db.Column(db.Integer, default=0, index=True)
+    ranking = db.Column(db.Integer, default=0, index=True)  # used for 'hot' sorting
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
 

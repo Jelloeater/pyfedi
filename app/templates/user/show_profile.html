@@ -38,22 +38,46 @@
             {{ user.about_html|safe }}
         {% endif %}
 
-        {% if len(posts) > 0 %}
+        {% if posts %}
             <h2 class="mt-4">Posts</h2>
             <div class="post_list">
                 {% for post in posts %}
                     {% include 'post/_post_teaser.html' %}
                 {% endfor %}
             </div>
+            <nav aria-label="Pagination" class="mt-4">
+                    {% if post_prev_url %}
+                        <a href="{{ post_prev_url }}" class="btn btn-primary">
+                            <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                        </a>
+                    {% endif %}
+                    {% if post_next_url %}
+                        <a href="{{ post_next_url }}" class="btn btn-primary">
+                            {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                        </a>
+                    {% endif %}
+            </nav>
         {% endif %}
 
-        {% if len(post_replies) > 0 %}
-            <h2 class="mt-4">Comments</h2>
+        {% if post_replies %}
+            <h2 class="mt-4" id="comments">Comments</h2>
             <div class="post_list">
                 {% for post_reply in post_replies %}
                     {% include 'post/_post_reply_teaser.html' %}
                 {% endfor %}
             </div>
+            <nav aria-label="Pagination" class="mt-4">
+                    {% if replies_prev_url %}
+                        <a href="{{ replies_prev_url }}#comments" class="btn btn-primary">
+                            <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                        </a>
+                    {% endif %}
+                    {% if replies_next_url %}
+                        <a href="{{ replies_next_url }}#comments" class="btn btn-primary">
+                            {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                        </a>
+                    {% endif %}
+            </nav>
         {% endif %}
     </div>
 

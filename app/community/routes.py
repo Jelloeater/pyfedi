@@ -92,6 +92,8 @@ def show_community(community: Community):
     if current_user.is_anonymous and  request_etag_matches(current_etag):
         return return_304(current_etag)
 
+    page = request.args.get('page', 1, type=int)
+
     mods = community.moderators()
 
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
@@ -105,17 +107,23 @@ def show_community(community: Community):
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
     if current_user.is_anonymous or current_user.ignore_bots:
-        posts = community.posts.filter(Post.from_bot == False).order_by(desc(Post.last_active)).all()
+        posts = community.posts.filter(Post.from_bot == False).order_by(desc(Post.last_active)).paginate(page=page, per_page=100, error_out=False)
     else:
-        posts = community.posts.order_by(desc(Post.last_active)).all()
+        posts = community.posts.order_by(desc(Post.last_active)).paginate(page=page, per_page=100, error_out=False)
 
     description = shorten_string(community.description, 150) if community.description else None
     og_image = community.image.source_url if community.image_id else None
+
+    next_url = url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name,
+                       page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name,
+                       page=posts.prev_num) if posts.has_prev and page != 1 else None
 
     return render_template('community/community.html', community=community, title=community.title,
                            is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}",
+                           next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed")
 
 

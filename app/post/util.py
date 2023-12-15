@@ -16,6 +16,8 @@ def post_replies(post_id: int, sort_by: str, show_first: int = 0) -> List[PostRe
     elif sort_by == 'new':
         comments = comments.order_by(desc(PostReply.posted_at))
 
+    comments = comments.limit(2000) # paginating indented replies is too hard so just get the first 2000.
+
     comments_dict = {comment.id: {'comment': comment, 'replies': []} for comment in comments.all()}
 
     for comment in comments:

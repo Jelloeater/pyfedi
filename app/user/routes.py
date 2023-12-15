@@ -17,21 +17,40 @@ from sqlalchemy import desc, or_, text
 def show_profile(user):
     if user.deleted or user.banned and current_user.is_anonymous():
         abort(404)
-    posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.posted_at)).limit(20).all()
+
+    post_page = request.args.get('post_page', 1, type=int)
+    replies_page = request.args.get('replies_page', 1, type=int)
+
+    posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.posted_at)).paginate(page=post_page, per_page=50, error_out=False)
     moderates = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == user.id)\
         .filter(or_(CommunityMember.is_moderator, CommunityMember.is_owner))
     upvoted = Post.query.join(PostVote).filter(Post.id == PostVote.post_id, PostVote.effect > 0).order_by(desc(Post.posted_at)).limit(10).all()
     subscribed = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == user.id).all()
     if current_user.is_anonymous or user.id != current_user.id:
         moderates = moderates.filter(Community.private_mods == False)
-    post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).limit(20).all()
+    post_replies = PostReply.query.filter_by(user_id=user.id).order_by(desc(PostReply.posted_at)).paginate(page=replies_page, per_page=50, error_out=False)
+
+    # profile info
     canonical = user.ap_public_url if user.ap_public_url else None
     user.about_html = markdown_to_html(user.about)
     description = shorten_string(markdown_to_text(user.about), 150) if user.about else None
+
+    # pagination urls
+    post_next_url = url_for('activitypub.user_profile', actor=user.ap_id if user.ap_id is not None else user.user_name,
+                       post_page=posts.next_num) if posts.has_next else None
+    post_prev_url = url_for('activitypub.user_profile', actor=user.ap_id if user.ap_id is not None else user.user_name,
+                       post_page=posts.prev_num) if posts.has_prev and post_page != 1 else None
+    replies_next_url = url_for('activitypub.user_profile', actor=user.ap_id if user.ap_id is not None else user.user_name,
+                       replies_page=post_replies.next_num) if post_replies.has_next else None
+    replies_prev_url = url_for('activitypub.user_profile', actor=user.ap_id if user.ap_id is not None else user.user_name,
+                       replies_page=post_replies.prev_num) if post_replies.has_prev and replies_page != 1 else None
+
     return render_template('user/show_profile.html', user=user, posts=posts, post_replies=post_replies,
                            moderates=moderates.all(), canonical=canonical, title=_('Posts by %(user_name)s',
                                                                                    user_name=user.user_name),
-                           description=description, subscribed=subscribed, upvoted=upvoted)
+                           description=description, subscribed=subscribed, upvoted=upvoted,
+                           post_next_url=post_next_url, post_prev_url=post_prev_url,
+                           replies_next_url=replies_next_url, replies_prev_url=replies_prev_url)
 
 
 @bp.route('/u/<actor>/profile', methods=['GET', 'POST'])
