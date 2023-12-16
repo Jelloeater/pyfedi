@@ -18,7 +18,7 @@ from sqlalchemy_searchable import make_searchable
 from config import Config
 
 
-db = SQLAlchemy(session_options={"autoflush": False})  # engine_options={'pool_size': 5, 'max_overflow': 10}
+db = SQLAlchemy()  # engine_options={'pool_size': 5, 'max_overflow': 10} # session_options={"autoflush": False}
 migrate = Migrate()
 login = LoginManager()
 login.login_view = 'auth.login'

@@ -383,6 +383,8 @@ class User(UserMixin, db.Model):
         files = File.query.join(Post).filter(Post.user_id == self.id).all()
         for file in files:
             file.delete_from_disk()
+        db.session.query(Report).filter(Report.reporter_id == self.id).delete()
+        db.session.query(Report).filter(Report.suspect_user_id == self.id).delete()
         db.session.query(ActivityLog).filter(ActivityLog.user_id == self.id).delete()
         db.session.query(PostVote).filter(PostVote.user_id == self.id).delete()
         db.session.query(PostReplyVote).filter(PostReplyVote.user_id == self.id).delete()
@@ -448,6 +450,7 @@ class Post(db.Model):
     ranking = db.Column(db.Integer, default=0)                          # used for 'hot' ranking
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
+    reports = db.Column(db.Integer, default=0)                          # how many times this post has been reported. Set to -1 to ignore reports
 
     ap_id = db.Column(db.String(255), index=True)
     ap_create_id = db.Column(db.String(100))
@@ -468,6 +471,7 @@ class Post(db.Model):
         return cls.query.filter_by(ap_id=ap_id).first()
 
     def delete_dependencies(self):
+        db.session.query(Report).filter(Report.suspect_post_id == self.id).delete()
         db.session.execute(text('DELETE FROM post_reply_vote WHERE post_reply_id IN (SELECT id FROM post_reply WHERE post_id = :post_id)'),
                            {'post_id': self.id})
         db.session.execute(text('DELETE FROM post_reply WHERE post_id = :post_id'), {'post_id': self.id})
@@ -520,6 +524,7 @@ class PostReply(db.Model):
     ranking = db.Column(db.Integer, default=0, index=True)  # used for 'hot' sorting
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
+    reports = db.Column(db.Integer, default=0)  # how many times this post has been reported. Set to -1 to ignore reports
 
     ap_id = db.Column(db.String(255), index=True)
     ap_create_id = db.Column(db.String(100))
@@ -751,6 +756,33 @@ class Report(db.Model):
     suspect_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
+
+
+class Site(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(256))
+    description = db.Column(db.String(256))
+    icon_id = db.Column(db.Integer, db.ForeignKey('file.id'))
+    sidebar = db.Column(db.Text, default='')
+    legal_information = db.Column(db.Text, default='')
+    public_key = db.Column(db.Text)
+    private_key = db.Column(db.Text)
+    enable_downvotes = db.Column(db.Boolean, default=True)
+    allow_local_image_posts = db.Column(db.Boolean, default=True)
+    remote_image_cache_days = db.Column(db.Integer, default=30)
+    enable_nsfw = db.Column(db.Boolean, default=False)
+    enable_nsfl = db.Column(db.Boolean, default=False)
+    community_creation_admin_only = db.Column(db.Boolean, default=False)
+    reports_email_admins = db.Column(db.Boolean, default=True)
+    registration_mode = db.Column(db.String(20), default='Closed')
+    application_question = db.Column(db.Text, default='')
+    allow_or_block_list = db.Column(db.Integer, default=2)  # 1 = allow list, 2 = block list
+    allowlist = db.Column(db.Text, default='')
+    blocklist = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated = db.Column(db.DateTime, default=utcnow)
+    last_active = db.Column(db.DateTime, default=utcnow)
+
 
 @login.user_loader
 def load_user(id):

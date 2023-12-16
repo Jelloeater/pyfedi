@@ -6,6 +6,7 @@ from app import create_app, db, cli
 import os, click
 from flask import session, g, json
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
+from app.models import Site
 from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership
 
 app = create_app()
@@ -40,6 +41,7 @@ with app.app_context():
 def before_request():
     session['nonce'] = gibberish()
     g.locale = str(get_locale())
+    g.site = Site.query.get(1)
 
 
 @app.after_request

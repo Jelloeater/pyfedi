@@ -37,7 +37,7 @@ def add_local():
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
                               public_key=public_key,
                               ap_profile_id='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
-                              subscriptions_count=1)
+                              subscriptions_count=1, instance_id=1)
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':
             file = save_icon_file(icon_file)
@@ -89,7 +89,7 @@ def show_community(community: Community):
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{community.id}_{hash(community.last_active)}"
-    if current_user.is_anonymous and  request_etag_matches(current_etag):
+    if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
 
     page = request.args.get('page', 1, type=int)
@@ -314,7 +314,7 @@ def add_post(actor):
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
     if form.validate_on_submit():
-        post = Post(user_id=current_user.id, community_id=form.communities.data)
+        post = Post(user_id=current_user.id, community_id=form.communities.data, instance_id=1)
         save_post(form, post)
         community.post_count += 1
         community.last_active = utcnow()

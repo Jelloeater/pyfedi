@@ -1,5 +1,6 @@
 import random
 from datetime import datetime
+from typing import List
 
 import markdown2
 import math
@@ -17,7 +18,7 @@ from sqlalchemy import text
 from wtforms.fields  import SelectField, SelectMultipleField
 from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
-from app.models import Settings, Domain, Instance, BannedInstances, User, Community
+from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock
 
 
 # Flask's render_template function, with support for themes added
@@ -226,13 +227,19 @@ def user_access(permission: str, user_id: int) -> bool:
     return has_access is not None
 
 
-@cache.memoize(timeout=500)
+@cache.memoize(timeout=86400)
 def community_membership(user: User, community: Community) -> int:
     # @cache.memoize works with User.subscribed but cache.delete_memoized does not, making it bad to use on class methods.
     # however cache.memoize and cache.delete_memoized works fine with normal functions
     if community is None:
         return False
     return user.subscribed(community.id)
+
+
+@cache.memoize(timeout=86400)
+def blocked_domains(user_id) -> List[int]:
+    blocks = DomainBlock.query.filter_by(user_id=user_id)
+    return [block.domain_id for block in blocks]
 
 
 def retrieve_block_list():

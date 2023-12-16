@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_field %}
+
+{% block app_content %}
+
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <form method="post" enctype="multipart/form-data">
+            {{ form.csrf_token() }}
+            {{ render_field(form.name) }}
+            {{ render_field(form.description) }}
+            {{ render_field(form.icon) }}
+            {{ render_field(form.sidebar) }}
+            {{ render_field(form.legal_information) }}
+            {{ render_field(form.submit) }}
+        </form>
+    </div>
+</div>
+{% endblock %}

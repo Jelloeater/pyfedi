@@ -8,10 +8,11 @@ from app import db
 import click
 import os
 
+from app.activitypub.signature import RsaKeys
 from app.auth.email import send_verification_email
 from app.auth.util import random_token
 from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain, ActivityPubLog, \
-    utcnow
+    utcnow, Site, Instance
 from app.utils import file_get_contents, retrieve_block_list
 
 
@@ -53,6 +54,9 @@ def register(app):
             db.drop_all()
             db.configure_mappers()
             db.create_all()
+            private_key, public_key = RsaKeys.generate_keypair()
+            db.session.add(Site(name="PieFed", description='', public_key=public_key, private_key=private_key))
+            db.session.add(Instance(domain=app.config['SERVER_NAME'], software='PieFed'))
             db.session.add(Settings(name='allow_nsfw', value=json.dumps(False)))
             db.session.add(Settings(name='allow_nsfl', value=json.dumps(False)))
             db.session.add(Settings(name='allow_dislike', value=json.dumps(True)))

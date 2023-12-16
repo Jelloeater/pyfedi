@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app import db, constants, cache
 from app.activitypub import bp
-from flask import request, Response, current_app, abort, jsonify, json
+from flask import request, Response, current_app, abort, jsonify, json, g
 
 from app.activitypub.signature import HttpSignature
 from app.community.routes import show_community
@@ -290,7 +290,7 @@ def shared_inbox():
                             community = find_actor_or_create(community_ap_id)
                             user = find_actor_or_create(user_ap_id)
                             if user and community:
-                                user.last_seen = community.last_active = utcnow()
+                                user.last_seen = community.last_active = g.site.last_active = utcnow()
 
                                 object_type = request_json['object']['type']
                                 new_content_types = ['Page', 'Article', 'Link', 'Note']
@@ -403,7 +403,7 @@ def shared_inbox():
                                 community = find_actor_or_create(community_ap_id)
                                 user = find_actor_or_create(user_ap_id)
                                 if user and community:
-                                    user.last_seen = community.last_active = utcnow()
+                                    user.last_seen = community.last_active = g.site.last_active = utcnow()
                                     object_type = request_json['object']['object']['type']
                                     new_content_types = ['Page', 'Article', 'Link', 'Note']
                                     if object_type in new_content_types:      # create a new post

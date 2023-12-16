@@ -5,7 +5,7 @@ from typing import Union, Tuple
 from flask import current_app, request
 from sqlalchemy import text
 from app import db, cache
-from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow
+from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, Site
 import time
 import base64
 import requests
@@ -410,32 +410,34 @@ def is_activitypub_request():
 
 
 def lemmy_site_data():
+    site = Site.query.get(1)
     data = {
       "site_view": {
         "site": {
           "id": 1,
-          "name": "PieFed",
-          "sidebar": "Rules:\n- [Don't be a dick](https://lemmy.nz/post/63098)\n\n[FAQ](https://lemmy.nz/post/31318) ~ [NZ Community List ](https://lemmy.nz/post/63156) ~ [Join Matrix chatroom](https://lemmy.nz/post/169187)",
-          "published": "2023-06-02T09:46:21.972257",
-          "updated": "2023-11-03T03:22:35.594456",
+          "name": site.name,
+          "sidebar": site.sidebar,
+          "published": site.created_at.isoformat(),
+          "updated": site.updated.isoformat(),
           "icon": "https://lemmy.nz/pictrs/image/d308ef8d-4381-4a7a-b047-569ed5b8dd88.png",
           "banner": "https://lemmy.nz/pictrs/image/68beebd5-4e01-44b6-bd4e-008b0d443ac1.png",
-          "description": "PieFed development",
-          "actor_id": "https://lemmy.nz/",
-          "last_refreshed_at": "2023-06-02T09:46:21.960383",
-          "inbox_url": "https://lemmy.nz/site_inbox",
-          "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx6cROxTmUbuWDHM3DcIx\nAWVy4O+cYlnMU3s89gbzhgVioPHqoajDbxNzVavqLd093ZhGPG6pEoGAGEgI9zG/\nnxpCcRC8uoMcu6Yh8E707VWRXFiXDsONyldBKnFmQouQDFAEmPaEOkYX3l1Qe6Q+\np4XKQRcD5hZWMvJVYpGsEa1euOcKrZvQffA+HQ1xcbU2Kts92ZiGkuXcEzOT8YR2\nX82Y/JkpeGkFlW4AociJ1ohfsH9i4OV+C215SgpCPxnEa9oEpluOvql8d7lg0yPA\nIisxtLb6hQtx5hiueILv7WB7kq1dh57RZQmvt7fuBsEk9rK5Lqc/ee9hxseqZKH8\nxwIDAQAB\n-----END PUBLIC KEY-----\n",
+          "description": site.description,
+          "actor_id": f"https://{current_app.config['SERVER_NAME']}/",
+          "last_refreshed_at": site.updated.isoformat(),
+          "inbox_url": f"https://{current_app.config['SERVER_NAME']}/inbox",
+          "public_key": site.public_key,
           "instance_id": 1
         },
         "local_site": {
           "id": 1,
           "site_id": 1,
           "site_setup": True,
-          "enable_downvotes": True,
-          "enable_nsfw": True,
-          "community_creation_admin_only": True,
+          "enable_downvotes": site.enable_downvotes,
+          "enable_nsfw": site.enable_nsfw,
+          "enable_nsfl": site.enable_nsfl,
+          "community_creation_admin_only": site.community_creation_admin_only,
           "require_email_verification": True,
-          "application_question": "This is a New Zealand instance with a focus on New Zealand content. Most content can be accessed from any instance, see https://join-lemmy.org to find one that suits you.\n\nBecause of a Lemmy-wide spam issue, we have needed to turn on the requirement to apply for an account. We will approve you as soon as possible after reviewing your response.\n\nRemember if you didn't provide an email address, you won't be able to get notified you've been approved, so don't forget to check back.\n\nWhere are you from?",
+          "application_question": site.application_question,
           "private_instance": False,
           "default_theme": "browser",
           "default_post_listing_type": "All",
@@ -445,10 +447,10 @@ def lemmy_site_data():
           "federation_enabled": True,
           "captcha_enabled": True,
           "captcha_difficulty": "medium",
-          "published": "2023-06-02T09:46:22.153520",
-          "updated": "2023-11-03T03:22:35.600601",
-          "registration_mode": "RequireApplication",
-          "reports_email_admins": True
+          "published": site.created_at.isoformat(),
+          "updated": site.updated.isoformat(),
+          "registration_mode": site.registration_mode,
+          "reports_email_admins": site.reports_email_admins
         },
         "local_site_rate_limit": {
           "id": 1,
@@ -465,7 +467,7 @@ def lemmy_site_data():
           "comment_per_second": 600,
           "search": 999,
           "search_per_second": 600,
-          "published": "2023-06-02T09:46:22.156933"
+          "published": site.created_at.isoformat(),
         },
         "counts": {
           "id": 1,

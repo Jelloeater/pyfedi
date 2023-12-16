@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import redirect, url_for, flash, current_app, abort, request
+from flask import redirect, url_for, flash, current_app, abort, request, g
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
@@ -419,6 +419,7 @@ def post_delete(post_id: int):
         post.delete_dependencies()
         post.flush_cache()
         db.session.delete(post)
+        g.site.last_active = community.last_active = utcnow()
         db.session.commit()
         flash(_('Post deleted.'))
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
@@ -440,6 +441,7 @@ def post_report(post_id: int):
                                         url=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}",
                                         author_id=current_user.id)
             db.session.add(notification)
+        post.reports += 1
         # todo: Also notify admins for certain types of report
         db.session.commit()
 

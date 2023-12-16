@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6">
+                    <div class="card-title text-center">{{ _('Sorry') }}</div>
+                    <br>
+                    <hr />
+                    <br>
+                    <p>{{ _('Your account does not have access to that area.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

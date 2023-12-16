@@ -160,3 +160,8 @@ def verify_email(token):
 @bp.route('/validation_required')
 def validation_required():
     return render_template('auth/validation_required.html')
+
+
+@bp.route('/permission_denied')
+def permission_denied():
+    return render_template('auth/permission_denied.html')

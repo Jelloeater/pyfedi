@@ -3,7 +3,7 @@ from typing import List
 
 import requests
 from PIL import Image, ImageOps
-from flask import request, abort
+from flask import request, abort, g
 from flask_login import current_user
 from pillow_heif import register_heif_opener
 
@@ -63,6 +63,7 @@ def search_for_community(address: str):
                                                   ap_domain=server,
                                                   public_key=community_json['publicKey']['publicKeyPem'],
                                                   # language=community_json['language'][0]['identifier'] # todo: language
+                                                  # todo: set instance_id
                                                   )
                             if 'icon' in community_json:
                                 # todo: retrieve icon, save to disk, save more complete File record
@@ -237,6 +238,7 @@ def save_post(form, post: Post):
         post.score = 1
         db.session.add(postvote)
         db.session.add(post)
+    g.site.last_active = utcnow()
 
 
 def remove_old_file(file_id):
