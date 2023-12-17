@@ -179,6 +179,29 @@ def post_vote(post_id: int, vote_direction):
                              effect=effect)
         post.author.reputation += effect
         db.session.add(vote)
+
+        if post.community.is_local():
+            ...
+        else:
+            action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
+            action_json = {
+                'actor': current_user.profile_id(),
+                'object': post.profile_id(),
+                'type': action_type,
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
+                'audience': post.community.profile_id()
+            }
+            try:
+                message = HttpSignature.signed_request(post.community.ap_inbox_url, action_json, current_user.private_key,
+                                                       current_user.ap_profile_id + '#main-key')
+                if message.status_code != 200:
+                    flash('Response status code was not 200', 'warning')
+                    current_app.logger.error('Response code for reply attempt was ' +
+                                             str(message.status_code) + ' ' + message.text)
+            except Exception as ex:
+                flash('Failed to send reply: ' + str(ex), 'error')
+                current_app.logger.error("Exception while trying to send reply" + str(ex))
+
     current_user.last_seen = utcnow()
     db.session.commit()
     post.flush_cache()
@@ -231,6 +254,28 @@ def comment_vote(comment_id, vote_direction):
         vote = PostReplyVote(user_id=current_user.id, post_reply_id=comment_id, author_id=comment.author.id, effect=effect)
         comment.author.reputation += effect
         db.session.add(vote)
+
+        if comment.community.is_local():
+            ...
+        else:
+            action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
+            action_json = {
+                'actor': current_user.profile_id(),
+                'object': comment.profile_id(),
+                'type': action_type,
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
+                'audience': comment.community.profile_id()
+            }
+            try:
+                message = HttpSignature.signed_request(comment.community.ap_inbox_url, action_json, current_user.private_key,
+                                                       current_user.ap_profile_id + '#main-key')
+                if message.status_code != 200:
+                    flash('Response status code was not 200', 'warning')
+                    current_app.logger.error('Response code for reply attempt was ' +
+                                             str(message.status_code) + ' ' + message.text)
+            except Exception as ex:
+                flash('Failed to send reply: ' + str(ex), 'error')
+                current_app.logger.error("Exception while trying to send reply" + str(ex))
     current_user.last_seen = utcnow()
     db.session.commit()
     comment.post.flush_cache()

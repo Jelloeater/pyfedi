@@ -19,9 +19,9 @@ from app.constants import SUBSCRIPTION_NONMEMBER, SUBSCRIPTION_MEMBER, SUBSCRIPT
     SUBSCRIPTION_BANNED, SUBSCRIPTION_PENDING
 
 
-# same as datetime.utcnow() except with the UTC timezone explicitly added. datetime.utcnow() is depreciated in python 3.12+
+# datetime.utcnow() is depreciated in Python 3.12 so it will need to be swapped out eventually
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.utcnow()
 
 
 class FullTextSearchQuery(BaseQuery, SearchQueryMixin):
@@ -362,8 +362,6 @@ class User(UserMixin, db.Model):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
 
     def created_recently(self):
-        if self.created.tzinfo is None:
-            self.created = self.created.replace(tzinfo=timezone.utc)
         return self.created and self.created > utcnow() - timedelta(days=7)
 
     @staticmethod
