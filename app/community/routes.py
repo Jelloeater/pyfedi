@@ -6,7 +6,8 @@ from sqlalchemy import or_, desc
 from app import db, constants, cache
 from app.activitypub.signature import RsaKeys, HttpSignature
 from app.activitypub.util import default_context
-from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm
+from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
+    DeleteCommunityForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
     ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
@@ -37,7 +38,7 @@ def add_local():
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
                               public_key=public_key,
                               ap_profile_id='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
-                              subscriptions_count=1, instance_id=1)
+                              subscriptions_count=1, instance_id=1, low_quality='memes' in form.url.data)
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':
             file = save_icon_file(icon_file)
@@ -411,6 +412,25 @@ def community_report(community_id: int):
         return redirect(community.local_url())
 
     return render_template('community/community_report.html', title=_('Report community'), form=form, community=community)
+
+
+@login_required
+@bp.route('/community/<int:community_id>/delete', methods=['GET', 'POST'])
+def community_delete(community_id: int):
+    community = Community.query.get_or_404(community_id)
+    if community.is_owner() or current_user.is_admin():
+        form = DeleteCommunityForm()
+        if form.validate_on_submit():
+            community.delete_dependencies()
+            db.session.delete(community)
+            db.session.commit()
+            flash(_('Community deleted'))
+            return redirect('/communities')
+
+        return render_template('community/community_delete.html', title=_('Delete community'), form=form,
+                               community=community)
+    else:
+        abort(401)
 
 
 @login_required

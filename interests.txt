@@ -165,3 +165,9 @@ mental health
     https://beehaw.org/c/neurodivergence
     https://lemmy.blahaj.zone/c/bipolar
     
+health
+    https://lemmy.ml/c/coronavirus
+    https://mander.xyz/c/medicine
+    https://lemmy.world/c/health
+    https://lemmy.ml/c/health
+    https://mander.xyz/c/medicine

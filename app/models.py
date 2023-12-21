@@ -50,6 +50,11 @@ class File(db.Model):
             return ''
 
     def thumbnail_url(self):
+        if self.thumbnail_path is None:
+            if self.source_url:
+                return self.source_url
+            else:
+                return ''
         thumbnail_path = self.thumbnail_path[4:] if self.thumbnail_path.startswith('app/') else self.thumbnail_path
         return f"https://{current_app.config['SERVER_NAME']}/{thumbnail_path}"
 
@@ -68,8 +73,10 @@ class Community(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     name = db.Column(db.String(256), index=True)
     title = db.Column(db.String(256))
-    description = db.Column(db.Text)
+    description = db.Column(db.Text)        # markdown
+    description_html = db.Column(db.Text)   # html equivalent of above markdown
     rules = db.Column(db.Text)
+    rules_html = db.Column(db.Text)
     content_warning = db.Column(db.Text)        # "Are you sure you want to view this community?"
     subscriptions_count = db.Column(db.Integer, default=0)
     post_count = db.Column(db.Integer, default=0)
@@ -173,6 +180,9 @@ class Community(db.Model):
     def is_moderator(self):
         return any(moderator.user_id == current_user.id for moderator in self.moderators())
 
+    def is_owner(self):
+        return any(moderator.user_id == current_user.id and moderator.is_owner for moderator in self.moderators())
+
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
 
@@ -184,6 +194,17 @@ class Community(db.Model):
             return self.ap_profile_id
         else:
             return f"https://{current_app.config['SERVER_NAME']}/c/{self.ap_id}"
+
+    def delete_dependencies(self):
+        # this will be fine for remote communities but for local ones it is necessary to federate every deletion out to subscribers
+        for post in self.posts:
+            post.delete_dependencies()
+            db.session.delete(post)
+        db.session.query(CommunityBan).filter(CommunityBan.community_id == self.id).delete()
+        db.session.query(CommunityBlock).filter(CommunityBlock.community_id == self.id).delete()
+        db.session.query(CommunityJoinRequest).filter(CommunityJoinRequest.community_id == self.id).delete()
+        db.session.query(CommunityMember).filter(CommunityMember.community_id == self.id).delete()
+        db.session.query(Report).filter(Report.suspect_community_id == self.id).delete()
 
 
 user_role = db.Table('user_role',
@@ -203,7 +224,8 @@ class User(UserMixin, db.Model):
     verification_token = db.Column(db.String(16), index=True)
     banned = db.Column(db.Boolean, default=False)
     deleted = db.Column(db.Boolean, default=False)
-    about = db.Column(db.Text)
+    about = db.Column(db.Text)      # markdown
+    about_html = db.Column(db.Text) # html
     keywords = db.Column(db.String(256))
     show_nsfw = db.Column(db.Boolean, default=False)
     show_nsfl = db.Column(db.Boolean, default=False)
@@ -225,6 +247,7 @@ class User(UserMixin, db.Model):
     bot = db.Column(db.Boolean, default=False)
     ignore_bots = db.Column(db.Boolean, default=False)
     unread_notifications = db.Column(db.Integer, default=0)
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
@@ -296,6 +319,12 @@ class User(UserMixin, db.Model):
 
     def is_local(self):
         return self.ap_id is None or self.ap_profile_id.startswith('https://' + current_app.config['SERVER_NAME'])
+
+    def is_admin(self):
+        for role in self.roles:
+            if role.name == 'Admin':
+                return True
+        return False
 
     def link(self) -> str:
         if self.is_local():

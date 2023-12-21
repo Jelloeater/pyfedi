@@ -97,3 +97,7 @@ class ReportCommunityForm(FlaskForm):
     description = StringField(_l('More info'))
     report_remote = BooleanField('Also send report to originating instance')
     submit = SubmitField(_l('Report'))
+
+
+class DeleteCommunityForm(FlaskForm):
+    submit = SubmitField(_l('Delete community'))

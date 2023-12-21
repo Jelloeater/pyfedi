@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Union, Tuple
 from flask import current_app, request
 from sqlalchemy import text
-from app import db, cache
+from app import db, cache, constants
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, Site
 import time
 import base64
@@ -14,7 +14,8 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
 from urllib.parse import urlparse
 
-from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime
+from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
+    is_image_url, domain_from_url
 
 
 def public_key():
@@ -196,6 +197,8 @@ def instance_allowed(host: str) -> bool:
 def find_actor_or_create(actor: str) -> Union[User, Community, None]:
     user = None
     # actor parameter must be formatted as https://server/u/actor or https://server/c/actor
+
+    # Initially, check if the user exists in the local DB already
     if current_app.config['SERVER_NAME'] + '/c/' in actor:
         return Community.query.filter_by(
             ap_profile_id=actor).first()  # finds communities formatted like https://localhost/c/*
@@ -218,86 +221,36 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
             return None
         if user is None:
             user = Community.query.filter_by(ap_profile_id=actor).first()
-    if user is None:
-        # retrieve user details via webfinger, etc
-        # todo: try, except block around every get_request
-        webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
-                                     params={'resource': f"acct:{address}@{server}"})
-        if webfinger_data.status_code == 200:
-            webfinger_json = webfinger_data.json()
-            webfinger_data.close()
-            for links in webfinger_json['links']:
-                if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
-                    type = links['type'] if 'type' in links else 'application/activity+json'
-                    # retrieve the activitypub profile
-                    actor_data = get_request(links['href'], headers={'Accept': type})
-                    # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
-                    if actor_data.status_code == 200:
-                        activity_json = actor_data.json()
-                        actor_data.close()
-                        if activity_json['type'] == 'Person':
-                            user = User(user_name=activity_json['preferredUsername'],
-                                        email=f"{address}@{server}",
-                                        about=parse_summary(activity_json),
-                                        created=activity_json['published'],
-                                        ap_id=f"{address}@{server}",
-                                        ap_public_url=activity_json['id'],
-                                        ap_profile_id=activity_json['id'],
-                                        ap_inbox_url=activity_json['endpoints']['sharedInbox'],
-                                        ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
-                                        ap_preferred_username=activity_json['preferredUsername'],
-                                        ap_fetched_at=utcnow(),
-                                        ap_domain=server,
-                                        public_key=activity_json['publicKey']['publicKeyPem'],
-                                        # language=community_json['language'][0]['identifier'] # todo: language
-                                        )
-                            if 'icon' in activity_json:
-                                # todo: retrieve icon, save to disk, save more complete File record
-                                avatar = File(source_url=activity_json['icon']['url'])
-                                user.avatar = avatar
-                                db.session.add(avatar)
-                            if 'image' in activity_json:
-                                # todo: retrieve image, save to disk, save more complete File record
-                                cover = File(source_url=activity_json['image']['url'])
-                                user.cover = cover
-                                db.session.add(cover)
-                            db.session.add(user)
-                            db.session.commit()
-                            return user
-                        elif activity_json['type'] == 'Group':
-                            community = Community(name=activity_json['preferredUsername'],
-                                                  title=activity_json['name'],
-                                                  description=activity_json['summary'],
-                                                  nsfw=activity_json['sensitive'],
-                                                  restricted_to_mods=activity_json['postingRestrictedToMods'],
-                                                  created_at=activity_json['published'],
-                                                  last_active=activity_json['updated'],
-                                                  ap_id=f"{address[1:]}",
-                                                  ap_public_url=activity_json['id'],
-                                                  ap_profile_id=activity_json['id'],
-                                                  ap_followers_url=activity_json['followers'],
-                                                  ap_inbox_url=activity_json['endpoints']['sharedInbox'],
-                                                  ap_fetched_at=utcnow(),
-                                                  ap_domain=server,
-                                                  public_key=activity_json['publicKey']['publicKeyPem'],
-                                                  # language=community_json['language'][0]['identifier'] # todo: language
-                                                  )
-                            if 'icon' in activity_json:
-                                # todo: retrieve icon, save to disk, save more complete File record
-                                icon = File(source_url=activity_json['icon']['url'])
-                                community.icon = icon
-                                db.session.add(icon)
-                            if 'image' in activity_json:
-                                # todo: retrieve image, save to disk, save more complete File record
-                                image = File(source_url=activity_json['image']['url'])
-                                community.image = image
-                                db.session.add(image)
-                            db.session.add(community)
-                            db.session.commit()
-                            return community
-        return None
-    else:
+
+    if user is not None:
         return user
+    else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
+        if actor.startswith('https://'):
+            actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
+            if actor_data.status_code == 200:
+                actor_json = actor_data.json()
+                actor_data.close()
+                return actor_json_to_model(actor_json, address, server)
+        else:
+            # retrieve user details via webfinger, etc
+            # todo: try, except block around every get_request
+            webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
+                                         params={'resource': f"acct:{address}@{server}"})
+            if webfinger_data.status_code == 200:
+                webfinger_json = webfinger_data.json()
+                webfinger_data.close()
+                for links in webfinger_json['links']:
+                    if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
+                        type = links['type'] if 'type' in links else 'application/activity+json'
+                        # retrieve the activitypub profile
+                        print('****', links['href'])
+                        actor_data = get_request(links['href'], headers={'Accept': type})
+                        # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
+                        if actor_data.status_code == 200:
+                            actor_json = actor_data.json()
+                            actor_data.close()
+                            return actor_json_to_model(actor_json, address, server)
+    return None
 
 
 def extract_domain_and_actor(url_string: str):
@@ -312,6 +265,133 @@ def extract_domain_and_actor(url_string: str):
 
     return server_domain, actor
 
+
+def actor_json_to_model(activity_json, address, server):
+    if activity_json['type'] == 'Person':
+        user = User(user_name=activity_json['preferredUsername'],
+                    email=f"{address}@{server}",
+                    about=parse_summary(activity_json),
+                    created=activity_json['published'] if 'published' in activity_json else utcnow(),
+                    ap_id=f"{address}@{server}",
+                    ap_public_url=activity_json['id'],
+                    ap_profile_id=activity_json['id'],
+                    ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                    ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
+                    ap_preferred_username=activity_json['preferredUsername'],
+                    ap_fetched_at=utcnow(),
+                    ap_domain=server,
+                    public_key=activity_json['publicKey']['publicKeyPem'],
+                    instance_id=find_instance_id(server)
+                    # language=community_json['language'][0]['identifier'] # todo: language
+                    )
+        if 'icon' in activity_json:
+            # todo: retrieve icon, save to disk, save more complete File record
+            avatar = File(source_url=activity_json['icon']['url'])
+            user.avatar = avatar
+            db.session.add(avatar)
+        if 'image' in activity_json:
+            # todo: retrieve image, save to disk, save more complete File record
+            cover = File(source_url=activity_json['image']['url'])
+            user.cover = cover
+            db.session.add(cover)
+        db.session.add(user)
+        db.session.commit()
+        return user
+    elif activity_json['type'] == 'Group':
+        if 'attributedTo' in activity_json:  # lemmy and mbin
+            mods_url = activity_json['attributedTo']
+        elif 'moderators' in activity_json:  # kbin
+            mods_url = activity_json['moderators']
+        else:
+            mods_url = None
+        community = Community(name=activity_json['preferredUsername'],
+                              title=activity_json['name'],
+                              description=activity_json['summary'] if 'summary' in activity_json else '',
+                              rules=activity_json['rules'] if 'rules' in activity_json else '',
+                              rules_html=markdown_to_html(activity_json['rules'] if 'rules' in activity_json else ''),
+                              nsfw=activity_json['sensitive'],
+                              restricted_to_mods=activity_json['postingRestrictedToMods'],
+                              created_at=activity_json['published'] if 'published' in activity_json else utcnow(),
+                              last_active=activity_json['updated'] if 'updated' in activity_json else utcnow(),
+                              ap_id=f"{address[1:]}",
+                              ap_public_url=activity_json['id'],
+                              ap_profile_id=activity_json['id'],
+                              ap_followers_url=activity_json['followers'],
+                              ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                              ap_moderators_url=mods_url,
+                              ap_fetched_at=utcnow(),
+                              ap_domain=server,
+                              public_key=activity_json['publicKey']['publicKeyPem'],
+                              # language=community_json['language'][0]['identifier'] # todo: language
+                              instance_id=find_instance_id(server),
+                              low_quality='memes' in activity_json['preferredUsername']
+                              )
+        # parse markdown and overwrite html field with result
+        if 'source' in activity_json and \
+                activity_json['source']['mediaType'] == 'text/markdown':
+            community.description = activity_json['source']['content']
+            community.description_html = markdown_to_html(community.description)
+        elif 'content' in activity_json:
+            community.description_html = allowlist_html(activity_json['content'])
+            community.description = html_to_markdown(community.description_html)
+        if 'icon' in activity_json:
+            # todo: retrieve icon, save to disk, save more complete File record
+            icon = File(source_url=activity_json['icon']['url'])
+            community.icon = icon
+            db.session.add(icon)
+        if 'image' in activity_json:
+            # todo: retrieve image, save to disk, save more complete File record
+            image = File(source_url=activity_json['image']['url'])
+            community.image = image
+            db.session.add(image)
+        db.session.add(community)
+        db.session.commit()
+        return community
+
+
+def post_json_to_model(post_json, user, community) -> Post:
+    post = Post(user_id=user.id, community_id=community.id,
+                title=post_json['name'],
+                comments_enabled=post_json['commentsEnabled'],
+                sticky=post_json['stickied'] if 'stickied' in post_json else False,
+                nsfw=post_json['sensitive'],
+                nsfl=post_json['nsfl'] if 'nsfl' in post_json else False,
+                ap_id=post_json['id'],
+                type=constants.POST_TYPE_ARTICLE,
+                posted_at=post_json['published'],
+                last_active=post_json['published'],
+                )
+    if 'source' in post_json and \
+            post_json['source']['mediaType'] == 'text/markdown':
+        post.body = post_json['source']['content']
+        post.body_html = markdown_to_html(post.body)
+    elif 'content' in post_json:
+        post.body_html = allowlist_html(post_json['content'])
+        post.body = html_to_markdown(post.body_html)
+    if 'attachment' in post_json and \
+            len(post_json['attachment']) > 0 and \
+            'type' in post_json['attachment'][0]:
+        if post_json['attachment'][0]['type'] == 'Link':
+            post.url = post_json['attachment'][0]['href']
+            if is_image_url(post.url):
+                post.type = POST_TYPE_IMAGE
+            else:
+                post.type = POST_TYPE_LINK
+            domain = domain_from_url(post.url)
+            if not domain.banned:
+                post.domain_id = domain.id
+            else:
+                post = None
+    if 'image' in post_json:
+        image = File(source_url=post_json['image']['url'])
+        db.session.add(image)
+        post.image = image
+
+    if post is not None:
+        db.session.add(post)
+        community.post_count += 1
+        db.session.commit()
+    return post
 
 # create a summary from markdown if present, otherwise use html if available
 def parse_summary(user_json) -> str:
@@ -392,6 +472,40 @@ def find_liked_object(ap_id) -> Union[Post, PostReply, None]:
         post_reply = PostReply.get_by_ap_id(ap_id)
         if post_reply:
             return post_reply
+    return None
+
+
+def find_instance_id(server):
+    server = server.strip()
+    instance = Instance.query.filter_by(domain=server).first()
+    if instance:
+        return instance.id
+    else:
+        instance_data = get_request(f"https://{server}", headers={'Accept': 'application/activity+json'})
+        if instance_data.status_code == 200:
+            try:
+                instance_json = instance_data.json()
+                instance_data.close()
+            except requests.exceptions.JSONDecodeError as ex:
+                instance_json = {}
+            if 'type' in instance_json and instance_json['type'] == 'Application':
+                if instance_json['name'].lower() == 'kbin':
+                    software = 'Kbin'
+                elif instance_json['name'].lower() == 'mbin':
+                    software = 'Mbin'
+                else:
+                    software = 'Lemmy'
+                new_instance = Instance(domain=server,
+                                        inbox=instance_json['inbox'],
+                                        outbox=instance_json['outbox'],
+                                        software=software,
+                                        created_at=instance_json['published'] if 'published' in instance_json else utcnow()
+                                        )
+            else:
+                new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
+            db.session.add(new_instance)
+            db.session.commit()
+            return new_instance.id
     return None
 
 

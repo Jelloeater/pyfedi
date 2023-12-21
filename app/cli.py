@@ -83,6 +83,7 @@ def register(app):
             db.session.add(Interest(name='🛠 Programming', communities=parse_communities(interests, 'programming')))
             db.session.add(Interest(name='🖥️ Tech', communities=parse_communities(interests, 'tech')))
             db.session.add(Interest(name='🤗 Mental Health', communities=parse_communities(interests, 'mental health')))
+            db.session.add(Interest(name='💊 Health', communities=parse_communities(interests, 'health')))
 
             # Load initial domain block list
             block_list = retrieve_block_list()

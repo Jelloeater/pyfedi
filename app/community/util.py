@@ -1,22 +1,26 @@
 from datetime import datetime
+from threading import Thread
+from time import sleep
 from typing import List
-
 import requests
 from PIL import Image, ImageOps
-from flask import request, abort, g
+from flask import request, abort, g, current_app
 from flask_login import current_user
 from pillow_heif import register_heif_opener
 
 from app import db, cache
+from app.activitypub.util import find_actor_or_create, actor_json_to_model, post_json_to_model
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
-from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow
-from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image
+from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember
+from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
+    html_to_markdown, is_image_url
 from sqlalchemy import desc, text
 import os
 from opengraph_parse import parse_page
 
 
 allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
+
 
 def search_for_community(address: str):
     if address.startswith('!'):
@@ -45,40 +49,60 @@ def search_for_community(address: str):
                     # to see the structure of the json contained in community_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
                     if community_data.status_code == 200:
                         community_json = community_data.json()
+                        community_data.close()
                         if community_json['type'] == 'Group':
-                            community = Community(name=community_json['preferredUsername'],
-                                                  title=community_json['name'],
-                                                  description=community_json['summary'],
-                                                  nsfw=community_json['sensitive'],
-                                                  restricted_to_mods=community_json['postingRestrictedToMods'],
-                                                  created_at=community_json['published'],
-                                                  last_active=community_json['updated'],
-                                                  ap_id=f"{address[1:]}",
-                                                  ap_public_url=community_json['id'],
-                                                  ap_profile_id=community_json['id'],
-                                                  ap_followers_url=community_json['followers'],
-                                                  ap_inbox_url=community_json['endpoints']['sharedInbox'],
-                                                  ap_moderators_url=community_json['attributedTo'] if 'attributedTo' in community_json else None,
-                                                  ap_fetched_at=utcnow(),
-                                                  ap_domain=server,
-                                                  public_key=community_json['publicKey']['publicKeyPem'],
-                                                  # language=community_json['language'][0]['identifier'] # todo: language
-                                                  # todo: set instance_id
-                                                  )
-                            if 'icon' in community_json:
-                                # todo: retrieve icon, save to disk, save more complete File record
-                                icon = File(source_url=community_json['icon']['url'])
-                                community.icon = icon
-                                db.session.add(icon)
-                            if 'image' in community_json:
-                                # todo: retrieve image, save to disk, save more complete File record
-                                image = File(source_url=community_json['image']['url'])
-                                community.image = image
-                                db.session.add(image)
-                            db.session.add(community)
-                            db.session.commit()
+                            community = actor_json_to_model(community_json, address, server)
+                            thr = Thread(target=retrieve_mods_and_backfill_thread, args=[community, current_app._get_current_object()])
+                            thr.start()
                             return community
         return None
+
+
+def retrieve_mods_and_backfill_thread(community: Community, app):
+    with app.app_context():
+        if community.ap_moderators_url:
+            mods_request = get_request(community.ap_moderators_url, headers={'Accept': 'application/activity+json'})
+            if mods_request.status_code == 200:
+                mods_data = mods_request.json()
+                mods_request.close()
+                if mods_data and mods_data['type'] == 'OrderedCollection' and 'orderedItems' in mods_data:
+                    for actor in mods_data['orderedItems']:
+                        sleep(0.5)
+                        user = find_actor_or_create(actor)
+                        if user:
+                            existing_membership = CommunityMember.query.filter_by(community_id=community.id, user_id=user.id).first()
+                            if existing_membership:
+                                existing_membership.is_moderator = True
+                            else:
+                                new_membership = CommunityMember(community_id=community.id, user_id=user.id, is_moderator=True)
+                                db.session.add(new_membership)
+                    db.session.commit()
+
+        # only backfill nsfw if nsfw communities are allowed
+        if (community.nsfw and not g.site.enable_nsfw) or (community.nsfl and not g.site.enable_nsfl):
+            return
+
+        # download 50 old posts
+        if community.ap_public_url:
+            outbox_request = get_request(community.ap_public_url + '/outbox', headers={'Accept': 'application/activity+json'})
+            if outbox_request.status_code == 200:
+                outbox_data = outbox_request.json()
+                outbox_request.close()
+                if outbox_data['type'] == 'OrderedCollection' and 'orderedItems' in outbox_data:
+                    activities_processed = 0
+                    for activity in outbox_data['orderedItems']:
+                        user = find_actor_or_create(activity['object']['actor'])
+                        if user:
+                            post = post_json_to_model(activity['object']['object'], user, community)
+                            post.ap_create_id = activity['object']['id']
+                            post.ap_announce_id = activity['id']
+                            db.session.commit()
+
+                        activities_processed += 1
+                        if activities_processed >= 50:
+                            break
+                    community.post_count = activities_processed # todo: figure out why this value is not being saved
+                    db.session.commit()
 
 
 def community_url_exists(url) -> bool:

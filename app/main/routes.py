@@ -1,21 +1,27 @@
 from sqlalchemy.sql.operators import or_
 
 from app import db, cache
+from app.activitypub.util import default_context
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, SUBSCRIPTION_OWNER
 from app.main import bp
-from flask import g, session, flash, request, current_app, url_for, redirect, make_response
+from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
 from flask_moment import moment
 from flask_login import current_user
 from flask_babel import _, get_locale
 from sqlalchemy import select, desc
 from sqlalchemy_searchable import search
-from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains
+from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
+    ap_datetime
 from app.models import Community, CommunityMember, Post, Site, User
 
 
-@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/', methods=['HEAD', 'GET', 'POST'])
 @bp.route('/index', methods=['GET', 'POST'])
 def index():
+    if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get(
+            'Accept', ''):
+        return activitypub_application()
+
     verification_warning()
 
     # If nothing has changed since their last visit, return HTTP 304
@@ -99,3 +105,20 @@ def test():
 def verification_warning():
     if hasattr(current_user, 'verified') and current_user.verified is False:
         flash(_('Please click the link in your email inbox to verify your account.'), 'warning')
+
+
+def activitypub_application():
+    application_data = {
+        '@context': default_context(),
+        'type': 'Application',
+        'id': f"https://{current_app.config['SERVER_NAME']}/",
+        'name': g.site.name,
+        'summary': g.site.description,
+        'published': ap_datetime(g.site.created_at),
+        'updated': ap_datetime(g.site.updated),
+        'inbox': f"https://{current_app.config['SERVER_NAME']}/site_inbox",
+        'outbox': f"https://{current_app.config['SERVER_NAME']}/site_outbox",
+    }
+    resp = jsonify(application_data)
+    resp.content_type = 'application/activity+json'
+    return resp

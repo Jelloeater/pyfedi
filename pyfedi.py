@@ -14,7 +14,7 @@ cli.register(app)
 
 
 @app.context_processor
-def app_context_processor():  # NB there needs to be an identical function in cb.wsgi to make this work in production
+def app_context_processor():
     def getmtime(filename):
         return os.path.getmtime('app/static/' + filename)
     return dict(getmtime=getmtime, post_type_link=POST_TYPE_LINK, post_type_image=POST_TYPE_IMAGE, post_type_article=POST_TYPE_ARTICLE)
