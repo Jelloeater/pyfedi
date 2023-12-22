@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from flask import request, flash
+from flask import request, flash, json, url_for
 from flask_login import login_required, current_user
 from flask_babel import _
 from sqlalchemy import text, desc
@@ -126,5 +126,23 @@ def admin_activities():
         ActivityPubLog.created_at < utcnow() - timedelta(days=3)).delete()
     db.session.commit()
 
-    return render_template('admin/activities.html', title=_('ActivityPub Log'),
-                           activities=ActivityPubLog.query.order_by(desc(ActivityPubLog.created_at)).all())
+    page = request.args.get('page', 1, type=int)
+
+    activities = ActivityPubLog.query.order_by(desc(ActivityPubLog.created_at)).paginate(page=page, per_page=1000, error_out=False)
+
+    next_url = url_for('admin.admin_activities',
+                       page=activities.next_num) if activities.has_next else None
+    prev_url = url_for('admin.admin_activities',
+                       page=activities.prev_num) if activities.has_prev and page != 1 else None
+
+    return render_template('admin/activities.html', title=_('ActivityPub Log'), next_url=next_url, prev_url=prev_url,
+                           activities=activities)
+
+
+@bp.route('/activity_json/<int:activity_id>')
+@login_required
+@permission_required('change instance settings')
+def activity_json(activity_id):
+    activity = ActivityPubLog.query.get_or_404(activity_id)
+    return render_template('admin/activity_json.html', title=_('Activity JSON'),
+                           activity_json_data=json.loads(activity.activity_json))

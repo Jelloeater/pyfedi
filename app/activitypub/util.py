@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 import os
 from typing import Union, Tuple
-from flask import current_app, request
+from flask import current_app, request, g
 from sqlalchemy import text
 from app import db, cache, constants
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
-    Site, PostVote, PostReplyVote
+    Site, PostVote, PostReplyVote, ActivityPubLog
 import time
 import base64
 import requests
@@ -504,6 +504,11 @@ def is_activitypub_request():
     return 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', '')
 
 
+def activity_already_ingested(ap_id):
+    return db.session.execute(text('SELECT id FROM "activity_pub_log" WHERE activity_id = :activity_id'),
+                              {'activity_id': ap_id}).scalar()
+
+
 def downvote_post(post, user):
     user.last_seen = utcnow()
     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
@@ -627,7 +632,7 @@ def upvote_post(post, user):
 
 
 def lemmy_site_data():
-    site = Site.query.get(1)
+    site = g.site
     data = {
       "site_view": {
         "site": {

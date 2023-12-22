@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from app import db, constants, cache
 from app.activitypub import bp
 from flask import request, Response, current_app, abort, jsonify, json, g
@@ -14,7 +12,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
-    upvote_post
+    upvote_post, activity_already_ingested
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -279,10 +277,27 @@ def shared_inbox():
             activity_log.result = 'failure'
             db.session.add(activity_log)
             db.session.commit()
-            return
+            return ''
         else:
             if 'id' in request_json:
                 activity_log.activity_id = request_json['id']
+
+                if activity_already_ingested(request_json['id']):   # Lemmy has an extremely short POST timeout and tends to retry unnecessarily. Ignore their retries.
+                    activity_log.result = 'ignored'
+                    db.session.add(activity_log)
+                    db.session.commit()
+                    return ''
+
+                activity_log.activity_id = request_json['id']
+                activity_log.activity_json = json.dumps(request_json)
+
+                # Mastodon spams the whole fediverse whenever any of their users are deleted. Ignore them, for now. The Activity includes the Actor signature so it should be possible to verify the POST and do the delete if valid, without a call to find_actor_or_create() and all the network activity that involves. One day.
+                if 'type' in request_json and request_json['type'] == 'Delete' and request_json['id'].endswith('#delete'):
+                    activity_log.result = 'ignored'
+                    activity_log.activity_type = 'Delete'
+                    db.session.add(activity_log)
+                    db.session.commit()
+                    return ''
 
         actor = find_actor_or_create(request_json['actor']) if 'actor' in request_json else None
         if actor is not None:
@@ -304,7 +319,7 @@ def shared_inbox():
                                     community_ap_id = request_json['object']['cc'][0]
                             community = find_actor_or_create(community_ap_id)
                             user = find_actor_or_create(user_ap_id)
-                            if user and community:
+                            if (user and not user.is_local()) and community:
                                 user.last_seen = community.last_active = g.site.last_active = utcnow()
 
                                 object_type = request_json['object']['type']
@@ -367,8 +382,8 @@ def shared_inbox():
                                             activity_log.result = 'success'
                                             db.session.commit()
                                             vote = PostVote(user_id=user.id, author_id=post.user_id,
-                                                                 post_id=post.id,
-                                                                 effect=instance_weight(user.ap_domain))
+                                                            post_id=post.id,
+                                                            effect=instance_weight(user.ap_domain))
                                             db.session.add(vote)
                                     else:
                                         post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
@@ -401,8 +416,9 @@ def shared_inbox():
                                                 community.last_active = post.last_active = utcnow()
                                                 activity_log.result = 'success'
                                                 db.session.commit()
-                                                vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id, post_reply_id=post_reply.id,
-                                                                    effect=instance_weight(user.ap_domain))
+                                                vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id,
+                                                                     post_reply_id=post_reply.id,
+                                                                     effect=instance_weight(user.ap_domain))
                                                 db.session.add(vote)
                                             else:
                                                 activity_log.exception_message = 'Comments disabled'
@@ -421,7 +437,7 @@ def shared_inbox():
                                     user.last_seen = community.last_active = g.site.last_active = utcnow()
                                     object_type = request_json['object']['object']['type']
                                     new_content_types = ['Page', 'Article', 'Link', 'Note']
-                                    if object_type in new_content_types:      # create a new post
+                                    if object_type in new_content_types:  # create a new post
                                         in_reply_to = request_json['object']['object']['inReplyTo'] if 'inReplyTo' in \
                                                                                                        request_json['object']['object'] else None
 
@@ -526,8 +542,8 @@ def shared_inbox():
                                     else:
                                         activity_log.exception_message = 'Could not detect type of like'
                                     if activity_log.result == 'success':
-                                        ... # todo: recalculate 'hotness' of liked post/reply
-                                            # todo: if vote was on content in local community, federate the vote out to followers
+                                        ...  # todo: recalculate 'hotness' of liked post/reply
+                                        # todo: if vote was on content in local community, federate the vote out to followers
                             elif request_json['object']['type'] == 'Dislike':
                                 activity_log.activity_type = request_json['object']['type']
                                 if g.site.enable_downvotes is False:
@@ -554,7 +570,7 @@ def shared_inbox():
                                             # todo: if vote was on content in local community, federate the vote out to followers
 
                         # Follow: remote user wants to join/follow one of our communities
-                        elif request_json['type'] == 'Follow':      # Follow is when someone wants to join a community
+                        elif request_json['type'] == 'Follow':  # Follow is when someone wants to join a community
                             user_ap_id = request_json['actor']
                             community_ap_id = request_json['object']
                             follow_id = request_json['id']
@@ -594,10 +610,10 @@ def shared_inbox():
                                     except Exception as e:
                                         accept_log = ActivityPubLog(direction='out', activity_json=json.dumps(accept),
                                                                     result='failure', activity_id=accept['id'],
-                                                                    exception_message = 'could not send Accept' + str(e))
+                                                                    exception_message='could not send Accept' + str(e))
                                         db.session.add(accept_log)
                                         db.session.commit()
-                                        return
+                                        return ''
                                     activity_log.result = 'success'
                                 else:
                                     activity_log.exception_message = 'user is banned from this community'
@@ -652,7 +668,7 @@ def shared_inbox():
                                     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                     if existing_vote:
                                         post.author.reputation -= existing_vote.effect
-                                        if existing_vote.effect < 0:    # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
+                                        if existing_vote.effect < 0:  # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
                                             post.down_votes -= 1
                                         else:
                                             post.up_votes -= 1
@@ -701,7 +717,7 @@ def shared_inbox():
                                         activity_log.result = 'success'
 
                         elif request_json['type'] == 'Update':
-                            if request_json['object']['type'] == 'Page':    # Editing a post
+                            if request_json['object']['type'] == 'Page':  # Editing a post
                                 post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                                 if post:
                                     if 'source' in request_json['object'] and \
@@ -729,9 +745,9 @@ def shared_inbox():
                                     activity_log.result = 'success'
                         elif request_json['type'] == 'Delete':
                             if isinstance(request_json['object'], str):
-                                ap_id = request_json['object']          # lemmy
+                                ap_id = request_json['object']  # lemmy
                             else:
-                                ap_id = request_json['object']['id']    # kbin
+                                ap_id = request_json['object']['id']  # kbin
                             post = Post.query.filter_by(ap_id=ap_id).first()
                             if post:
                                 post.delete_dependencies()
@@ -743,7 +759,7 @@ def shared_inbox():
                                     reply.body = 'deleted'
                             db.session.commit()
                             activity_log.result = 'success'
-                        elif request_json['type'] == 'Like':                    # Upvote
+                        elif request_json['type'] == 'Like':  # Upvote
                             activity_log.activity_type = request_json['type']
                             user_ap_id = request_json['actor']
                             user = find_actor_or_create(user_ap_id)
@@ -761,7 +777,7 @@ def shared_inbox():
                                 upvote_post_reply(comment, user)
                                 activity_log.result = 'success'
 
-                        elif request_json['type'] == 'Dislike':                 # Downvote
+                        elif request_json['type'] == 'Dislike':  # Downvote
                             if get_setting('allow_dislike', True) is False:
                                 activity_log.exception_message = 'Dislike ignored because of allow_dislike setting'
                             else:
@@ -786,7 +802,7 @@ def shared_inbox():
                         # Flush the caches of any major object that was created. To be sure.
                         if 'user' in vars() and user is not None:
                             user.flush_cache()
-                        #if 'community' in vars() and community is not None:
+                        # if 'community' in vars() and community is not None:
                         #    community.flush_cache()
                         if 'post' in vars() and post is not None:
                             post.flush_cache()
@@ -801,9 +817,7 @@ def shared_inbox():
             activity_log.result = 'failure'
         db.session.add(activity_log)
         db.session.commit()
-        return ''
-
-
+    return ''
 
 
 @bp.route('/c/<actor>/outbox', methods=['GET'])
@@ -927,6 +941,7 @@ def post_ap(post_id):
 
 
 @bp.route('/activities/<type>/<id>')
+@cache.cached(timeout=600)
 def activities_json(type, id):
     activity = ActivityPubLog.query.filter_by(activity_id=f"https://{current_app.config['SERVER_NAME']}/activities/{type}/{id}").first()
     if activity:
