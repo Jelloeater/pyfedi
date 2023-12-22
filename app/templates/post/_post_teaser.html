@@ -1,9 +1,19 @@
 <div class="post_teaser">
     <div class="row">
-        <div class="col col-md-10">
+        <div class="col-12">
             <div class="row main_row">
                 <div class="col">
                     <h3>
+                        <div class="voting_buttons">
+                            {% include "post/_post_voting_buttons.html" %}
+                        </div>
+                        {% if post.image_id %}
+                            <div class="thumbnail">
+                                <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
+                                                                                                     alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
+                                                                                                     height="50" /></a>
+                            </div>
+                        {% endif %}
                         <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a>
                         {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image"> </span>{% endif %}
                         {% if post.type == POST_TYPE_LINK and post.domain_id %}
@@ -17,13 +27,7 @@
                         {% endif %}
                     </h3>
                     <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>
-                {% if post.image_id %}
-                    <div class="thumbnail">
-                        <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                                                             alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
-                                                                                             height="50" /></a>
-                    </div>
-                {% endif %}
+
                 </div>
 
             </div>
@@ -33,11 +37,6 @@
                     <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
                 </div>
                 <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a></div>
-            </div>
-        </div>
-        <div class="col col-md-2">
-            <div class="voting_buttons pt-2">
-                {% include "post/_post_voting_buttons.html" %}
             </div>
         </div>
     </div>

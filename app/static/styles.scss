@@ -54,6 +54,14 @@ nav.navbar {
   }
 }
 
+#outer_container {
+  margin-top: -4px;
+  @include breakpoint(tablet) {
+    margin-top: 1rem;
+    padding-top: 0.25rem;
+  }
+}
+
 .card-title {
   font-size: 140%;
 }
@@ -85,21 +93,39 @@ nav.navbar {
   background-color: white;
   padding-top: 8px;
   padding-bottom: 12px;
+
+  .url_thumbnail {
+    width: 120px;
+    height: auto;
+
+    img {
+      width: 100%;
+    }
+  }
 }
 
 .community_icon {
-  width: 30px;
-  height: auto;
+  width: 20vw;
+  height: 20vw;
+  max-width: 30px;
+  max-height: 30px;
+  min-width: 20px;
+  min-height: 20px;
 }
 
 .community_icon_big {
-  width: 120px;
-  height: auto;
+  width: 20vw;
+  height: 20vw;
+  max-width: 120px;
+  max-height: 120px;
+  min-width: 80px;
+  min-height: 80px;
+  object-fit: cover;
 }
 
 .bump_up {
   position: absolute;
-  top: 104px;
+  top: 115px;
   left: 26px;
 
 }

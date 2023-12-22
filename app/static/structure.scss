@@ -77,28 +77,35 @@ nav, etc which are used site-wide */
   background-position: center center;
   background-size: cover;
   border-radius: 5px;
+  height: 176px;
 
   @include breakpoint(tablet) {
-    #breadcrumb_nav {
+    height: 240px;
+  }
+
+  #breadcrumb_nav {
+    @include breakpoint(tablet) {
       padding-left: 20px;
       padding-top: 13px;
+    }
+    .breadcrumb {
+      background-color: rgba(0,0,0,0.2);
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 6px;
+      margin-bottom: 0;
 
-      .breadcrumb {
-        padding: 0;
-        margin-bottom: 0;
-        background-color: inherit;
-
-        .breadcrumb-item {
+      .breadcrumb-item {
+        color: white;
+        display: inline-block;
+        a {
           color: white;
-          a {
-            color: white;
-          }
         }
+      }
 
-        .breadcrumb-item + .breadcrumb-item::before {
-            content: ">";
-           color: white;
-        }
+      .breadcrumb-item + .breadcrumb-item::before {
+          content: ">";
+         color: white;
       }
     }
   }
@@ -155,13 +162,21 @@ nav, etc which are used site-wide */
     }
 
     .thumbnail {
+      float: right;
       padding-left: 0;
       padding-right: 0;
+
       img {
-        position: absolute;
-        right: 70px;
-        height: 70px;
-        margin-top: -47px;
+        height: 60px;
+        width: 60px;
+        border-radius: 5px;
+        object-fit: cover;
+        margin-left: 5px;
+        @include breakpoint(tablet) {
+          height: 70px;
+          width: 133px;
+
+        }
       }
     }
 
@@ -215,8 +230,9 @@ nav, etc which are used site-wide */
   float: right;
   display: block;
   width: 55px;
-  padding: 5px;
-  padding-right: 0;
+  padding: 0 0 5px 5px;
+  line-height: 22px;
+  font-size: 14px;
 
   div {
     border: solid 1px $primary-colour;

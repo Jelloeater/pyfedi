@@ -39,13 +39,13 @@
             <div class="voting_buttons">
                 {% include "post/_post_voting_buttons.html" %}
             </div>
+            <h1 class="mt-2">{{ post.title }}</h1>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">
-                    <img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
-                            width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" />
+                    <a href="{{ post.url }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                            width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 </div>
             {% endif %}
-            <h1 class="mt-2">{{ post.title }}</h1>
             <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
                 {{ render_username(post.author) }}
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
@@ -68,17 +68,8 @@
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 {% endif %}
             {% endif %}
-
-
+            {{ post.body_html|safe if post.body_html else '' }}
         </div>
     {% endif %}
     <a href="{{ url_for('post.post_options', post_id=post.id) }}" class="post_options_link" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a>
 </div>
-
-{% if post.body_html %}
-<div class="row post_full">
-    <div class="col">
-        {{ post.body_html|safe }}
-    </div>
-</div>
-{% endif %}

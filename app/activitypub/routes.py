@@ -13,7 +13,8 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
     PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
-    lemmy_site_data, instance_weight, is_activitypub_request
+    lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
+    upvote_post
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -254,7 +255,7 @@ def community_profile(actor):
 @bp.route('/inbox', methods=['GET', 'POST'])
 def shared_inbox():
     if request.method == 'POST':
-        # save all incoming data to aid in debugging and development
+        # save all incoming data to aid in debugging and development. Set result to 'success' if things go well
         activity_log = ActivityPubLog(direction='in', activity_json=request.data, result='failure')
 
         try:
@@ -456,78 +457,86 @@ def shared_inbox():
                                                 db.session.commit()
                                         else:
                                             post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
-                                            post_reply = PostReply(user_id=user.id, community_id=community.id,
-                                                                   post_id=post_id, parent_id=parent_comment_id,
-                                                                   root_id=root_id,
-                                                                   nsfw=community.nsfw,
-                                                                   nsfl=community.nsfl,
-                                                                   ap_id=request_json['object']['object']['id'],
-                                                                   ap_create_id=request_json['object']['id'],
-                                                                   ap_announce_id=request_json['id'])
-                                            if 'source' in request_json['object']['object'] and \
-                                                    request_json['object']['object']['source'][
-                                                        'mediaType'] == 'text/markdown':
-                                                post_reply.body = request_json['object']['object']['source']['content']
-                                                post_reply.body_html = markdown_to_html(post_reply.body)
-                                            elif 'content' in request_json['object']['object']:
-                                                post_reply.body_html = allowlist_html(
-                                                    request_json['object']['object']['content'])
-                                                post_reply.body = html_to_markdown(post_reply.body_html)
+                                            if post_id or parent_comment_id or root_id:
+                                                post_reply = PostReply(user_id=user.id, community_id=community.id,
+                                                                       post_id=post_id, parent_id=parent_comment_id,
+                                                                       root_id=root_id,
+                                                                       nsfw=community.nsfw,
+                                                                       nsfl=community.nsfl,
+                                                                       ap_id=request_json['object']['object']['id'],
+                                                                       ap_create_id=request_json['object']['id'],
+                                                                       ap_announce_id=request_json['id'])
+                                                if 'source' in request_json['object']['object'] and \
+                                                        request_json['object']['object']['source'][
+                                                            'mediaType'] == 'text/markdown':
+                                                    post_reply.body = request_json['object']['object']['source']['content']
+                                                    post_reply.body_html = markdown_to_html(post_reply.body)
+                                                elif 'content' in request_json['object']['object']:
+                                                    post_reply.body_html = allowlist_html(
+                                                        request_json['object']['object']['content'])
+                                                    post_reply.body = html_to_markdown(post_reply.body_html)
 
-                                            if post_reply is not None:
-                                                post = Post.query.get(post_id)
-                                                if post.comments_enabled:
-                                                    db.session.add(post_reply)
-                                                    community.post_reply_count += 1
-                                                    community.last_active = utcnow()
-                                                    post.last_active = utcnow()
-                                                    activity_log.result = 'success'
-                                                    db.session.commit()
-                                                else:
-                                                    activity_log.exception_message = 'Comments disabled'
+                                                if post_reply is not None:
+                                                    post = Post.query.get(post_id)
+                                                    if post.comments_enabled:
+                                                        db.session.add(post_reply)
+                                                        community.post_reply_count += 1
+                                                        community.last_active = utcnow()
+                                                        post.last_active = utcnow()
+                                                        activity_log.result = 'success'
+                                                        db.session.commit()
+                                                    else:
+                                                        activity_log.exception_message = 'Comments disabled'
+                                            else:
+                                                activity_log.exception_message = 'Parent not found'
                                     else:
                                         activity_log.exception_message = 'Unacceptable type: ' + object_type
 
-                            elif request_json['object']['type'] == 'Like' or request_json['object']['type'] == 'Dislike':
+                            elif request_json['object']['type'] == 'Like':
                                 activity_log.activity_type = request_json['object']['type']
-                                vote_effect = 1.0 if request_json['object']['type'] == 'Like' else -1.0
-                                if vote_effect < 0 and get_setting('allow_dislike', True) is False:
+                                user_ap_id = request_json['object']['actor']
+                                liked_ap_id = request_json['object']['object']
+                                user = find_actor_or_create(user_ap_id)
+                                if user:
+                                    liked = find_liked_object(liked_ap_id)
+                                    # insert into voted table
+                                    if liked is None:
+                                        activity_log.exception_message = 'Liked object not found'
+                                    elif liked is not None and isinstance(liked, Post):
+                                        upvote_post(liked, user)
+                                        activity_log.result = 'success'
+                                    elif liked is not None and isinstance(liked, PostReply):
+                                        upvote_post_reply(liked, user)
+                                        activity_log.result = 'success'
+                                    else:
+                                        activity_log.exception_message = 'Could not detect type of like'
+                                    if activity_log.result == 'success':
+                                        ... # todo: recalculate 'hotness' of liked post/reply
+                                            # todo: if vote was on content in local community, federate the vote out to followers
+                            elif request_json['object']['type'] == 'Dislike':
+                                activity_log.activity_type = request_json['object']['type']
+                                if g.site.enable_downvotes is False:
                                     activity_log.exception_message = 'Dislike ignored because of allow_dislike setting'
                                 else:
                                     user_ap_id = request_json['object']['actor']
                                     liked_ap_id = request_json['object']['object']
                                     user = find_actor_or_create(user_ap_id)
                                     if user:
-                                        vote_weight = instance_weight(user.ap_domain)
-                                        liked = find_liked_object(liked_ap_id)
+                                        disliked = find_liked_object(liked_ap_id)
                                         # insert into voted table
-                                        if liked is None:
+                                        if disliked is None:
                                             activity_log.exception_message = 'Liked object not found'
-                                        elif liked is not None and isinstance(liked, Post):
-                                            existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
-                                            if existing_vote:
-                                                existing_vote.effect = vote_effect * vote_weight
-                                            else:
-                                                vote = PostVote(user_id=user.id, author_id=liked.user_id, post_id=liked.id,
-                                                                effect=vote_effect * vote_weight)
-                                                db.session.add(vote)
-                                            db.session.commit()
+                                        elif disliked is not None and isinstance(disliked, Post):
+                                            downvote_post(disliked, user)
                                             activity_log.result = 'success'
-                                        elif liked is not None and isinstance(liked, PostReply):
-                                            existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=liked.id).first()
-                                            if existing_vote:
-                                                existing_vote.effect = vote_effect * vote_weight
-                                            else:
-                                                vote = PostReplyVote(user_id=user.id, author_id=liked.user_id, post_reply_id=liked.id,
-                                                                effect=vote_effect * vote_weight)
-                                                db.session.add(vote)
-                                            db.session.commit()
+                                        elif disliked is not None and isinstance(disliked, PostReply):
+                                            downvote_post_reply(disliked, user)
                                             activity_log.result = 'success'
                                         else:
                                             activity_log.exception_message = 'Could not detect type of like'
                                         if activity_log.result == 'success':
-                                            ... # todo: recalculate 'hotness' of liked post/reply
-                                                # todo: if vote was on content in local community, federate the vote out to followers
+                                            ...  # todo: recalculate 'hotness' of liked post/reply
+                                            # todo: if vote was on content in local community, federate the vote out to followers
 
                         # Follow: remote user wants to join/follow one of our communities
                         elif request_json['type'] == 'Follow':      # Follow is when someone wants to join a community
@@ -726,65 +735,15 @@ def shared_inbox():
                             target_ap_id = request_json['object']
                             post = None
                             comment = None
-                            effect = instance_weight(user.ap_domain)
                             if '/comment/' in target_ap_id:
                                 comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                             if '/post/' in target_ap_id:
                                 post = Post.query.filter_by(ap_id=target_ap_id).first()
                             if user and post:
-                                user.last_seen = utcnow()
-                                existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
-                                if not existing_vote:
-                                    post.up_votes += 1
-                                    post.score += effect
-                                    vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
-                                                    effect=effect)
-                                    post.author.reputation += effect
-                                    db.session.add(vote)
-                                else:
-                                    # remove previous cast downvote
-                                    if existing_vote.effect < 0:
-                                        post.author.reputation -= existing_vote.effect
-                                        post.down_votes -= 1
-                                        post.score -= existing_vote.effect
-                                        db.session.delete(existing_vote)
-
-                                        # apply up vote
-                                        post.up_votes += 1
-                                        post.score += effect
-                                        vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
-                                                        effect=effect)
-                                        post.author.reputation += effect
-                                        db.session.add(vote)
+                                upvote_post(post, user)
                                 activity_log.result = 'success'
                             elif user and comment:
-                                user.last_seen = utcnow()
-                                existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
-                                                                              post_reply_id=comment.id).first()
-                                if not existing_vote:
-                                    comment.up_votes += 1
-                                    comment.score += effect
-                                    vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
-                                                         author_id=comment.author.id, effect=effect)
-                                    comment.author.reputation += effect
-                                    db.session.add(vote)
-                                else:
-                                    # remove previously cast downvote
-                                    if existing_vote.effect < 0:
-                                        comment.author.reputation -= existing_vote.effect
-                                        comment.down_votes -= 1
-                                        comment.score -= existing_vote.effect
-                                        db.session.delete(existing_vote)
-
-                                        # apply up vote
-                                        comment.up_votes += 1
-                                        comment.score += effect
-                                        vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
-                                                             author_id=comment.author.id, effect=effect)
-                                        comment.author.reputation += effect
-                                        db.session.add(vote)
-                                    else:
-                                        pass    # they have already upvoted this reply
+                                upvote_post_reply(comment, user)
                                 activity_log.result = 'success'
 
                         elif request_json['type'] == 'Dislike':                 # Downvote
@@ -802,65 +761,10 @@ def shared_inbox():
                                 if '/post/' in target_ap_id:
                                     post = Post.query.filter_by(ap_id=target_ap_id).first()
                                 if user and comment:
-                                    user.last_seen = utcnow()
-                                    existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
-                                                                                  post_reply_id=comment.id).first()
-                                    if not existing_vote:
-                                        effect = -1.0
-                                        comment.down_votes += 1
-                                        comment.score -= 1.0
-                                        vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
-                                                             author_id=comment.author.id, effect=effect)
-                                        comment.author.reputation += effect
-                                        db.session.add(vote)
-                                    else:
-                                        # remove previously cast upvote
-                                        if existing_vote.effect > 0:
-                                            comment.author.reputation -= existing_vote.effect
-                                            comment.up_votes -= 1
-                                            comment.score -= existing_vote.effect
-                                            db.session.delete(existing_vote)
-
-                                            # apply down vote
-                                            effect = -1.0
-                                            comment.down_votes += 1
-                                            comment.score -= 1.0
-                                            vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
-                                                                 author_id=comment.author.id, effect=effect)
-                                            comment.author.reputation += effect
-                                            db.session.add(vote)
-                                        else:
-                                            pass    # they have already downvoted this reply
+                                    downvote_post_reply(comment, user)
                                     activity_log.result = 'success'
                                 elif user and post:
-                                    user.last_seen = utcnow()
-                                    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
-                                    if not existing_vote:
-                                        effect = -1.0
-                                        post.down_votes += 1
-                                        post.score -= 1.0
-                                        vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
-                                                        effect=effect)
-                                        post.author.reputation += effect
-                                        db.session.add(vote)
-                                    else:
-                                        # remove previously cast upvote
-                                        if existing_vote.effect > 0:
-                                            post.author.reputation -= existing_vote.effect
-                                            post.up_votes -= 1
-                                            post.score -= existing_vote.effect
-                                            db.session.delete(existing_vote)
-
-                                            # apply down vote
-                                            effect = -1.0
-                                            post.down_votes += 1
-                                            post.score -= 1.0
-                                            vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
-                                                            effect=effect)
-                                            post.author.reputation += effect
-                                            db.session.add(vote)
-                                        else:
-                                            pass  # they have already downvoted this post
+                                    downvote_post(post, user)
                                     activity_log.result = 'success'
                                 else:
                                     activity_log.exception_message = 'Could not find user or content for vote'
@@ -883,6 +787,8 @@ def shared_inbox():
         db.session.add(activity_log)
         db.session.commit()
         return ''
+
+
 
 
 @bp.route('/c/<actor>/outbox', methods=['GET'])
@@ -1003,3 +909,12 @@ def post_ap(post_id):
         return resp
     else:
         return show_post(post_id)
+
+
+@bp.route('/activities/<type>/<id>')
+def activities_json(type, id):
+    activity = ActivityPubLog.query.filter_by(activity_id=f"https://{current_app.config['SERVER_NAME']}/activities/{type}/{id}").first()
+    if activity:
+        ...
+    else:
+        abort(404)

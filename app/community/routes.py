@@ -100,6 +100,7 @@ def show_community(community: Community):
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     is_owner = current_user.is_authenticated and any(
         mod.user_id == current_user.id and mod.is_owner == True for mod in mods)
+    is_admin = current_user.is_authenticated and current_user.is_admin()
 
     if community.private_mods:
         mod_list = []
@@ -121,7 +122,7 @@ def show_community(community: Community):
                        page=posts.prev_num) if posts.has_prev and page != 1 else None
 
     return render_template('community/community.html', community=community, title=community.title,
-                           is_moderator=is_moderator, is_owner=is_owner, mods=mod_list, posts=posts, description=description,
+                           is_moderator=is_moderator, is_owner=is_owner, is_admin=is_admin, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}",
                            next_url=next_url, prev_url=prev_url,

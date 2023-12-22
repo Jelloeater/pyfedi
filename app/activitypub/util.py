@@ -5,7 +5,8 @@ from typing import Union, Tuple
 from flask import current_app, request
 from sqlalchemy import text
 from app import db, cache, constants
-from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, Site
+from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
+    Site, PostVote, PostReplyVote
 import time
 import base64
 import requests
@@ -439,12 +440,16 @@ def default_context():
 def find_reply_parent(in_reply_to: str) -> Tuple[int, int, int]:
     if 'comment' in in_reply_to:
         parent_comment = PostReply.get_by_ap_id(in_reply_to)
+        if not parent_comment:
+            return (None, None, None)
         parent_comment_id = parent_comment.id
         post_id = parent_comment.post_id
         root_id = parent_comment.root_id
     elif 'post' in in_reply_to:
         parent_comment_id = None
         post = Post.get_by_ap_id(in_reply_to)
+        if not post:
+            return (None, None, None)
         post_id = post.id
         root_id = None
     else:
@@ -460,6 +465,8 @@ def find_reply_parent(in_reply_to: str) -> Tuple[int, int, int]:
                 parent_comment_id = parent_comment.id
                 post_id = parent_comment.post_id
                 root_id = parent_comment.root_id
+            else:
+                return (None, None, None)
 
     return post_id, parent_comment_id, root_id
 
@@ -521,6 +528,128 @@ def instance_weight(domain):
 
 def is_activitypub_request():
     return 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get('Accept', '')
+
+
+def downvote_post(post, user):
+    user.last_seen = utcnow()
+    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+    if not existing_vote:
+        effect = -1.0
+        post.down_votes += 1
+        post.score -= 1.0
+        vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                        effect=effect)
+        post.author.reputation += effect
+        db.session.add(vote)
+    else:
+        # remove previously cast upvote
+        if existing_vote.effect > 0:
+            post.author.reputation -= existing_vote.effect
+            post.up_votes -= 1
+            post.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+
+            # apply down vote
+            effect = -1.0
+            post.down_votes += 1
+            post.score -= 1.0
+            vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                            effect=effect)
+            post.author.reputation += effect
+            db.session.add(vote)
+        else:
+            pass  # they have already downvoted this post
+
+
+def downvote_post_reply(comment, user):
+    user.last_seen = utcnow()
+    existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
+                                                  post_reply_id=comment.id).first()
+    if not existing_vote:
+        effect = -1.0
+        comment.down_votes += 1
+        comment.score -= 1.0
+        vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                             author_id=comment.author.id, effect=effect)
+        comment.author.reputation += effect
+        db.session.add(vote)
+    else:
+        # remove previously cast upvote
+        if existing_vote.effect > 0:
+            comment.author.reputation -= existing_vote.effect
+            comment.up_votes -= 1
+            comment.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+
+            # apply down vote
+            effect = -1.0
+            comment.down_votes += 1
+            comment.score -= 1.0
+            vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                                 author_id=comment.author.id, effect=effect)
+            comment.author.reputation += effect
+            db.session.add(vote)
+        else:
+            pass  # they have already downvoted this reply
+
+
+def upvote_post_reply(comment, user):
+    user.last_seen = utcnow()
+    effect = instance_weight(user.ap_domain)
+    existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
+                                                  post_reply_id=comment.id).first()
+    if not existing_vote:
+        comment.up_votes += 1
+        comment.score += effect
+        vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                             author_id=comment.author.id, effect=effect)
+        comment.author.reputation += effect
+        db.session.add(vote)
+    else:
+        # remove previously cast downvote
+        if existing_vote.effect < 0:
+            comment.author.reputation -= existing_vote.effect
+            comment.down_votes -= 1
+            comment.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+
+            # apply up vote
+            comment.up_votes += 1
+            comment.score += effect
+            vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
+                                 author_id=comment.author.id, effect=effect)
+            comment.author.reputation += effect
+            db.session.add(vote)
+        else:
+            pass  # they have already upvoted this reply
+
+
+def upvote_post(post, user):
+    user.last_seen = utcnow()
+    effect = instance_weight(user.ap_domain)
+    existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+    if not existing_vote:
+        post.up_votes += 1
+        post.score += effect
+        vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                        effect=effect)
+        post.author.reputation += effect
+        db.session.add(vote)
+    else:
+        # remove previous cast downvote
+        if existing_vote.effect < 0:
+            post.author.reputation -= existing_vote.effect
+            post.down_votes -= 1
+            post.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+
+            # apply up vote
+            post.up_votes += 1
+            post.score += effect
+            vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
+                            effect=effect)
+            post.author.reputation += effect
+            db.session.add(vote)
 
 
 def lemmy_site_data():

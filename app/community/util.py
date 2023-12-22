@@ -101,7 +101,9 @@ def retrieve_mods_and_backfill_thread(community: Community, app):
                         activities_processed += 1
                         if activities_processed >= 50:
                             break
-                    community.post_count = activities_processed # todo: figure out why this value is not being saved
+                    c = Community.query.get(community.id)
+                    c.post_count = activities_processed
+                    c.last_active = utcnow()
                     db.session.commit()
 
 

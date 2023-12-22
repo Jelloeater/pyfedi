@@ -388,27 +388,36 @@ fieldset legend {
   background-position: center center;
   background-size: cover;
   border-radius: 5px;
+  height: 176px;
+}
+@media (min-width: 992px) {
+  .community_header {
+    height: 240px;
+  }
 }
 @media (min-width: 992px) {
   .community_header #breadcrumb_nav {
     padding-left: 20px;
     padding-top: 13px;
   }
-  .community_header #breadcrumb_nav .breadcrumb {
-    padding: 0;
-    margin-bottom: 0;
-    background-color: inherit;
-  }
-  .community_header #breadcrumb_nav .breadcrumb .breadcrumb-item {
-    color: white;
-  }
-  .community_header #breadcrumb_nav .breadcrumb .breadcrumb-item a {
-    color: white;
-  }
-  .community_header #breadcrumb_nav .breadcrumb .breadcrumb-item + .breadcrumb-item::before {
-    content: ">";
-    color: white;
-  }
+}
+.community_header #breadcrumb_nav .breadcrumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 6px;
+  margin-bottom: 0;
+}
+.community_header #breadcrumb_nav .breadcrumb .breadcrumb-item {
+  color: white;
+  display: inline-block;
+}
+.community_header #breadcrumb_nav .breadcrumb .breadcrumb-item a {
+  color: white;
+}
+.community_header #breadcrumb_nav .breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+  color: white;
 }
 
 .community_header_no_background .community_icon, .community_header .community_icon {
@@ -451,14 +460,22 @@ fieldset legend {
   text-decoration: none;
 }
 .post_list .post_teaser .thumbnail {
+  float: right;
   padding-left: 0;
   padding-right: 0;
 }
 .post_list .post_teaser .thumbnail img {
-  position: absolute;
-  right: 70px;
-  height: 70px;
-  margin-top: -47px;
+  height: 60px;
+  width: 60px;
+  border-radius: 5px;
+  object-fit: cover;
+  margin-left: 5px;
+}
+@media (min-width: 992px) {
+  .post_list .post_teaser .thumbnail img {
+    height: 70px;
+    width: 133px;
+  }
 }
 
 .url_thumbnail {
@@ -498,8 +515,9 @@ fieldset legend {
   float: right;
   display: block;
   width: 55px;
-  padding: 5px;
-  padding-right: 0;
+  padding: 0 0 5px 5px;
+  line-height: 22px;
+  font-size: 14px;
 }
 .voting_buttons div {
   border: solid 1px #0071CE;
