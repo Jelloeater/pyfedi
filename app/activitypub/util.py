@@ -459,7 +459,10 @@ def find_instance_id(server):
     if instance:
         return instance.id
     else:
-        instance_data = get_request(f"https://{server}", headers={'Accept': 'application/activity+json'})
+        try:
+            instance_data = get_request(f"https://{server}", headers={'Accept': 'application/activity+json'})
+        except:
+             return None
         if instance_data.status_code == 200:
             try:
                 instance_json = instance_data.json()

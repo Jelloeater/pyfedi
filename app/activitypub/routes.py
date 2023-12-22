@@ -417,7 +417,7 @@ def shared_inbox():
                                 community_ap_id = request_json['object']['audience']
                                 community = find_actor_or_create(community_ap_id)
                                 user = find_actor_or_create(user_ap_id)
-                                if user and community:
+                                if (user and not user.is_local()) and community:
                                     user.last_seen = community.last_active = g.site.last_active = utcnow()
                                     object_type = request_json['object']['object']['type']
                                     new_content_types = ['Page', 'Article', 'Link', 'Note']
@@ -512,7 +512,7 @@ def shared_inbox():
                                 user_ap_id = request_json['object']['actor']
                                 liked_ap_id = request_json['object']['object']
                                 user = find_actor_or_create(user_ap_id)
-                                if user:
+                                if user and not user.is_local():
                                     liked = find_liked_object(liked_ap_id)
                                     # insert into voted table
                                     if liked is None:
@@ -536,7 +536,7 @@ def shared_inbox():
                                     user_ap_id = request_json['object']['actor']
                                     liked_ap_id = request_json['object']['object']
                                     user = find_actor_or_create(user_ap_id)
-                                    if user:
+                                    if user and not user.is_local():
                                         disliked = find_liked_object(liked_ap_id)
                                         # insert into voted table
                                         if disliked is None:
@@ -647,7 +647,7 @@ def shared_inbox():
                                     comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                                 if '/post/' in target_ap_id:
                                     post = Post.query.filter_by(ap_id=target_ap_id).first()
-                                if user and post:
+                                if (user and not user.is_local()) and post:
                                     user.last_seen = utcnow()
                                     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                     if existing_vote:
@@ -659,7 +659,7 @@ def shared_inbox():
                                         post.score -= existing_vote.effect
                                         db.session.delete(existing_vote)
                                         activity_log.result = 'success'
-                                if user and comment:
+                                if (user and not user.is_local()) and comment:
                                     existing_vote = PostReplyVote.query.filter_by(user_id=user.id, post_reply_id=comment.id).first()
                                     if existing_vote:
                                         comment.author.reputation -= existing_vote.effect
@@ -682,7 +682,7 @@ def shared_inbox():
                                     comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                                 if '/post/' in target_ap_id:
                                     post = Post.query.filter_by(ap_id=target_ap_id).first()
-                                if user and post:
+                                if (user and not user.is_local()) and post:
                                     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
                                     if existing_vote:
                                         post.author.reputation -= existing_vote.effect
@@ -690,7 +690,7 @@ def shared_inbox():
                                         post.score -= existing_vote.effect
                                         db.session.delete(existing_vote)
                                         activity_log.result = 'success'
-                                if user and comment:
+                                if (user and not user.is_local()) and comment:
                                     existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
                                                                                   post_reply_id=comment.id).first()
                                     if existing_vote:
@@ -754,10 +754,10 @@ def shared_inbox():
                                 comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                             if '/post/' in target_ap_id:
                                 post = Post.query.filter_by(ap_id=target_ap_id).first()
-                            if user and post:
+                            if (user and not user.is_local()) and post:
                                 upvote_post(post, user)
                                 activity_log.result = 'success'
-                            elif user and comment:
+                            elif (user and not user.is_local()) and comment:
                                 upvote_post_reply(comment, user)
                                 activity_log.result = 'success'
 
@@ -775,10 +775,10 @@ def shared_inbox():
                                     comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                                 if '/post/' in target_ap_id:
                                     post = Post.query.filter_by(ap_id=target_ap_id).first()
-                                if user and comment:
+                                if (user and not user.is_local()) and comment:
                                     downvote_post_reply(comment, user)
                                     activity_log.result = 'success'
-                                elif user and post:
+                                elif (user and not user.is_local()) and post:
                                     downvote_post(post, user)
                                     activity_log.result = 'success'
                                 else:

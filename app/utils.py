@@ -78,6 +78,9 @@ def get_request(uri, params=None, headers=None) -> requests.Response:
     except ValueError as ex:
         # Convert to a more generic error we handle
         raise requests.exceptions.RequestException(f"InvalidCodepoint: {str(ex)}") from None
+    except requests.exceptions.ReadTimeout as read_timeout:
+        current_app.logger.info(f"{uri} {read_timeout}")
+        raise requests.exceptions.ReadTimeout from read_timeout
 
     return response
 
