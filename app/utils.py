@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import random
 from datetime import datetime
-from typing import List
+from typing import List, Literal
 
 import markdown2
 import math
@@ -18,7 +20,8 @@ from sqlalchemy import text
 from wtforms.fields  import SelectField, SelectMultipleField
 from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
-from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock
+
+from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog
 
 
 # Flask's render_template function, with support for themes added

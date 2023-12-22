@@ -44,9 +44,10 @@ from datetime import datetime
 from dateutil import parser
 from pyld import jsonld
 
+from app import db
 from app.activitypub.util import default_context
 from app.constants import DATETIME_MS_FORMAT
-from app.models import utcnow
+from app.models import utcnow, ActivityPubLog
 
 
 def http_date(epoch_seconds=None):
@@ -72,6 +73,30 @@ def parse_ld_date(value: str | None) -> datetime | None:
     if value is None:
         return None
     return parser.isoparse(value).replace(microsecond=0)
+
+
+def post_request(uri: str, body: dict | None, private_key: str, key_id: str, content_type: str = "application/activity+json",
+        method: Literal["get", "post"] = "post", timeout: int = 5,):
+    if '@context' not in body:  # add a default json-ld context if necessary
+        body['@context'] = default_context()
+    log = ActivityPubLog(direction='out', activity_json=json.dumps(body),
+                                    result='success', activity_id=body['id'])
+    try:
+        result = HttpSignature.signed_request(uri, body, private_key, key_id, content_type, method, timeout)
+        if result.status_code != 200:
+            log.result = 'failure'
+            log.exception_message = f'Response status code was {result.status_code}'
+            current_app.logger.error('Response code for post attempt was ' +
+                                     str(result.status_code) + ' ' + result.text)
+    except Exception as e:
+        log.result = 'failure'
+        log.exception_message='could not send:' + str(e)
+        current_app.logger.error(f'Exception while sending post to {uri}')
+    db.session.add(log)
+    db.session.commit()
+
+    return log.result != 'failure'
+
 
 class VerificationError(BaseException):
     """

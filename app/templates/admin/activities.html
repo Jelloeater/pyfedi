@@ -25,9 +25,13 @@
                     <td>{{ moment(activity.created_at).fromNow() }}</td>
                     <td>{{ activity.direction }}</td>
                     <td>{{ activity.activity_id }}</td>
-                    <td>{{ activity.activity_type }}</td>
-                    <td>{{ activity.result }}</td>
-                    <td>{{ activity.exception_message }}</td>
+                    <td>{{ activity.activity_type if activity.activity_type else ''  }}</td>
+                    {% if activity.result == 'success' %}
+                        <td><span style="color: green;">{{ activity.result }}</span></td>
+                    {% else %}
+                        <td><span style="color: red;">{{ activity.result }}</span></td>
+                    {% endif %}
+                    <td>{{ activity.exception_message if activity.exception_message else '' }}</td>
                     <td><pre> </pre></td>
                 </tr>
             {% endfor %}

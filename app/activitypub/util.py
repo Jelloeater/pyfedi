@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import json
 import os
-from datetime import datetime
 from typing import Union, Tuple
 from flask import current_app, request
 from sqlalchemy import text
@@ -141,36 +142,6 @@ def post_to_activity(post: Post, community: Community):
     if post.image_id is not None:
         activity_data["object"]["object"]["image"] = {"href": post.image.source_url, "type": "Image"}
     return activity_data
-
-
-def validate_headers(headers, body):
-    if headers['content-type'] != 'application/activity+json' and headers['content-type'] != 'application/ld+json':
-        return False
-
-    if headers['user-agent'] in banned_user_agents():
-        return False
-
-    if instance_blocked(headers['host']):
-        return False
-
-    return validate_header_signature(body, headers['host'], headers['date'], headers['signature'])
-
-
-def validate_header_signature(body: str, host: str, date: str, signature: str) -> bool:
-    body = json.loads(body)
-    signature = parse_signature_header(signature)
-
-    key_domain = urlparse(signature['key_id']).hostname
-    id_domain = urlparse(body['id']).hostname
-
-    if urlparse(body['object']['attributedTo']).hostname != key_domain:
-        raise Exception('Invalid host url.')
-
-    if key_domain != id_domain:
-        raise Exception('Wrong domain.')
-
-    user = find_actor_or_create(body['actor'])
-    return verify_signature(user.private_key, signature, headers)
 
 
 def banned_user_agents():

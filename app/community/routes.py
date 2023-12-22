@@ -4,7 +4,7 @@ from flask_babel import _
 from sqlalchemy import or_, desc
 
 from app import db, constants, cache
-from app.activitypub.signature import RsaKeys, HttpSignature
+from app.activitypub.signature import RsaKeys, HttpSignature, post_request
 from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
     DeleteCommunityForm
@@ -206,18 +206,12 @@ def subscribe(actor):
                     "type": "Follow",
                     "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{join_request.id}"
                 }
-                try:
-                    message = HttpSignature.signed_request(community.ap_inbox_url, follow, current_user.private_key,
+                success = post_request(community.ap_inbox_url, follow, current_user.private_key,
                                                            current_user.profile_id() + '#main-key')
-                    if message.status_code == 200:
-                        flash('Your request to subscribe has been sent to ' + community.title)
-                    else:
-                        flash('Response status code was not 200', 'warning')
-                        current_app.logger.error('Response code for subscription attempt was ' +
-                                                 str(message.status_code) + ' ' + message.text)
-                except Exception as ex:
-                    flash('Failed to send request to subscribe: ' + str(ex), 'error')
-                    current_app.logger.error("Exception while trying to subscribe" + str(ex))
+                if success:
+                    flash('Your request to subscribe has been sent to ' + community.title)
+                else:
+                    flash('There was a problem while trying to subscribe.', 'error')
             else:  # for local communities, joining is instant
                 banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
                 if banned:
@@ -261,18 +255,11 @@ def unsubscribe(actor):
                         'id': f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15),
                         'object': follow
                     }
-                    try:
-                        message = HttpSignature.signed_request(community.ap_inbox_url, undo, current_user.private_key,
+                    success = post_request(community.ap_inbox_url, undo, current_user.private_key,
                                                                current_user.profile_id() + '#main-key')
-                        if message.status_code != 200:
-                            flash('Response status code was not 200', 'warning')
-                            current_app.logger.error('Response code for unsubscription attempt was ' +
-                                                     str(message.status_code) + ' ' + message.text)
-                            proceed = False
-                    except Exception as ex:
-                        proceed = False
-                        flash('Failed to send request to unsubscribe: ' + str(ex), 'error')
-                        current_app.logger.error("Exception while trying to unsubscribe" + str(ex))
+                    if not success:
+                        flash('There was a problem while trying to subscribe', 'error')
+
                 if proceed:
                     db.session.query(CommunityMember).filter_by(user_id=current_user.id, community_id=community.id).delete()
                     db.session.query(CommunityJoinRequest).filter_by(user_id=current_user.id, community_id=community.id).delete()
@@ -361,18 +348,12 @@ def add_post(actor):
                 "audience": community.ap_profile_id,
                 "object": page
             }
-            try:
-                message = HttpSignature.signed_request(community.ap_inbox_url, create, current_user.private_key,
-                                                       current_user.ap_profile_id + '#main-key')
-                if message.status_code == 200:
-                    flash('Your post has been sent to ' + community.title)
-                else:
-                    flash('Response status code was not 200', 'warning')
-                    current_app.logger.error('Response code for post attempt was ' +
-                                             str(message.status_code) + ' ' + message.text)
-            except Exception as ex:
-                flash('Failed to send request to subscribe: ' + str(ex), 'error')
-                current_app.logger.error("Exception while trying to subscribe" + str(ex))
+            success = post_request(community.ap_inbox_url, create, current_user.private_key,
+                                   current_user.ap_profile_id + '#main-key')
+            if success:
+                flash('Your post has been sent to ' + community.title)
+            else:
+                flash('There was a problem sending your post to ' + community.title)
         else:   # local community - send post out to followers
             ...
 

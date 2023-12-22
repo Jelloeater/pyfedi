@@ -6,7 +6,7 @@ from flask_babel import _
 from sqlalchemy import or_, desc
 
 from app import db, constants
-from app.activitypub.signature import HttpSignature
+from app.activitypub.signature import HttpSignature, post_request
 from app.activitypub.util import default_context
 from app.community.util import save_post
 from app.post.forms import NewReplyForm, ReportPostForm, MeaCulpaForm
@@ -104,16 +104,10 @@ def show_post(post_id: int):
                 'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
             }
 
-            try:
-                message = HttpSignature.signed_request(post.community.ap_inbox_url, create_json, current_user.private_key,
+            success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
-                if message.status_code != 200:
-                    flash('Failed to send to remote instance', 'warning')
-                    current_app.logger.error('Response code for reply attempt was ' +
-                                             str(message.status_code) + ' ' + message.text)
-            except Exception as ex:
-                flash('Failed to send request to subscribe: ' + str(ex), 'error')
-                current_app.logger.error("Exception while trying to subscribe" + str(ex))
+            if not success:
+                flash('Failed to send to remote instance', 'error')
         else:                       # local community - send it to followers on remote instances
             ...
 
@@ -191,16 +185,10 @@ def post_vote(post_id: int, vote_direction):
                 'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
                 'audience': post.community.profile_id()
             }
-            try:
-                message = HttpSignature.signed_request(post.community.ap_inbox_url, action_json, current_user.private_key,
+            success = post_request(post.community.ap_inbox_url, action_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
-                if message.status_code != 200:
-                    flash('Response status code was not 200', 'warning')
-                    current_app.logger.error('Response code for reply attempt was ' +
-                                             str(message.status_code) + ' ' + message.text)
-            except Exception as ex:
-                flash('Failed to send reply: ' + str(ex), 'error')
-                current_app.logger.error("Exception while trying to send reply" + str(ex))
+            if not success:
+                flash('Failed to send vote', 'warning')
 
     current_user.last_seen = utcnow()
     db.session.commit()
@@ -266,16 +254,11 @@ def comment_vote(comment_id, vote_direction):
                 'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
                 'audience': comment.community.profile_id()
             }
-            try:
-                message = HttpSignature.signed_request(comment.community.ap_inbox_url, action_json, current_user.private_key,
+            success = post_request(comment.community.ap_inbox_url, action_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
-                if message.status_code != 200:
-                    flash('Response status code was not 200', 'warning')
-                    current_app.logger.error('Response code for reply attempt was ' +
-                                             str(message.status_code) + ' ' + message.text)
-            except Exception as ex:
-                flash('Failed to send reply: ' + str(ex), 'error')
-                current_app.logger.error("Exception while trying to send reply" + str(ex))
+            if not success:
+                flash('Failed to send vote', 'error')
+
     current_user.last_seen = utcnow()
     db.session.commit()
     comment.post.flush_cache()
@@ -388,16 +371,10 @@ def add_reply(post_id: int, comment_id: int):
                         'type': 'Mention'
                     }
                 ]
-            try:
-                message = HttpSignature.signed_request(post.community.ap_inbox_url, create_json, current_user.private_key,
+            success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
-                if message.status_code != 200:
-                    flash('Response status code was not 200', 'warning')
-                    current_app.logger.error('Response code for reply attempt was ' +
-                                             str(message.status_code) + ' ' + message.text)
-            except Exception as ex:
-                flash('Failed to send reply: ' + str(ex), 'error')
-                current_app.logger.error("Exception while trying to send reply" + str(ex))
+            if not success:
+                flash('Failed to send reply', 'error')
         else:                       # local community - send it to followers on remote instances
             ...
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:

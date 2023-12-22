@@ -192,6 +192,20 @@ def user_profile(actor):
         abort(404)
 
 
+@bp.route('/u/<actor>/outbox', methods=['GET'])
+def user_outbox(actor):
+    outbox = {
+        "@context": default_context(),
+        'type': 'OrderedCollection',
+        'id': f"https://{current_app.config['SERVER_NAME']}/u/{actor}/outbox",
+        'orderedItems': [],
+        'totalItems': 0
+    }
+    resp = jsonify(outbox)
+    resp.content_type = 'application/activity+json'
+    return resp
+
+
 @bp.route('/c/<actor>', methods=['GET'])
 def community_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the community, or a HTML rendering of it.
@@ -483,6 +497,7 @@ def shared_inbox():
                                                         community.post_reply_count += 1
                                                         community.last_active = utcnow()
                                                         post.last_active = utcnow()
+                                                        post.reply_count += 1
                                                         activity_log.result = 'success'
                                                         db.session.commit()
                                                     else:
@@ -915,6 +930,9 @@ def post_ap(post_id):
 def activities_json(type, id):
     activity = ActivityPubLog.query.filter_by(activity_id=f"https://{current_app.config['SERVER_NAME']}/activities/{type}/{id}").first()
     if activity:
-        ...
+        activity_json = json.loads(activity.activity_json)
+        resp = jsonify(activity_json)
+        resp.content_type = 'application/activity+json'
+        return resp
     else:
         abort(404)
