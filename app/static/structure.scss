@@ -198,6 +198,16 @@ nav, etc which are used site-wide */
   }
 }
 
+.render_username {
+  display: inline;
+  a img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    vertical-align: bottom;
+  }
+}
+
 .comments > .comment {
   margin-left: 0;
   border-top: solid 1px $grey;

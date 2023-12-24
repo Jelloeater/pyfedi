@@ -1,0 +1,12 @@
+for celery, run this:
+
+celery -A celery_worker.celery worker --loglevel=INFO
+
+
+on prod web server, celery is managed by systemd: /etc/default/celeryd and /etc/systemd/system/celeryd.service
+
+sudo systemctl stop celeryd
+sudo systemctl restart celeryd or sudo service celeryd restart
+
+*** check for celery-related problems by looking in /var/log/celery ***
+

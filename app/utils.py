@@ -42,7 +42,6 @@ def render_template(template_name: str, **context) -> Response:
 
 
 def request_etag_matches(etag):
-    print(str(request.headers))
     if 'If-None-Match' in request.headers:
         old_etag = request.headers['If-None-Match']
         return old_etag == etag

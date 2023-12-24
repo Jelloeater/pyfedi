@@ -161,3 +161,4 @@ cython_debug/
 .idea/
 app/static/*.css.map
 /app/static/media/
+celery_worker.py

@@ -134,8 +134,8 @@
                  <h2>{{ _('About community') }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ post.community.description|safe }}</p>
-                <p>{{ post.community.rules|safe }}</p>
+                <p>{{ post.community.description_html|safe }}</p>
+                <p>{{ post.community.rules_html|safe }}</p>
                 {% if len(mods) > 0 and not post.community.private_mods %}
                     <h3>Moderators</h3>
                     <ol>

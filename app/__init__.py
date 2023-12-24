@@ -13,6 +13,7 @@ from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel, lazy_gettext as _l
 from flask_caching import Cache
+from celery import Celery
 from sqlalchemy_searchable import make_searchable
 
 from config import Config
@@ -28,6 +29,7 @@ bootstrap = Bootstrap5()
 moment = Moment()
 babel = Babel()
 cache = Cache()
+celery = Celery(__name__, broker=Config.CELERY_BROKER_URL)
 
 
 def create_app(config_class=Config):
@@ -43,6 +45,7 @@ def create_app(config_class=Config):
     make_searchable(db.metadata)
     babel.init_app(app, locale_selector=get_locale)
     cache.init_app(app)
+    celery.conf.update(app.config)
 
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)

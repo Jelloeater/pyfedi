@@ -144,7 +144,6 @@ environment
     https://sh.itjust.works/c/sewingrepairing
     https://lemmy.world/c/fuckcars
     https://lemmy.world/c/evs
-    https://feddit.uk/c/evs
     https://slrpnk.net/c/solarpunk
     https://slrpnk.net/c/climate
     https://slrpnk.net/c/energy

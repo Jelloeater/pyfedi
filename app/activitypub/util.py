@@ -215,7 +215,6 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                     if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
                         type = links['type'] if 'type' in links else 'application/activity+json'
                         # retrieve the activitypub profile
-                        print('****', links['href'])
                         actor_data = get_request(links['href'], headers={'Accept': type})
                         # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
                         if actor_data.status_code == 200:
@@ -462,7 +461,10 @@ def find_instance_id(server):
         try:
             instance_data = get_request(f"https://{server}", headers={'Accept': 'application/activity+json'})
         except:
-             return None
+            new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
+            db.session.add(new_instance)
+            db.session.commit()
+            return new_instance.id
         if instance_data.status_code == 200:
             try:
                 instance_json = instance_data.json()
@@ -487,7 +489,11 @@ def find_instance_id(server):
             db.session.add(new_instance)
             db.session.commit()
             return new_instance.id
-    return None
+        else:
+            new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
+            db.session.add(new_instance)
+            db.session.commit()
+            return new_instance.id
 
 
 # alter the effect of upvotes based on their instance. Default to 1.0

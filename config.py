@@ -27,4 +27,6 @@ class Config(object):
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_THRESHOLD = 1000
     CACHE_KEY_PREFIX = 'pyfedi'
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or 'redis://localhost:6379/0'
+    RESULT_BACKEND = os.environ.get('RESULT_BACKEND') or 'redis://localhost:6379/0'
     SQLALCHEMY_ECHO = False     # set to true to see SQL in console

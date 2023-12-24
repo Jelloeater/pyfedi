@@ -1,5 +1,5 @@
 from flask import current_app, render_template, escape
-from app import db
+from app import db, celery
 from flask_babel import _, lazy_gettext as _l           # todo: set the locale based on account_id so that _() works
 import boto3
 from botocore.exceptions import ClientError
@@ -9,6 +9,7 @@ AWS_REGION = "ap-southeast-2"
 CHARSET = "UTF-8"
 
 
+@celery.task
 def send_async_email(subject, sender, recipients, text_body, html_body, reply_to):
     if type(recipients) == str:
         recipients = [recipients]
@@ -62,5 +63,7 @@ def send_async_email(subject, sender, recipients, text_body, html_body, reply_to
 
 
 def send_email(subject, sender, recipients: List[str], text_body, html_body, reply_to=None):
-    # todo: make async or threaded
-    send_async_email(subject, sender, recipients, text_body, html_body, reply_to)
+    if current_app.debug:
+        send_async_email(subject, sender, recipients, text_body, html_body, reply_to)
+    else:
+        send_async_email.delay(subject, sender, recipients, text_body, html_body, reply_to)

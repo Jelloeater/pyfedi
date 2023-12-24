@@ -107,6 +107,7 @@ def verification_warning():
         flash(_('Please click the link in your email inbox to verify your account.'), 'warning')
 
 
+@cache.cached(timeout=6)
 def activitypub_application():
     application_data = {
         '@context': default_context(),

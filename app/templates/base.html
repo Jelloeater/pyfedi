@@ -1,12 +1,18 @@
 {% macro render_username(user) %}
-{% if user.deleted %}
-    [deleted]
-{% else %}
-    <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">{{ user.user_name }}</a>
-    {% if user.created_recently() %}
-        <span class="fe fe-new-account" title="New account"> </span>
+<span class="render_username">
+    {% if user.deleted %}
+        [deleted]
+    {% else %}
+        {% if user.avatar_id %}
+            <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">
+                <img src="{{ user.avatar_image() }}" alt="Avatar" /></a>
+        {% endif %}
+        <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">{{ user.user_name }}</a>
+        {% if user.created_recently() %}
+            <span class="fe fe-new-account" title="New account"> </span>
+        {% endif %}
     {% endif %}
-{% endif %}
+</span>
 {% endmacro %}
 <!doctype html>
 <html lang="en">
