@@ -321,7 +321,7 @@ def actor_json_to_model(activity_json, address, server):
         db.session.add(community)
         db.session.commit()
         if community.icon_id:
-            make_image_sizes(community.icon_id, 40, 250, 'communities')
+            make_image_sizes(community.icon_id, 60, 250, 'communities')
         if community.image_id:
             make_image_sizes(community.image_id, 700, 1600, 'communities')
         return community

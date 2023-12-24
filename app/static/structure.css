@@ -526,8 +526,13 @@ fieldset legend {
   display: block;
   width: 55px;
   padding: 0 0 5px 5px;
-  line-height: 22px;
+  line-height: 30px;
   font-size: 14px;
+}
+@media (min-width: 1280px) {
+  .voting_buttons {
+    line-height: 25px;
+  }
 }
 .voting_buttons div {
   border: solid 1px #0071CE;
@@ -627,6 +632,10 @@ fieldset legend {
 
 .table tr th {
   vertical-align: middle;
+}
+
+.show_menu {
+  display: block !important;
 }
 
 /*# sourceMappingURL=structure.css.map */

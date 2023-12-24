@@ -9,9 +9,13 @@
                         </div>
                         {% if post.image_id %}
                             <div class="thumbnail">
-                                <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                                                                     alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
-                                                                                                     height="50" /></a>
+                                {% if post.type == POST_TYPE_LINK %}
+                                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
+                                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                {% else %}
+                                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
+                                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                {% endif %}
                             </div>
                         {% endif %}
                         <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a>

@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupShowMoreLinks();
     setupConfirmFirst();
     setupTimeTracking();
+    setupMobileNav();
 });
 
 
@@ -12,6 +13,25 @@ window.addEventListener("load", function () {
     setupPostTypeTabs();    // when choosing the type of your new post, store the chosen tab in a hidden field so the backend knows which fields to check
     setupHideButtons();
 });
+
+function setupMobileNav() {
+    var navbarToggler = document.getElementById('navbar-toggler');
+    navbarToggler.addEventListener("click", function(event) {
+        toggleClass('navbarSupportedContent', 'show_menu')
+    });
+}
+
+function toggleClass(elementId, className) {
+  var element = document.getElementById(elementId);
+
+  if (element.classList.contains(className)) {
+    // If the element has the class, remove it
+    element.classList.remove(className);
+  } else {
+    // If the element doesn't have the class, add it
+    element.classList.add(className);
+  }
+}
 
 function collapseReply(comment_id) {
     const reply = document.getElementById('comment_' + comment_id);

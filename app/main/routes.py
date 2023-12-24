@@ -99,7 +99,8 @@ def robots():
 
 @bp.route('/test')
 def test():
-    make_image_sizes_async(140, 40, 250, 'communities')
+    make_image_sizes_async(159, 60, 250, 'communities')
+    make_image_sizes_async(140, 60, 250, 'communities')
     make_image_sizes_async(141, 700, 1600, 'communities')
     return 'done'
 

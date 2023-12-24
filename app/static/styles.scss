@@ -26,9 +26,17 @@ nav.navbar {
   outline-style: none;
 }
 
+.navbar-toggler {
+  border: none;
+  height: 48px;
+  margin-top: 5px;
+}
 
 .navbar-light .navbar-toggler-icon {
-  background-image: url(https://www.chorebuster.net/images/menu.svg);
+  background-image: url(/static/images/menu.svg);
+  width: 35px;
+  height: 40px;
+  background-position: top;
 }
 
 .dropdown.active {

@@ -241,8 +241,12 @@ nav, etc which are used site-wide */
   display: block;
   width: 55px;
   padding: 0 0 5px 5px;
-  line-height: 22px;
+  line-height: 30px;
   font-size: 14px;
+
+  @include breakpoint(laptop) {
+    line-height: 25px;
+  }
 
   div {
     border: solid 1px $primary-colour;
@@ -365,4 +369,8 @@ nav, etc which are used site-wide */
   tr th {
     vertical-align: middle;
   }
+}
+
+.show_menu {
+  display: block!important;
 }
