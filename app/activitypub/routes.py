@@ -12,7 +12,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
-    upvote_post, activity_already_ingested
+    upvote_post, activity_already_ingested, make_image_sizes
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -401,6 +401,10 @@ def process_inbox_request(request_json, activitypublog_id):
                                     community.last_active = utcnow()
                                     activity_log.result = 'success'
                                     db.session.commit()
+
+                                    if post.image_id:
+                                        make_image_sizes(post.image_id, 266, None, 'posts')
+
                                     vote = PostVote(user_id=user.id, author_id=post.user_id,
                                                     post_id=post.id,
                                                     effect=instance_weight(user.ap_domain))
@@ -442,6 +446,12 @@ def process_inbox_request(request_json, activitypublog_id):
                                         activity_log.exception_message = 'Comments disabled'
                         else:
                             activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
+                    else:
+                        if user is None or community is None:
+                            activity_log.exception_message = 'Blocked or unfound user or community'
+                        if user and user.is_local():
+                            activity_log.exception_message = 'Activity about local content which is already present'
+                            activity_log.result = 'ignored'
 
                 # Announce is new content and votes, mastodon style (?)
                 if request_json['type'] == 'Announce':
@@ -502,6 +512,8 @@ def process_inbox_request(request_json, activitypublog_id):
                                         db.session.add(post)
                                         community.post_count += 1
                                         db.session.commit()
+                                        if post.image_id:
+                                            make_image_sizes(post.image_id, 266, None, 'posts')
                                 else:
                                     post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
                                     if post_id or parent_comment_id or root_id:
@@ -538,6 +550,12 @@ def process_inbox_request(request_json, activitypublog_id):
                                         activity_log.exception_message = 'Parent not found'
                             else:
                                 activity_log.exception_message = 'Unacceptable type: ' + object_type
+                        else:
+                            if user is None or community is None:
+                                activity_log.exception_message = 'Blocked or unfound user or community'
+                            if user and user.is_local():
+                                activity_log.exception_message = 'Activity about local content which is already present'
+                                activity_log.result = 'ignored'
 
                     elif request_json['object']['type'] == 'Like':
                         activity_log.activity_type = request_json['object']['type']
@@ -558,8 +576,16 @@ def process_inbox_request(request_json, activitypublog_id):
                             else:
                                 activity_log.exception_message = 'Could not detect type of like'
                             if activity_log.result == 'success':
-                                ...  # todo: recalculate 'hotness' of liked post/reply
+                                ...
+                                # todo: recalculate 'hotness' of liked post/reply
                                 # todo: if vote was on content in local community, federate the vote out to followers
+                        else:
+                            if user is None:
+                                activity_log.exception_message = 'Blocked or unfound user'
+                            if user and user.is_local():
+                                activity_log.exception_message = 'Activity about local content which is already present'
+                                activity_log.result = 'ignored'
+
                     elif request_json['object']['type'] == 'Dislike':
                         activity_log.activity_type = request_json['object']['type']
                         if site.enable_downvotes is False:
@@ -584,6 +610,12 @@ def process_inbox_request(request_json, activitypublog_id):
                                 if activity_log.result == 'success':
                                     ...  # todo: recalculate 'hotness' of liked post/reply
                                     # todo: if vote was on content in local community, federate the vote out to followers
+                            else:
+                                if user is None:
+                                    activity_log.exception_message = 'Blocked or unfound user'
+                                if user and user.is_local():
+                                    activity_log.exception_message = 'Activity about local content which is already present'
+                                    activity_log.result = 'ignored'
 
                 # Follow: remote user wants to join/follow one of our communities
                 elif request_json['type'] == 'Follow':  # Follow is when someone wants to join a community
@@ -699,6 +731,12 @@ def process_inbox_request(request_json, activitypublog_id):
                                 comment.score -= existing_vote.effect
                                 db.session.delete(existing_vote)
                                 activity_log.result = 'success'
+                        else:
+                            if user is None or comment is None:
+                                activity_log.exception_message = 'Blocked or unfound user or comment'
+                            if user and user.is_local():
+                                activity_log.exception_message = 'Activity about local content which is already present'
+                                activity_log.result = 'ignored'
 
                     elif request_json['object']['type'] == 'Dislike':  # Undoing a downvote - probably unused
                         activity_log.activity_type = request_json['object']['type']
@@ -728,6 +766,12 @@ def process_inbox_request(request_json, activitypublog_id):
                                 comment.score -= existing_vote.effect
                                 db.session.delete(existing_vote)
                                 activity_log.result = 'success'
+
+                        if user is None:
+                            activity_log.exception_message = 'Blocked or unfound user'
+                        if user and user.is_local():
+                            activity_log.exception_message = 'Activity about local content which is already present'
+                            activity_log.result = 'ignored'
 
                 elif request_json['type'] == 'Update':
                     if request_json['object']['type'] == 'Page':  # Editing a post
@@ -820,7 +864,7 @@ def process_inbox_request(request_json, activitypublog_id):
             else:
                 activity_log.exception_message = 'Instance banned'
 
-            if activity_log.exception_message is not None:
+            if activity_log.exception_message is not None and activity_log.result == 'processing':
                 activity_log.result = 'failure'
             db.session.commit()
 

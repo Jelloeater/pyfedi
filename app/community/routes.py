@@ -9,7 +9,7 @@ from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
     DeleteCommunityForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
-    ensure_directory_exists, opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file
+    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \

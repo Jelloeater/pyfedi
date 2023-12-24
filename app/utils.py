@@ -256,6 +256,16 @@ def retrieve_block_list():
         return response.text
 
 
+def ensure_directory_exists(directory):
+    parts = directory.split('/')
+    rebuild_directory = ''
+    for part in parts:
+        rebuild_directory += part
+        if not os.path.isdir(rebuild_directory):
+            os.mkdir(rebuild_directory)
+        rebuild_directory += '/'
+
+
 def validate_image(stream):
         header = stream.read(512)
         stream.seek(0)

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import os
+from random import randint
 from typing import Union, Tuple
 from flask import current_app, request, g
 from sqlalchemy import text
-from app import db, cache, constants
+from app import db, cache, constants, celery
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
-    Site, PostVote, PostReplyVote, ActivityPubLog
+    PostVote, PostReplyVote, ActivityPubLog
 import time
 import base64
 import requests
@@ -15,9 +16,11 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from app.constants import *
 from urllib.parse import urlparse
+from PIL import Image, ImageOps
+from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
-    is_image_url, domain_from_url
+    is_image_url, domain_from_url, gibberish, ensure_directory_exists
 
 
 def public_key():
@@ -256,17 +259,19 @@ def actor_json_to_model(activity_json, address, server):
                     # language=community_json['language'][0]['identifier'] # todo: language
                     )
         if 'icon' in activity_json:
-            # todo: retrieve icon, save to disk, save more complete File record
             avatar = File(source_url=activity_json['icon']['url'])
             user.avatar = avatar
             db.session.add(avatar)
         if 'image' in activity_json:
-            # todo: retrieve image, save to disk, save more complete File record
             cover = File(source_url=activity_json['image']['url'])
             user.cover = cover
             db.session.add(cover)
         db.session.add(user)
         db.session.commit()
+        if user.avatar_id:
+            make_image_sizes(user.avatar_id, 40, 250, 'users')
+        if user.cover_id:
+            make_image_sizes(user.cover_id, 700, 1600, 'users')
         return user
     elif activity_json['type'] == 'Group':
         if 'attributedTo' in activity_json:  # lemmy and mbin
@@ -306,17 +311,19 @@ def actor_json_to_model(activity_json, address, server):
             community.description_html = allowlist_html(activity_json['content'])
             community.description = html_to_markdown(community.description_html)
         if 'icon' in activity_json:
-            # todo: retrieve icon, save to disk, save more complete File record
             icon = File(source_url=activity_json['icon']['url'])
             community.icon = icon
             db.session.add(icon)
         if 'image' in activity_json:
-            # todo: retrieve image, save to disk, save more complete File record
             image = File(source_url=activity_json['image']['url'])
             community.image = image
             db.session.add(image)
         db.session.add(community)
         db.session.commit()
+        if community.icon_id:
+            make_image_sizes(community.icon_id, 40, 250, 'communities')
+        if community.image_id:
+            make_image_sizes(community.image_id, 700, 1600, 'communities')
         return community
 
 
@@ -363,6 +370,71 @@ def post_json_to_model(post_json, user, community) -> Post:
         community.post_count += 1
         db.session.commit()
     return post
+
+
+# Save two different versions of a File, after downloading it from file.source_url. Set a width parameter to None to avoid generating one of that size
+def make_image_sizes(file_id, thumbnail_width=50, medium_width=120, directory='posts'):
+    if current_app.debug:
+        make_image_sizes_async(file_id, thumbnail_width, medium_width, directory)
+    else:
+        make_image_sizes_async.apply_async(args=(file_id, thumbnail_width, medium_width, directory), countdown=randint(1, 10))  # Delay by up to 10 seconds so servers do not experience a stampede of requests all in the same second
+
+
+@celery.task
+def make_image_sizes_async(file_id, thumbnail_width, medium_width, directory):
+    file = File.query.get(file_id)
+    if file and file.source_url:
+        try:
+            source_image_response = get_request(file.source_url)
+        except:
+            pass
+        else:
+            if source_image_response.status_code == 200:
+                content_type = source_image_response.headers.get('content-type')
+                if content_type and content_type.startswith('image'):
+                    source_image = source_image_response.content
+                    source_image_response.close()
+
+                    file_ext = os.path.splitext(file.source_url)[1]
+
+                    new_filename = gibberish(15)
+
+                    # set up the storage directory
+                    directory = f'app/static/media/{directory}/' + new_filename[0:2] + '/' + new_filename[2:4]
+                    ensure_directory_exists(directory)
+
+                    # file path and names to store the resized images on disk
+                    final_place = os.path.join(directory, new_filename + file_ext)
+                    final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
+
+                    # Load image data into Pillow
+                    image = Image.open(BytesIO(source_image))
+                    image = ImageOps.exif_transpose(image)
+                    img_width = image.width
+                    img_height = image.height
+
+                    # Resize the image to medium
+                    if medium_width:
+                        if img_width > medium_width:
+                            image.thumbnail((medium_width, medium_width))
+                        image.save(final_place)
+                        file.file_path = final_place
+                        file.width = image.width
+                        file.height = image.height
+
+                    # Resize the image to a thumbnail (webp)
+                    if thumbnail_width:
+                        if img_width > thumbnail_width:
+                            image.thumbnail((thumbnail_width, thumbnail_width))
+                        image.save(final_place_thumbnail, format="WebP", quality=93)
+                        file.thumbnail_path = final_place_thumbnail
+                        file.thumbnail_width = image.width
+                        file.thumbnail_height = image.height
+
+                    db.session.commit()
+
+
+
 
 # create a summary from markdown if present, otherwise use html if available
 def parse_summary(user_json) -> str:

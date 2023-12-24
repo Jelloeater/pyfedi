@@ -5,7 +5,7 @@
     {% else %}
         {% if user.avatar_id %}
             <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">
-                <img src="{{ user.avatar_image() }}" alt="Avatar" /></a>
+                <img src="{{ user.avatar_thumbnail() }}" alt="Avatar" /></a>
         {% endif %}
         <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">{{ user.user_name }}</a>
         {% if user.created_recently() %}

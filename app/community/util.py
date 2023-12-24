@@ -13,7 +13,7 @@ from app.activitypub.util import find_actor_or_create, actor_json_to_model, post
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
-    html_to_markdown, is_image_url
+    html_to_markdown, is_image_url, ensure_directory_exists
 from sqlalchemy import desc, text
 import os
 from opengraph_parse import parse_page
@@ -119,16 +119,6 @@ def actor_to_community(actor) -> Community:
     else:
         community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
     return community
-
-
-def ensure_directory_exists(directory):
-    parts = directory.split('/')
-    rebuild_directory = ''
-    for part in parts:
-        rebuild_directory += part
-        if not os.path.isdir(rebuild_directory):
-            os.mkdir(rebuild_directory)
-        rebuild_directory += '/'
 
 
 @cache.memoize(timeout=50)
@@ -297,13 +287,13 @@ def save_icon_file(icon_file) -> File:
     img = ImageOps.exif_transpose(img)
     img_width = img.width
     img_height = img.height
-    if img.width > 200 or img.height > 200:
-        img.thumbnail((200, 200))
+    if img.width > 250 or img.height > 250:
+        img.thumbnail((250, 250))
         img.save(final_place)
         img_width = img.width
         img_height = img.height
     # save a second, smaller, version as a thumbnail
-    img.thumbnail((32, 32))
+    img.thumbnail((40, 40))
     img.save(final_place_thumbnail, format="WebP", quality=93)
     thumbnail_width = img.width
     thumbnail_height = img.height
@@ -340,13 +330,19 @@ def save_banner_file(banner_file) -> File:
     img = ImageOps.exif_transpose(img)
     img_width = img.width
     img_height = img.height
-    if img.width > 1000 or img.height > 300:
-        img.thumbnail((1000, 300))
+    if img.width > 1600 or img.height > 600:
+        img.thumbnail((1600, 600))
         img.save(final_place)
         img_width = img.width
         img_height = img.height
 
+    # save a second, smaller, version as a thumbnail
+    img.thumbnail((700, 500))
+    img.save(final_place_thumbnail, format="WebP", quality=93)
+    thumbnail_width = img.width
+    thumbnail_height = img.height
+
     file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text='community banner',
-                width=img_width, height=img_height)
+                width=img_width, height=img_height, thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
     db.session.add(file)
     return file

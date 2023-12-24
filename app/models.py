@@ -289,6 +289,17 @@ class User(UserMixin, db.Model):
         else:
             return '[deleted]'
 
+    def avatar_thumbnail(self) -> str:
+        if self.avatar_id is not None:
+            if self.avatar.thumbnail_path is not None:
+                if self.avatar.thumbnail_path.startswith('app/'):
+                    return self.avatar.thumbnail_path.replace('app/', '/')
+                else:
+                    return self.avatar.thumbnail_path
+            else:
+                return self.avatar_image()
+        return ''
+
     def avatar_image(self) -> str:
         if self.avatar_id is not None:
             if self.avatar.file_path is not None:

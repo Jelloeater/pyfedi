@@ -587,6 +587,8 @@ fieldset legend {
 .comment .comment_author img {
   width: 20px;
   height: 20px;
+  border-radius: 50%;
+  vertical-align: bottom;
 }
 .comment .hide_button {
   float: right;
