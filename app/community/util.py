@@ -8,10 +8,10 @@ from flask import request, abort, g, current_app
 from flask_login import current_user
 from pillow_heif import register_heif_opener
 
-from app import db, cache
+from app import db, cache, celery
 from app.activitypub.util import find_actor_or_create, actor_json_to_model, post_json_to_model
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
-from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember
+from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
     html_to_markdown, is_image_url, ensure_directory_exists
 from sqlalchemy import desc, text
@@ -52,14 +52,19 @@ def search_for_community(address: str):
                         community_data.close()
                         if community_json['type'] == 'Group':
                             community = actor_json_to_model(community_json, address, server)
-                            thr = Thread(target=retrieve_mods_and_backfill_thread, args=[community, current_app._get_current_object()])
-                            thr.start()
+                            if current_app.debug:
+                                retrieve_mods_and_backfill(community.id)
+                            else:
+                                retrieve_mods_and_backfill.delay(community.id)
                             return community
         return None
 
 
-def retrieve_mods_and_backfill_thread(community: Community, app):
-    with app.app_context():
+@celery.task
+def retrieve_mods_and_backfill(community_id: int):
+    with current_app.app_context():
+        community = Community.query.get(community_id)
+        site = Site.query.get(1)
         if community.ap_moderators_url:
             mods_request = get_request(community.ap_moderators_url, headers={'Accept': 'application/activity+json'})
             if mods_request.status_code == 200:
@@ -79,7 +84,7 @@ def retrieve_mods_and_backfill_thread(community: Community, app):
                     db.session.commit()
 
         # only backfill nsfw if nsfw communities are allowed
-        if (community.nsfw and not g.site.enable_nsfw) or (community.nsfl and not g.site.enable_nsfl):
+        if (community.nsfw and not site.enable_nsfw) or (community.nsfl and not site.enable_nsfl):
             return
 
         # download 50 old posts
@@ -262,7 +267,7 @@ def remove_old_file(file_id):
     remove_file.delete_from_disk()
 
 
-def save_icon_file(icon_file) -> File:
+def save_icon_file(icon_file, directory='communities') -> File:
     # check if this is an allowed type of file
     file_ext = os.path.splitext(icon_file.filename)[1]
     if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
@@ -271,7 +276,7 @@ def save_icon_file(icon_file) -> File:
     new_filename = gibberish(15)
 
     # set up the storage directory
-    directory = 'app/static/media/communities/' + new_filename[0:2] + '/' + new_filename[2:4]
+    directory = f'app/static/media/{directory}/' + new_filename[0:2] + '/' + new_filename[2:4]
     ensure_directory_exists(directory)
 
     # save the file
@@ -298,14 +303,14 @@ def save_icon_file(icon_file) -> File:
     thumbnail_width = img.width
     thumbnail_height = img.height
 
-    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text='community icon',
+    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} icon',
                 width=img_width, height=img_height, thumbnail_width=thumbnail_width,
                 thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
     db.session.add(file)
     return file
 
 
-def save_banner_file(banner_file) -> File:
+def save_banner_file(banner_file, directory='communities') -> File:
     # check if this is an allowed type of file
     file_ext = os.path.splitext(banner_file.filename)[1]
     if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
@@ -314,7 +319,7 @@ def save_banner_file(banner_file) -> File:
     new_filename = gibberish(15)
 
     # set up the storage directory
-    directory = 'app/static/media/communities/' + new_filename[0:2] + '/' + new_filename[2:4]
+    directory = f'app/static/media/{directory}/' + new_filename[0:2] + '/' + new_filename[2:4]
     ensure_directory_exists(directory)
 
     # save the file
@@ -342,7 +347,7 @@ def save_banner_file(banner_file) -> File:
     thumbnail_width = img.width
     thumbnail_height = img.height
 
-    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text='community banner',
+    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} banner',
                 width=img_width, height=img_height, thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
     db.session.add(file)
     return file

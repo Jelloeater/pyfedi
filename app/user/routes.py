@@ -72,12 +72,12 @@ def edit_profile(actor):
         current_user.bot = form.bot.data
         profile_file = request.files['profile_file']
         if profile_file and profile_file.filename != '':
-            file = save_icon_file(profile_file)
+            file = save_icon_file(profile_file, 'users')
             if file:
                 current_user.avatar = file
         banner_file = request.files['banner_file']
         if banner_file and banner_file.filename != '':
-            file = save_banner_file(banner_file)
+            file = save_banner_file(banner_file, 'users')
             if file:
                 current_user.cover = file
         current_user.flush_cache()
