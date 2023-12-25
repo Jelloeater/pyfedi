@@ -363,7 +363,7 @@ def add_post(actor):
         form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
-                           images_disabled=images_disabled)
+                           images_disabled=images_disabled, markdown_editor=True)
 
 
 @login_required

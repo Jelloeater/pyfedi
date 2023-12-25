@@ -124,7 +124,7 @@ def show_post(post_id: int):
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
                            POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
-                           etag=f"{post.id}_{hash(post.last_active)}")
+                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True)
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])
@@ -276,7 +276,7 @@ def continue_discussion(post_id, comment_id):
     replies = get_comment_branch(post.id, comment.id, 'top')
 
     return render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                           is_moderator=is_moderator, comment=comment, replies=replies)
+                           is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=True)
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
@@ -384,7 +384,7 @@ def add_reply(post_id: int, comment_id: int):
     else:
         form.notify_author.data = True
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                               is_moderator=is_moderator, form=form, comment=in_reply_to)
+                               is_moderator=is_moderator, form=form, comment=in_reply_to, markdown_editor=True)
 
 
 @bp.route('/post/<int:post_id>/options', methods=['GET'])

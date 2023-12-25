@@ -24,6 +24,17 @@
               <div class="tab-pane fade show active" id="discussion-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
                   {{ render_field(form.discussion_title) }}
                   {{ render_field(form.discussion_body) }}
+                  {% if markdown_editor %}
+                    <script nonce="{{ session['nonce'] }}">
+                        window.addEventListener("load", function () {
+                            var downarea = new DownArea({
+                                elem: document.querySelector('#discussion_body'),
+                                resize: DownArea.RESIZE_VERTICAL,
+                                hide: ['heading', 'bold-italic'],
+                            });
+                        });
+                    </script>
+                  {% endif %}
               </div>
               <div class="tab-pane fade" id="link-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
                   {{ render_field(form.link_url) }}

@@ -34,6 +34,9 @@
             {{ bootstrap.load_css() }}
             <link href="{{ url_for('static', filename='structure.css', changed=getmtime('structure.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='styles.css', changed=getmtime('styles.css')) }}" type="text/css" rel="stylesheet" />
+            {% if markdown_editor %}
+                <link href="{{ url_for('static', filename='js/markdown/downarea.css') }}" type="text/css" rel="stylesheet" />
+            {% endif %}
         {% endblock %}
         <title>{% if title %}{{ title }} - {{ _('PieFed') }}{% else %}{{ _('PieFed') }}{% endif %}</title>
         <link rel="apple-touch-icon" sizes="152x152" href="/static/images/apple-touch-icon.png">
@@ -120,7 +123,9 @@
     {{ bootstrap.load_js() }}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
-
+    {% if markdown_editor %}
+        <script type="text/javascript" src="{{ url_for('static', filename='js/markdown/downarea.js') }}"></script>
+    {% endif %}
     {% block end_scripts %}
 
     {% endblock %}

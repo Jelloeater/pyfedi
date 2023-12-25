@@ -14,6 +14,17 @@
         </fieldset>
         <div class="position-relative">
             {{ render_form(form) }}
+            {% if markdown_editor %}
+                <script nonce="{{ session['nonce'] }}">
+                    window.addEventListener("load", function () {
+                        var downarea = new DownArea({
+                            elem: document.querySelector('#body'),
+                            resize: DownArea.RESIZE_VERTICAL,
+                            hide: ['heading', 'bold-italic'],
+                        });
+                    });
+                </script>
+            {% endif %}
         </div>
     </div>
     <div class="col-12 col-md-4">
