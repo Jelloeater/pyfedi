@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 
-from flask import request, flash, json, url_for
+from flask import request, flash, json, url_for, current_app
 from flask_login import login_required, current_user
 from flask_babel import _
 from sqlalchemy import text, desc
 
 from app import db
+from app.activitypub.routes import process_inbox_request
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site
 from app.utils import render_template, permission_required, set_setting, get_setting
@@ -145,4 +146,13 @@ def admin_activities():
 def activity_json(activity_id):
     activity = ActivityPubLog.query.get_or_404(activity_id)
     return render_template('admin/activity_json.html', title=_('Activity JSON'),
-                           activity_json_data=json.loads(activity.activity_json))
+                           activity_json_data=json.loads(activity.activity_json), activity=activity, current_app=current_app)
+
+
+@bp.route('/activity_json/<int:activity_id>/replay')
+@login_required
+@permission_required('change instance settings')
+def activity_replay(activity_id):
+    activity = ActivityPubLog.query.get_or_404(activity_id)
+    process_inbox_request(json.loads(activity.activity_json), activity.id)
+    return 'Ok'

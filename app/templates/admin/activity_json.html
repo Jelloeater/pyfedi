@@ -11,6 +11,9 @@
 <div class="row">
     <div class="col">
         <code><pre>{{ activity_json_data | tojson(indent=2) }}</pre></code>
+        {% if current_app.debug %}
+        <p><a class="btn btn-warning" href="{{ url_for('admin.activity_replay', activity_id=activity.id) }}">Re-submit this activity</a></p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

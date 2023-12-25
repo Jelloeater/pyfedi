@@ -709,6 +709,36 @@ def upvote_post(post, user):
             db.session.add(vote)
 
 
+def delete_post_or_comment(user_ap_id, community_ap_id, to_be_deleted_ap_id):
+    if current_app.debug:
+        delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id)
+    else:
+        delete_post_or_comment_task.delay(user_ap_id, community_ap_id, to_be_deleted_ap_id)
+
+
+@celery.task
+def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id):
+    deletor = find_actor_or_create(user_ap_id)
+    community = find_actor_or_create(community_ap_id)
+    to_delete = find_liked_object(to_be_deleted_ap_id)
+
+    if deletor and community and to_delete:
+        if deletor.is_admin() or community.is_moderator(deletor) or to_delete.author.id == deletor.id:
+            if isinstance(to_delete, Post):
+                to_delete.delete_dependencies()
+                to_delete.flush_cache()
+                db.session.delete(to_delete)
+                db.session.commit()
+            elif isinstance(to_delete, PostReply):
+                if to_delete.has_replies():
+                    to_delete.body = 'Deleted by author' if to_delete.author.id == deletor.id else 'Deleted by moderator'
+                    to_delete.body_html = markdown_to_html(to_delete.body)
+                else:
+                    to_delete.delete_dependencies()
+                    db.session.delete(to_delete)
+                db.session.commit()
+
+
 def lemmy_site_data():
     site = g.site
     data = {
