@@ -177,11 +177,17 @@ class Community(db.Model):
                                      ))
                                      ).all()
 
-    def is_moderator(self):
-        return any(moderator.user_id == current_user.id for moderator in self.moderators())
+    def is_moderator(self, user=None):
+        if user is None:
+            return any(moderator.user_id == current_user.id for moderator in self.moderators())
+        else:
+            return any(moderator.user_id == user.id for moderator in self.moderators())
 
-    def is_owner(self):
-        return any(moderator.user_id == current_user.id and moderator.is_owner for moderator in self.moderators())
+    def is_owner(self, user=None):
+        if user is None:
+            return any(moderator.user_id == current_user.id and moderator.is_owner for moderator in self.moderators())
+        else:
+            return any(moderator.user_id == user.id and moderator.is_owner for moderator in self.moderators())
 
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
@@ -599,6 +605,18 @@ class PostReply(db.Model):
             parent = PostReply.query.get(self.parent_id)
             return parent.author.profile_id()
 
+    def delete_dependencies(self):
+        db.session.query(Report).filter(Report.suspect_post_reply_id == self.id).delete()
+        db.session.execute(text('DELETE FROM post_reply_vote WHERE post_reply_id = :post_reply_id'),
+                           {'post_reply_id': self.id})
+        if self.image_id:
+            file = File.query.get(self.image_id)
+            file.delete_from_disk()
+
+    def has_replies(self):
+        reply = PostReply.query.filter_by(parent_id=self.id).first()
+        return reply is not None
+
 
 class Domain(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -791,6 +809,7 @@ class Report(db.Model):
     suspect_community_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     suspect_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     suspect_post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    suspect_post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     suspect_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)

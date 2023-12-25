@@ -12,7 +12,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
-    upvote_post, activity_already_ingested, make_image_sizes
+    upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -453,7 +453,7 @@ def process_inbox_request(request_json, activitypublog_id):
                             activity_log.exception_message = 'Activity about local content which is already present'
                             activity_log.result = 'ignored'
 
-                # Announce is new content and votes, mastodon style (?)
+                # Announce is new content and votes, lemmy and mastodon style
                 if request_json['type'] == 'Announce':
                     if request_json['object']['type'] == 'Create':
                         activity_log.activity_type = request_json['object']['type']
@@ -616,8 +616,15 @@ def process_inbox_request(request_json, activitypublog_id):
                                 if user and user.is_local():
                                     activity_log.exception_message = 'Activity about local content which is already present'
                                     activity_log.result = 'ignored'
+                    elif request_json['object']['type'] == 'Delete':
+                        activity_log.activity_type = request_json['object']['type']
+                        user_ap_id = request_json['object']['actor']
+                        community_ap_id = request_json['object']['audience']
+                        to_be_deleted_ap_id = request_json['object']['object']
+                        delete_post_or_comment(user_ap_id, community_ap_id, to_be_deleted_ap_id)
+                        activity_log.result = 'success'
 
-                # Follow: remote user wants to join/follow one of our communities
+                        # Follow: remote user wants to join/follow one of our communities
                 elif request_json['type'] == 'Follow':  # Follow is when someone wants to join a community
                     user_ap_id = request_json['actor']
                     community_ap_id = request_json['object']
