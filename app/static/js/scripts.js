@@ -33,6 +33,24 @@ function toggleClass(elementId, className) {
   }
 }
 
+function findOutermostParent(element, className) {
+  while (element && !element.classList.contains(className)) {
+    element = element.parentNode;
+  }
+  return element;
+}
+
+function setupAutoResize(element) {
+    const elem = document.getElementById(element);
+    elem.addEventListener("keyup", function(event) {
+        const outerWrapper = findOutermostParent(elem, 'downarea');
+        elem.style.height = 'auto'; // Reset height to auto to calculate scrollHeight accurately
+        elem.style.height = (elem.scrollHeight + 2) + 'px'; // Add 2px to avoid cutting off text
+        outerWrapper.style.height = (elem.scrollHeight + 61) + 'px';
+    });
+
+}
+
 function collapseReply(comment_id) {
     const reply = document.getElementById('comment_' + comment_id);
     let isHidden = false;

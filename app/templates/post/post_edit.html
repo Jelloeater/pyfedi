@@ -31,6 +31,7 @@
             hide: ['heading', 'bold-italic'],
             value: {{ form.discussion_body.data | tojson | safe }}
         });
+        setupAutoResize('discussion_body');
     });
 </script>
 <div class="row">
