@@ -374,3 +374,13 @@ nav, etc which are used site-wide */
 .show_menu {
   display: block!important;
 }
+
+.moderator_list {
+  list-style-type: none;
+  padding-left: 0;
+
+  li {
+    display: inline-block;
+    padding-right: 5px;
+  }
+}

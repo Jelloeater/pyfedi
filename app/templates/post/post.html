@@ -47,7 +47,8 @@
         <div class="row post_replies">
             <div class="col">
                 {% macro render_comment(comment) %}
-                    <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].score <= -10 %}low_score{% endif %}">
+                    <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].score <= -10 %}low_score{% endif %}
+                        {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}">
                         <div class="limit_height">
                             <div class="voting_buttons">
                                 {% with comment=comment['comment'] %}
@@ -74,6 +75,12 @@
                                 {% endif %}
                                 {% if comment['comment'].author.created_recently() %}
                                     <span class="fe fe-new-account small" title="New account"> </span>
+                                {% endif %}
+                                {% if comment['comment'].author.reputation < -10 %}
+                                    <span class="fe fe-warning red" title="Very low reputation. Beware."> </span>
+                                    <span class="fe fe-warning red" title="Very low reputation. Beware!"> </span>
+                                {% elif comment['comment'].author.reputation < 0 %}
+                                    <span class="fe fe-warning orangered" title="Low reputation."> </span>
                                 {% endif %}
                                 {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter" class="small">[OP]</span>{% endif %}
                                 <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
@@ -146,15 +153,15 @@
                  <h2>{{ _('About community') }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ post.community.description_html|safe }}</p>
-                <p>{{ post.community.rules_html|safe }}</p>
+                <p>{{ community.description_html|safe if community.description_html else '' }}</p>
+                <p>{{ community.rules_html|safe if community.rules_html else '' }}</p>
                 {% if len(mods) > 0 and not post.community.private_mods %}
                     <h3>Moderators</h3>
-                    <ol>
+                    <ul class="moderator_list">
                         {% for mod in mods %}
                             <li><a href="/u/{{ mod.user_name }}">{{ mod.user_name }}</a></li>
                         {% endfor %}
-                    </ol>
+                    </ul>
                 {% endif %}
             </div>
         </div>

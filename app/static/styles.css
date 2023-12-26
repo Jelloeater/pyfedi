@@ -1,4 +1,12 @@
 /* */
+.red {
+  color: red;
+}
+
+.orangered {
+  color: orangered;
+}
+
 .pl-0 {
   padding-left: 0 !important;
 }
@@ -137,6 +145,10 @@
 
 .fe-sun::before {
   content: "\e9d7";
+}
+
+.fe-warning::before {
+  content: "\e904";
 }
 
 .fe-arrow-up::before {

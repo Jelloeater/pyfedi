@@ -1,5 +1,13 @@
 /* This file contains SCSS used for creating the general structure of pages. Selectors should be things like body, h1,
 nav, etc which are used site-wide */
+.red {
+  color: red;
+}
+
+.orangered {
+  color: orangered;
+}
+
 .pl-0 {
   padding-left: 0 !important;
 }
@@ -138,6 +146,10 @@ nav, etc which are used site-wide */
 
 .fe-sun::before {
   content: "\e9d7";
+}
+
+.fe-warning::before {
+  content: "\e904";
 }
 
 .fe-arrow-up::before {
@@ -636,6 +648,15 @@ fieldset legend {
 
 .show_menu {
   display: block !important;
+}
+
+.moderator_list {
+  list-style-type: none;
+  padding-left: 0;
+}
+.moderator_list li {
+  display: inline-block;
+  padding-right: 5px;
 }
 
 /*# sourceMappingURL=structure.css.map */

@@ -11,6 +11,12 @@
         {% if user.created_recently() %}
             <span class="fe fe-new-account" title="New account"> </span>
         {% endif %}
+        {% if user.reputation < -10 %}
+            <span class="fe fe-warning red" title="Very low reputation. Beware."> </span>
+            <span class="fe fe-warning red" title="Very low reputation. Beware!"> </span>
+        {% elif user.reputation < 0 %}
+            <span class="fe fe-warning orangered" title="Low reputation."> </span>
+        {% endif %}
     {% endif %}
 </span>
 {% endmacro %}
