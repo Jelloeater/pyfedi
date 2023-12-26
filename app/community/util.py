@@ -9,6 +9,7 @@ from flask_login import current_user
 from pillow_heif import register_heif_opener
 
 from app import db, cache, celery
+from app.activitypub.signature import post_request
 from app.activitypub.util import find_actor_or_create, actor_json_to_model, post_json_to_model
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site
@@ -351,3 +352,17 @@ def save_banner_file(banner_file, directory='communities') -> File:
                 width=img_width, height=img_height, thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
     db.session.add(file)
     return file
+
+
+def send_to_remote_instance(inbox, community_id, payload):
+    if current_app.debug:
+        send_to_remote_instance_task(inbox, community_id, payload)
+    else:
+        send_to_remote_instance_task.delay(inbox, community_id, payload)
+
+
+@celery.task
+def send_to_remote_instance_task(inbox, community_id, payload):
+    community = Community.query.get(community_id)
+    if community:
+        post_request(inbox, payload, community.private_key, community.ap_profile_id + '#main-key')

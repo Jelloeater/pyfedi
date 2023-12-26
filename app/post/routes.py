@@ -8,7 +8,7 @@ from sqlalchemy import or_, desc
 from app import db, constants
 from app.activitypub.signature import HttpSignature, post_request
 from app.activitypub.util import default_context
-from app.community.util import save_post
+from app.community.util import save_post, send_to_remote_instance
 from app.post.forms import NewReplyForm, ReportPostForm, MeaCulpaForm
 from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
@@ -68,48 +68,63 @@ def show_post(post_id: int):
         post.flush_cache()
 
         # federation
+        reply_json = {
+            'type': 'Note',
+            'id': reply.profile_id(),
+            'attributedTo': current_user.profile_id(),
+            'to': [
+                'https://www.w3.org/ns/activitystreams#Public'
+            ],
+            'cc': [
+                post.community.profile_id(),
+            ],
+            'content': reply.body_html,
+            'inReplyTo': post.profile_id(),
+            'mediaType': 'text/html',
+            'source': {
+                'content': reply.body,
+                'mediaType': 'text/markdown'
+            },
+            'published': ap_datetime(utcnow()),
+            'distinguished': False,
+            'audience': post.community.profile_id()
+        }
+        create_json = {
+            'type': 'Create',
+            'actor': current_user.profile_id(),
+            'audience': post.community.profile_id(),
+            'to': [
+                'https://www.w3.org/ns/activitystreams#Public'
+            ],
+            'cc': [
+                post.community.ap_profile_id
+            ],
+            'object': reply_json,
+            'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
+        }
         if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
-            reply_json = {
-                'type': 'Note',
-                'id': reply.profile_id(),
-                'attributedTo': current_user.profile_id(),
-                'to': [
-                    'https://www.w3.org/ns/activitystreams#Public'
-                ],
-                'cc': [
-                    post.community.profile_id(),
-                ],
-                'content': reply.body_html,
-                'inReplyTo': post.profile_id(),
-                'mediaType': 'text/html',
-                'source': {
-                    'content': reply.body,
-                    'mediaType': 'text/markdown'
-                },
-                'published': ap_datetime(utcnow()),
-                'distinguished': False,
-                'audience': post.community.profile_id()
-            }
-            create_json = {
-                'type': 'Create',
-                'actor': current_user.profile_id(),
-                'audience': post.community.profile_id(),
-                'to': [
-                    'https://www.w3.org/ns/activitystreams#Public'
-                ],
-                'cc': [
-                    post.community.ap_profile_id
-                ],
-                'object': reply_json,
-                'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
-            }
-
             success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
             if not success:
                 flash('Failed to send to remote instance', 'error')
         else:                       # local community - send it to followers on remote instances
-            ...
+            announce = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                "type": 'Announce',
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "actor": post.community.ap_profile_id,
+                "cc": [
+                    post.community.ap_followers_url
+                ],
+                '@context': default_context(),
+                'object': create_json
+            }
+
+            for instance in post.community.following_instances():
+                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                    send_to_remote_instance(instance[1], post.community.id, announce)
 
         return redirect(url_for('activitypub.post_ap',
                                 post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
@@ -319,64 +334,81 @@ def add_reply(post_id: int, comment_id: int):
         post.flush_cache()
 
         # federation
-        if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
-            reply_json = {
-                'type': 'Note',
-                'id': reply.profile_id(),
-                'attributedTo': current_user.profile_id(),
-                'to': [
-                    'https://www.w3.org/ns/activitystreams#Public',
-                    in_reply_to.author.profile_id()
-                ],
-                'cc': [
-                    post.community.profile_id(),
-                    current_user.followers_url()
-                ],
-                'content': reply.body_html,
-                'inReplyTo': in_reply_to.profile_id(),
-                'url': reply.profile_id(),
-                'mediaType': 'text/html',
-                'source': {
-                    'content': reply.body,
-                    'mediaType': 'text/markdown'
-                },
-                'published': ap_datetime(utcnow()),
-                'distinguished': False,
-                'audience': post.community.profile_id(),
-                'contentMap': {
-                    'en': reply.body_html
+        reply_json = {
+            'type': 'Note',
+            'id': reply.profile_id(),
+            'attributedTo': current_user.profile_id(),
+            'to': [
+                'https://www.w3.org/ns/activitystreams#Public',
+                in_reply_to.author.profile_id()
+            ],
+            'cc': [
+                post.community.profile_id(),
+                current_user.followers_url()
+            ],
+            'content': reply.body_html,
+            'inReplyTo': in_reply_to.profile_id(),
+            'url': reply.profile_id(),
+            'mediaType': 'text/html',
+            'source': {
+                'content': reply.body,
+                'mediaType': 'text/markdown'
+            },
+            'published': ap_datetime(utcnow()),
+            'distinguished': False,
+            'audience': post.community.profile_id(),
+            'contentMap': {
+                'en': reply.body_html
+            }
+        }
+        create_json = {
+            '@context': default_context(),
+            'type': 'Create',
+            'actor': current_user.profile_id(),
+            'audience': post.community.profile_id(),
+            'to': [
+                'https://www.w3.org/ns/activitystreams#Public',
+                in_reply_to.author.profile_id()
+            ],
+            'cc': [
+                post.community.profile_id(),
+                current_user.followers_url()
+            ],
+            'object': reply_json,
+            'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
+        }
+        if in_reply_to.notify_author and in_reply_to.author.ap_id is not None:
+            reply_json['tag'] = [
+                {
+                    'href': in_reply_to.author.ap_profile_id,
+                    'name': '@' + in_reply_to.author.ap_id,
+                    'type': 'Mention'
                 }
-            }
-            create_json = {
-                '@context': default_context(),
-                'type': 'Create',
-                'actor': current_user.profile_id(),
-                'audience': post.community.profile_id(),
-                'to': [
-                    'https://www.w3.org/ns/activitystreams#Public',
-                    in_reply_to.author.profile_id()
-                ],
-                'cc': [
-                    post.community.profile_id(),
-                    current_user.followers_url()
-                ],
-                'object': reply_json,
-                'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
-            }
-            if in_reply_to.notify_author and in_reply_to.author.ap_id is not None:
-                reply_json['tag'] = [
-                    {
-                        'href': in_reply_to.author.ap_profile_id,
-                        'name': '@' + in_reply_to.author.ap_id,
-                        'type': 'Mention'
-                    }
-                ]
+            ]
+        if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
             success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
             if not success:
                 flash('Failed to send reply', 'error')
         else:                       # local community - send it to followers on remote instances
-            ...
+            announce = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                "type": 'Announce',
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "actor": post.community.ap_profile_id,
+                "cc": [
+                    post.community.ap_followers_url
+                ],
+                '@context': default_context(),
+                'object': create_json
+            }
+
+            for instance in post.community.following_instances():
+                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                    send_to_remote_instance(instance[1], post.community.id, announce)
+
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
             return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
         else:
@@ -392,8 +424,9 @@ def post_options(post_id: int):
     post = Post.query.get_or_404(post_id)
     return render_template('post/post_options.html', post=post)
 
-@login_required
+
 @bp.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
+@login_required
 def post_edit(post_id: int):
     post = Post.query.get_or_404(post_id)
     form = CreatePostForm()
@@ -427,13 +460,14 @@ def post_edit(post_id: int):
                 form.type.data = 'image'
                 form.image_title.data = post.title
             form.notify_author.data = post.notify_author
-            return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post, images_disabled=images_disabled)
+            return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
+                                   images_disabled=images_disabled, markdown_editor=True)
     else:
         abort(401)
 
 
-@login_required
 @bp.route('/post/<int:post_id>/delete', methods=['GET', 'POST'])
+@login_required
 def post_delete(post_id: int):
     post = Post.query.get_or_404(post_id)
     community = post.community
@@ -447,8 +481,8 @@ def post_delete(post_id: int):
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
 
 
-@login_required
 @bp.route('/post/<int:post_id>/report', methods=['GET', 'POST'])
+@login_required
 def post_report(post_id: int):
     post = Post.query.get_or_404(post_id)
     form = ReportPostForm()
@@ -479,8 +513,8 @@ def post_report(post_id: int):
     return render_template('post/post_report.html', title=_('Report post'), form=form, post=post)
 
 
-@login_required
 @bp.route('/post/<int:post_id>/block_user', methods=['GET', 'POST'])
+@login_required
 def post_block_user(post_id: int):
     post = Post.query.get_or_404(post_id)
     existing = UserBlock.query.filter_by(blocker_id=current_user.id, blocked_id=post.author.id).first()
@@ -494,8 +528,8 @@ def post_block_user(post_id: int):
     return redirect(post.community.local_url())
 
 
-@login_required
 @bp.route('/post/<int:post_id>/block_domain', methods=['GET', 'POST'])
+@login_required
 def post_block_domain(post_id: int):
     post = Post.query.get_or_404(post_id)
     existing = DomainBlock.query.filter_by(user_id=current_user.id, domain_id=post.domain_id).first()
@@ -506,8 +540,8 @@ def post_block_domain(post_id: int):
     return redirect(post.community.local_url())
 
 
-@login_required
 @bp.route('/post/<int:post_id>/block_instance', methods=['GET', 'POST'])
+@login_required
 def post_block_instance(post_id: int):
     post = Post.query.get_or_404(post_id)
     existing = InstanceBlock.query.filter_by(user_id=current_user.id, instance_id=post.instance_id).first()
@@ -518,8 +552,8 @@ def post_block_instance(post_id: int):
     return redirect(post.community.local_url())
 
 
-@login_required
 @bp.route('/post/<int:post_id>/mea_culpa', methods=['GET', 'POST'])
+@login_required
 def post_mea_culpa(post_id: int):
     post = Post.query.get_or_404(post_id)
     form = MeaCulpaForm()

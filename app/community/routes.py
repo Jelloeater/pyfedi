@@ -1,4 +1,4 @@
-from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
+from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, g
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
@@ -9,7 +9,7 @@ from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
     DeleteCommunityForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
-    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file
+    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file, send_to_remote_instance
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
@@ -303,59 +303,83 @@ def add_post(actor):
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
     if form.validate_on_submit():
+        community = Community.query.get_or_404(form.communities.data)
         post = Post(user_id=current_user.id, community_id=form.communities.data, instance_id=1)
         save_post(form, post)
         community.post_count += 1
-        community.last_active = utcnow()
+        community.last_active = g.site.last_active = utcnow()
         db.session.commit()
         post.ap_id = f"https://{current_app.config['SERVER_NAME']}/post/{post.id}"
         db.session.commit()
 
+        page = {
+            'type': 'Page',
+            'id': post.ap_id,
+            'attributedTo': current_user.ap_profile_id,
+            'to': [
+                community.ap_profile_id,
+                'https://www.w3.org/ns/activitystreams#Public'
+            ],
+            'name': post.title,
+            'cc': [],
+            'content': post.body_html,
+            'mediaType': 'text/html',
+            'source': {
+                'content': post.body,
+                'mediaType': 'text/markdown'
+            },
+            'attachment': [],
+            'commentsEnabled': post.comments_enabled,
+            'sensitive': post.nsfw,
+            'nsfl': post.nsfl,
+            'published': ap_datetime(utcnow()),
+            'audience': community.ap_profile_id
+        }
+        create = {
+            "id": f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}",
+            "actor": current_user.ap_profile_id,
+            "to": [
+                "https://www.w3.org/ns/activitystreams#Public"
+            ],
+            "cc": [
+                community.ap_profile_id
+            ],
+            "type": "Create",
+            "audience": community.ap_profile_id,
+            "object": page,
+            '@context': default_context()
+        }
         if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
-            page = {
-                'type': 'Page',
-                'id': post.ap_id,
-                'attributedTo': current_user.ap_profile_id,
-                'to': [
-                    community.ap_profile_id,
-                    'https://www.w3.org/ns/activitystreams#Public'
-                ],
-                'name': post.title,
-                'cc': [],
-                'content': post.body_html,
-                'mediaType': 'text/html',
-                'source': {
-                    'content': post.body,
-                    'mediaType': 'text/markdown'
-                },
-                'attachment': [],
-                'commentsEnabled': post.comments_enabled,
-                'sensitive': post.nsfw,
-                'nsfl': post.nsfl,
-                'published': ap_datetime(utcnow()),
-                'audience': community.ap_profile_id
-            }
-            create = {
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}",
-                "actor": current_user.ap_profile_id,
-                "to": [
-                    "https://www.w3.org/ns/activitystreams#Public"
-                ],
-                "cc": [
-                    community.ap_profile_id
-                ],
-                "type": "Create",
-                "audience": community.ap_profile_id,
-                "object": page
-            }
             success = post_request(community.ap_inbox_url, create, current_user.private_key,
                                    current_user.ap_profile_id + '#main-key')
             if success:
-                flash('Your post has been sent to ' + community.title)
+                flash(_('Your post to %(name)s has been made.', name=community.title))
             else:
-                flash('There was a problem sending your post to ' + community.title)
+                flash('There was a problem making your post to ' + community.title)
         else:   # local community - send post out to followers
-            ...
+            announce = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                "type": 'Announce',
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "actor": community.ap_profile_id,
+                "cc": [
+                    community.ap_followers_url
+                ],
+                '@context': default_context(),
+                'object': create
+            }
+
+            sent_to = 0
+            for instance in community.following_instances():
+                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                    send_to_remote_instance(instance[1], community.id, announce)
+                    sent_to += 1
+            if sent_to:
+                flash(_('Your post to %(name)s has been made.', name=community.title))
+            else:
+                flash(_('Your post to %(name)s has been made.', name=community.title))
 
         return redirect(f"/c/{community.link()}")
     else:
@@ -366,8 +390,8 @@ def add_post(actor):
                            images_disabled=images_disabled, markdown_editor=True)
 
 
-@login_required
 @bp.route('/community/<int:community_id>/report', methods=['GET', 'POST'])
+@login_required
 def community_report(community_id: int):
     community = Community.query.get_or_404(community_id)
     form = ReportCommunityForm()
@@ -396,8 +420,8 @@ def community_report(community_id: int):
     return render_template('community/community_report.html', title=_('Report community'), form=form, community=community)
 
 
-@login_required
 @bp.route('/community/<int:community_id>/delete', methods=['GET', 'POST'])
+@login_required
 def community_delete(community_id: int):
     community = Community.query.get_or_404(community_id)
     if community.is_owner() or current_user.is_admin():
@@ -415,8 +439,8 @@ def community_delete(community_id: int):
         abort(401)
 
 
-@login_required
 @bp.route('/community/<int:community_id>/block_instance', methods=['GET', 'POST'])
+@login_required
 def community_block_instance(community_id: int):
     community = Community.query.get_or_404(community_id)
     existing = InstanceBlock.query.filter_by(user_id=current_user.id, instance_id=community.instance_id).first()

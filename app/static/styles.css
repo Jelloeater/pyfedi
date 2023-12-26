@@ -532,6 +532,10 @@ nav.navbar {
   text-decoration: none;
 }
 
+.alert {
+  width: 96%;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #777;

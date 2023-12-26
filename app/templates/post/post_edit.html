@@ -24,6 +24,13 @@
         if(toClick) {
             toClick.click();
         }
+
+        var downarea = new DownArea({
+            elem: document.querySelector('#discussion_body'),
+            resize: DownArea.RESIZE_VERTICAL,
+            hide: ['heading', 'bold-italic'],
+            value: {{ form.discussion_body.data | tojson | safe }}
+        });
     });
 </script>
 <div class="row">

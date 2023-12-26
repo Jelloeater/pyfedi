@@ -453,7 +453,7 @@ def process_inbox_request(request_json, activitypublog_id):
                             activity_log.exception_message = 'Activity about local content which is already present'
                             activity_log.result = 'ignored'
 
-                # Announce is new content and votes, lemmy and mastodon style
+                # Announce is new content and votes that happened on a remote server.
                 if request_json['type'] == 'Announce':
                     if request_json['object']['type'] == 'Create':
                         activity_log.activity_type = request_json['object']['type']
@@ -511,6 +511,7 @@ def process_inbox_request(request_json, activitypublog_id):
                                     if post is not None:
                                         db.session.add(post)
                                         community.post_count += 1
+                                        activity_log.result = 'success'
                                         db.session.commit()
                                         if post.image_id:
                                             make_image_sizes(post.image_id, 266, None, 'posts')
@@ -623,6 +624,39 @@ def process_inbox_request(request_json, activitypublog_id):
                         to_be_deleted_ap_id = request_json['object']['object']
                         delete_post_or_comment(user_ap_id, community_ap_id, to_be_deleted_ap_id)
                         activity_log.result = 'success'
+                    elif request_json['object']['type'] == 'Page': # Editing a post
+                        post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
+                        if post:
+                            post.title = request_json['object']['name']
+                            if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+                                post.body = request_json['object']['source']['content']
+                                post.body_html = markdown_to_html(post.body)
+                            elif 'content' in request_json['object']:
+                                post.body_html = allowlist_html(request_json['object']['content'])
+                                post.body = html_to_markdown(post.body_html)
+                            if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
+                                post.url = request_json['object']['attachment']['href']
+                            post.edited_at = utcnow()
+                            db.session.commit()
+                            activity_log.result = 'success'
+                        else:
+                            activity_log.exception_message = 'Post not found'
+                    elif request_json['object']['type'] == 'Note':  # Editing a reply
+                        reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
+                        if reply:
+                            if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+                                reply.body = request_json['object']['source']['content']
+                                reply.body_html = markdown_to_html(reply.body)
+                            elif 'content' in request_json['object']:
+                                reply.body_html = allowlist_html(request_json['object']['content'])
+                                reply.body = html_to_markdown(reply.body_html)
+                            reply.edited_at = utcnow()
+                            db.session.commit()
+                            activity_log.result = 'success'
+                        else:
+                            activity_log.exception_message = 'PostReply not found'
+                    else:
+                        activity_log.exception_message = 'Invalid type for Announce'
 
                         # Follow: remote user wants to join/follow one of our communities
                 elif request_json['type'] == 'Follow':  # Follow is when someone wants to join a community
@@ -781,6 +815,7 @@ def process_inbox_request(request_json, activitypublog_id):
                             activity_log.result = 'ignored'
 
                 elif request_json['type'] == 'Update':
+                    activity_log.activity_type = 'Update'
                     if request_json['object']['type'] == 'Page':  # Editing a post
                         post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                         if post:
@@ -790,9 +825,13 @@ def process_inbox_request(request_json, activitypublog_id):
                             elif 'content' in request_json['object']:
                                 post.body_html = allowlist_html(request_json['object']['content'])
                                 post.body = html_to_markdown(post.body_html)
+                            if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
+                                post.url = request_json['object']['attachment']['href']
                             post.edited_at = utcnow()
                             db.session.commit()
                             activity_log.result = 'success'
+                        else:
+                            activity_log.exception_message = 'Post not found'
                     elif request_json['object']['type'] == 'Note':  # Editing a reply
                         reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
                         if reply:
@@ -805,6 +844,8 @@ def process_inbox_request(request_json, activitypublog_id):
                             reply.edited_at = utcnow()
                             db.session.commit()
                             activity_log.result = 'success'
+                        else:
+                            activity_log.exception_message = 'PostReply not found'
                 elif request_json['type'] == 'Delete':
                     if isinstance(request_json['object'], str):
                         ap_id = request_json['object']  # lemmy

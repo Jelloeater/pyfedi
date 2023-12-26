@@ -201,6 +201,12 @@ class Community(db.Model):
         else:
             return f"https://{current_app.config['SERVER_NAME']}/c/{self.ap_id}"
 
+    # returns a list of tuples (instance.id, instance.inbox)
+    def following_instances(self):
+        sql = 'select distinct i.id, i.inbox from "instance" as i inner join "user" as u on u.instance_id = i.id inner join "community_member" as cm on cm.user_id = u.id '
+        sql += 'where cm.community_id = :community_id and cm.is_banned = false'
+        return db.session.execute(text(sql), {'community_id': self.id})
+
     def delete_dependencies(self):
         # this will be fine for remote communities but for local ones it is necessary to federate every deletion out to subscribers
         for post in self.posts:
@@ -409,6 +415,10 @@ class User(UserMixin, db.Model):
 
     def created_recently(self):
         return self.created and self.created > utcnow() - timedelta(days=7)
+
+    def has_blocked_instance(self, instance_id):
+        instance_block = InstanceBlock.query.filter_by(user_id=self.id, instance_id=instance_id).first()
+        return instance_block is not None
 
     @staticmethod
     def verify_reset_password_token(token):
