@@ -11,15 +11,15 @@ The following are the goals for a 1.0 release, good enough for production use. I
 - ✅ vote
 - sort posts by hotness algo
 - ✅ markdown
-- logging and debugging support
+- ✅ logging and debugging support
 
 
 ### Activitypub-enabled
 
 - ✅ follow remote community
-- post content in remote community
-- edit & delete content
-- vote
+- ✅ post content in remote community
+- ✅ edit & delete content
+- ✅ vote
 
 ### Search
 
@@ -39,5 +39,5 @@ The following are the goals for a 1.0 release, good enough for production use. I
 
 ### Performance and scaling
 
-- async / await
-- threading
+- ✅ background task runner
+
