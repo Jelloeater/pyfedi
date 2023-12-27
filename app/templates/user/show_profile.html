@@ -35,7 +35,8 @@
             </nav>
             <h1 class="mt-2">{{ user.user_name if user.ap_id == none else user.ap_id }}</h1>
         {% endif %}
-        <p class="small">{{ _('Joined') }}: {{ moment(user.created).fromNow(refresh=True) }}
+        <p class="small">{{ _('Joined') }}: {{ moment(user.created).fromNow(refresh=True) }}<br />
+            {{ _('Attitude') }}: <span title="{{ _('Ratio of upvotes cast to downvotes cast. Higher is more positive.') }}">{{ (user.attitude * 100) | round | int }}%</span></p>
         {{ user.about_html|safe }}
         {% if posts %}
             <h2 class="mt-4">Posts</h2>

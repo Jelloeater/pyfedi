@@ -424,6 +424,7 @@ nav.navbar {
 }
 .main_pane .url_thumbnail img {
   width: 100%;
+  height: auto;
 }
 
 .community_icon {

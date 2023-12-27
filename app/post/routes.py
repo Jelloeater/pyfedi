@@ -226,6 +226,8 @@ def post_vote(post_id: int, vote_direction):
 
     current_user.last_seen = utcnow()
     db.session.commit()
+    current_user.recalculate_attitude()
+    db.session.commit()
     post.flush_cache()
     return render_template('post/_post_voting_buttons.html', post=post,
                            upvoted_class=upvoted_class,
@@ -279,6 +281,7 @@ def comment_vote(comment_id, vote_direction):
 
         if comment.community.is_local():
             ...
+            # todo: federate vote
         else:
             action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
             action_json = {
@@ -295,6 +298,9 @@ def comment_vote(comment_id, vote_direction):
 
     current_user.last_seen = utcnow()
     db.session.commit()
+    current_user.recalculate_attitude(vote_direction)
+    db.session.commit()
+
     comment.post.flush_cache()
     return render_template('post/_voting_buttons.html', comment=comment,
                            upvoted_class=upvoted_class,

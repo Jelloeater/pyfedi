@@ -386,6 +386,34 @@ class User(UserMixin, db.Model):
             return True
         return self.expires < datetime(2019, 9, 1)
 
+    def recalculate_attitude(self):
+        upvotes = db.session.execute(text('SELECT COUNT(id) as c FROM "post_vote" WHERE user_id = :user_id AND effect > 0'),
+                                         {'user_id': self.id}).scalar()
+        downvotes = db.session.execute(text('SELECT COUNT(id) as c FROM "post_vote" WHERE user_id = :user_id AND effect < 0'),
+                                         {'user_id': self.id}).scalar()
+        if upvotes is None:
+            upvotes = 0
+        if downvotes is None:
+            downvotes = 0
+
+        comment_upvotes = db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply_vote" WHERE user_id = :user_id AND effect > 0'),
+                                     {'user_id': self.id}).scalar()
+        comment_downvotes = db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply_vote" WHERE user_id = :user_id AND effect < 0'),
+                                       {'user_id': self.id}).scalar()
+
+        if comment_upvotes is None:
+            comment_upvotes = 0
+        if comment_downvotes is None:
+            comment_downvotes = 0
+
+        total_upvotes = upvotes + comment_upvotes
+        total_downvotes = downvotes + comment_downvotes
+
+        if total_downvotes == 0:    # guard against division by zero
+            self.attitude = 1.0
+        else:
+            self.attitude = (total_upvotes - total_downvotes) / (total_upvotes + total_downvotes)
+
     def subscribed(self, community_id: int) -> int:
         if community_id is None:
             return False

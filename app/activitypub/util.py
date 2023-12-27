@@ -647,6 +647,7 @@ def activity_already_ingested(ap_id):
 
 def downvote_post(post, user):
     user.last_seen = utcnow()
+    user.recalculate_attitude()
     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
     if not existing_vote:
         effect = -1.0
@@ -678,6 +679,7 @@ def downvote_post(post, user):
 
 def downvote_post_reply(comment, user):
     user.last_seen = utcnow()
+    user.recalculate_attitude()
     existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
                                                   post_reply_id=comment.id).first()
     if not existing_vote:
@@ -710,6 +712,7 @@ def downvote_post_reply(comment, user):
 
 def upvote_post_reply(comment, user):
     user.last_seen = utcnow()
+    user.recalculate_attitude()
     effect = instance_weight(user.ap_domain)
     existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
                                                   post_reply_id=comment.id).first()
@@ -745,6 +748,7 @@ def upvote_post_reply(comment, user):
 
 def upvote_post(post, user):
     user.last_seen = utcnow()
+    user.recalculate_attitude()
     effect = instance_weight(user.ap_domain)
     existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
     if not existing_vote:
