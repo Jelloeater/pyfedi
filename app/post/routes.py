@@ -150,7 +150,8 @@ def post_vote(post_id: int, vote_direction):
     post = Post.query.get_or_404(post_id)
     existing_vote = PostVote.query.filter_by(user_id=current_user.id, post_id=post.id).first()
     if existing_vote:
-        post.author.reputation -= existing_vote.effect
+        if not post.community.low_quality:
+            post.author.reputation -= existing_vote.effect
         if existing_vote.effect > 0:  # previous vote was up
             if vote_direction == 'upvote':  # new vote is also up, so remove it
                 db.session.delete(existing_vote)
@@ -186,20 +187,38 @@ def post_vote(post_id: int, vote_direction):
             downvoted_class = 'voted_down'
         vote = PostVote(user_id=current_user.id, post_id=post.id, author_id=post.author.id,
                              effect=effect)
+        # upvotes do not increase reputation in low quality communities
+        if post.community.low_quality and effect > 0:
+            effect = 0
         post.author.reputation += effect
         db.session.add(vote)
 
+        action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
+        action_json = {
+            'actor': current_user.profile_id(),
+            'object': post.profile_id(),
+            'type': action_type,
+            'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
+            'audience': post.community.profile_id()
+        }
         if post.community.is_local():
-            ...
-        else:
-            action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
-            action_json = {
-                'actor': current_user.profile_id(),
-                'object': post.profile_id(),
-                'type': action_type,
-                'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
-                'audience': post.community.profile_id()
+            announce = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                "type": 'Announce',
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "actor": post.community.ap_profile_id,
+                "cc": [
+                    post.community.ap_followers_url
+                ],
+                '@context': default_context(),
+                'object': action_json
             }
+            for instance in post.community.following_instances():
+                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                    send_to_remote_instance(instance[1], post.community.id, announce)
+        else:
             success = post_request(post.community.ap_inbox_url, action_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
             if not success:

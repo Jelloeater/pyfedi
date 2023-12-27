@@ -660,6 +660,8 @@ def upvote_post_reply(comment, user):
         comment.score += effect
         vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
                              author_id=comment.author.id, effect=effect)
+        if comment.community.low_quality and effect > 0:
+            effect = 0
         comment.author.reputation += effect
         db.session.add(vote)
     else:
@@ -675,6 +677,8 @@ def upvote_post_reply(comment, user):
             comment.score += effect
             vote = PostReplyVote(user_id=user.id, post_reply_id=comment.id,
                                  author_id=comment.author.id, effect=effect)
+            if comment.community.low_quality and effect > 0:
+                effect = 0
             comment.author.reputation += effect
             db.session.add(vote)
         else:
@@ -690,6 +694,8 @@ def upvote_post(post, user):
         post.score += effect
         vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
                         effect=effect)
+        if post.community.low_quality and effect > 0:
+            effect = 0
         post.author.reputation += effect
         db.session.add(vote)
     else:
@@ -705,6 +711,8 @@ def upvote_post(post, user):
             post.score += effect
             vote = PostVote(user_id=user.id, post_id=post.id, author_id=post.author.id,
                             effect=effect)
+            if post.community.low_quality and effect > 0:
+                effect = 0
             post.author.reputation += effect
             db.session.add(vote)
 
