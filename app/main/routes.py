@@ -1,7 +1,7 @@
 from sqlalchemy.sql.operators import or_
 
 from app import db, cache
-from app.activitypub.util import default_context, make_image_sizes_async
+from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, SUBSCRIPTION_OWNER
 from app.main import bp
 from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
@@ -99,9 +99,7 @@ def robots():
 
 @bp.route('/test')
 def test():
-    make_image_sizes_async(159, 60, 250, 'communities')
-    make_image_sizes_async(140, 60, 250, 'communities')
-    make_image_sizes_async(141, 700, 1600, 'communities')
+    refresh_user_profile(12)
     return 'done'
 
 

@@ -278,7 +278,7 @@ class User(UserMixin, db.Model):
     search_vector = db.Column(TSVectorType('user_name', 'bio', 'keywords'))
     activity = db.relationship('ActivityLog', backref='account', lazy='dynamic', cascade="all, delete-orphan")
     posts = db.relationship('Post', lazy='dynamic', cascade="all, delete-orphan")
-    post_replies = db.relationship('PostReply', backref='author', lazy='dynamic', cascade="all, delete-orphan")
+    post_replies = db.relationship('PostReply', lazy='dynamic', cascade="all, delete-orphan")
 
     roles = db.relationship('Role', secondary=user_role, lazy='dynamic', cascade="all, delete")
 
@@ -585,6 +585,8 @@ class PostReply(db.Model):
     ap_announce_id = db.Column(db.String(100))
 
     search_vector = db.Column(TSVectorType('body'))
+
+    author = db.relationship('User', lazy='joined', foreign_keys=[user_id], single_parent=True)
 
     def is_local(self):
         return self.ap_id is None or self.ap_id.startswith('https://' + current_app.config['SERVER_NAME'])

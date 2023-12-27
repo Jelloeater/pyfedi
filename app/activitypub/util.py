@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import timedelta
 from random import randint
 from typing import Union, Tuple
 from flask import current_app, request, g
@@ -205,6 +206,8 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
             user = Community.query.filter_by(ap_profile_id=actor).first()
 
     if user is not None:
+        if not user.is_local() and user.ap_fetched_at < utcnow() - timedelta(days=7):
+            refresh_user_profile(user.id)
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
         if actor.startswith('https://'):
@@ -247,11 +250,53 @@ def extract_domain_and_actor(url_string: str):
     return server_domain, actor
 
 
+def refresh_user_profile(user_id):
+    if current_app.debug:
+        refresh_user_profile_task(user_id)
+    else:
+        refresh_user_profile_task.apply_async(args=(user_id), countdown=randint(1, 10))
+
+
+@celery.task
+def refresh_user_profile_task(user_id):
+    user = User.query.get(user_id)
+    if user:
+        actor_data = get_request(user.ap_profile_id, headers={'Accept': 'application/activity+json'})
+        if actor_data.status_code == 200:
+            activity_json = actor_data.json()
+            actor_data.close()
+            user.user_name = activity_json['preferredUsername']
+            user.about_html = parse_summary(activity_json)
+            user.ap_fetched_at = utcnow()
+            user.public_key=activity_json['publicKey']['publicKeyPem']
+
+            avatar_changed = cover_changed = False
+            if 'icon' in activity_json:
+                if activity_json['icon']['url'] != user.avatar.source_url:
+                    user.avatar.delete_from_disk()
+                    avatar = File(source_url=activity_json['icon']['url'])
+                    user.avatar = avatar
+                    db.session.add(avatar)
+                    avatar_changed = True
+            if 'image' in activity_json:
+                if activity_json['image']['url'] != user.cover.source_url:
+                    user.cover.delete_from_disk()
+                    cover = File(source_url=activity_json['image']['url'])
+                    user.cover = cover
+                    db.session.add(cover)
+                    cover_changed = True
+            db.session.commit()
+            if user.avatar_id and avatar_changed:
+                make_image_sizes(user.avatar_id, 40, 250, 'users')
+            if user.cover_id and cover_changed:
+                make_image_sizes(user.cover_id, 700, 1600, 'users')
+
+
 def actor_json_to_model(activity_json, address, server):
     if activity_json['type'] == 'Person':
         user = User(user_name=activity_json['preferredUsername'],
                     email=f"{address}@{server}",
-                    about=parse_summary(activity_json),
+                    about_html=parse_summary(activity_json),
                     created=activity_json['published'] if 'published' in activity_json else utcnow(),
                     ap_id=f"{address}@{server}",
                     ap_public_url=activity_json['id'],
