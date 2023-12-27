@@ -586,7 +586,7 @@ class PostReply(db.Model):
 
     search_vector = db.Column(TSVectorType('body'))
 
-    author = db.relationship('User', lazy='joined', foreign_keys=[user_id], single_parent=True)
+    author = db.relationship('User', lazy='joined', foreign_keys=[user_id], single_parent=True, overlaps="post_replies")
 
     def is_local(self):
         return self.ap_id is None or self.ap_id.startswith('https://' + current_app.config['SERVER_NAME'])

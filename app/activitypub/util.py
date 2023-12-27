@@ -207,7 +207,13 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
 
     if user is not None:
         if not user.is_local() and user.ap_fetched_at < utcnow() - timedelta(days=7):
-            refresh_user_profile(user.id)
+            # To reduce load on remote servers, refreshing the user profile happens after a delay of 1 to 10 seconds. Meanwhile, subsequent calls to
+            # find_actor_or_create() which happen to be for the same actor might queue up refreshes of the same user. To avoid this, set a flag to
+            # indicate that user is currently being refreshed.
+            refresh_in_progress = cache.get(f'refreshing_{user.id}')
+            if not refresh_in_progress:
+                cache.set(f'refreshing_{user.id}', True, timeout=30)
+                refresh_user_profile(user.id)
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
         if actor.startswith('https://'):
