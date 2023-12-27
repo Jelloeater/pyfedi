@@ -38,7 +38,7 @@ class CreatePostForm(FlaskForm):
     communities = SelectField(_l('Community'), validators=[DataRequired()], coerce=int)
     type = HiddenField() # https://getbootstrap.com/docs/4.6/components/navs/#tabs
     discussion_title = StringField(_l('Title'), validators={Optional(), Length(min=3, max=255)})
-    discussion_body = TextAreaField(_l('Body'), render_kw={'placeholder': 'Text (optional)'})
+    discussion_body = TextAreaField(_l('Body'), validators={Optional(), Length(min=3, max=5000)}, render_kw={'placeholder': 'Text (optional)'})
     link_title = StringField(_l('Title'), validators={Optional(), Length(min=3, max=255)})
     link_url = StringField(_l('URL'), render_kw={'placeholder': 'https://...'})
     image_title = StringField(_l('Title'), validators={Optional(), Length(min=3, max=255)})

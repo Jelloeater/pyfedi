@@ -38,6 +38,7 @@ def add_local():
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
                               public_key=public_key,
                               ap_profile_id='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
+                              ap_followers_url='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data + '/followers',
                               subscriptions_count=1, instance_id=1, low_quality='memes' in form.url.data)
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':

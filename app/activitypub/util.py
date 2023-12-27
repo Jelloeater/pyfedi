@@ -34,6 +34,13 @@ def public_key():
         return PUBLICKEY
 
 
+def community_members(community_id):
+    sql = 'SELECT COUNT(id) as c FROM "user" as u '
+    sql += 'INNER JOIN community_member cm on u.id = cm.user_id '
+    sql += 'WHERE u.banned is false AND u.deleted is false AND cm.is_banned is false and cm.community_id = :community_id'
+    return db.session.execute(text(sql), {'community_id': community_id}).scalar()
+
+
 def users_total():
     return db.session.execute(text(
         'SELECT COUNT(id) as c FROM "user" WHERE ap_id is null AND verified is true AND banned is false AND deleted is false')).scalar()

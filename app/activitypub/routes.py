@@ -12,7 +12,7 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
-    upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment
+    upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment, community_members
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime
 import werkzeug.exceptions
@@ -347,6 +347,11 @@ def process_inbox_request(request_json, activitypublog_id):
                                 community_ap_id = request_json['object']['cc'][0]
                         elif 'cc' in request_json['object'] and request_json['object']['cc']:
                             community_ap_id = request_json['object']['cc'][0]
+                        if community_ap_id.endswith('/followers'):  # mastodon
+                            if 'inReplyTo' in request_json['object']:
+                                post_being_replied_to = Post.query.filter_by(ap_id=request_json['object']['inReplyTo']).first()
+                                if post_being_replied_to:
+                                    community_ap_id = post_being_replied_to.community.ap_profile_id
                     community = find_actor_or_create(community_ap_id)
                     user = find_actor_or_create(user_ap_id)
                     if (user and not user.is_local()) and community:
@@ -959,29 +964,35 @@ def community_moderators(actor):
         return jsonify(community_data)
 
 
-@bp.route('/inspect')
-def inspect():
-    return Response(b'<br><br>'.join(INBOX), status=200)
+@bp.route('/u/<actor>/inbox', methods=['GET', 'POST'])
+def user_inbox(actor):
+    resp = jsonify('ok')
+    resp.content_type = 'application/activity+json'
+    return resp
 
 
-@bp.route('/users/<actor>/inbox', methods=['GET', 'POST'])
-def inbox(actor):
-    """ To post to this inbox, you could use curl:
-    $ curl -d '{"key" : "value"}' -H "Content-Type: application/json" -X POST http://localhost:5001/users/test/inbox
-    Or, with an actual Mastodon follow request:
-    $ curl -d '{"@context":["https://www.w3.org/ns/activitystreams","https://w3id.org/security/v1",{"manuallyApprovesFollowers":"as:manuallyApprovesFollowers","sensitive":"as:sensitive","movedTo":{"@id":"as:movedTo","@type":"@id"},"Hashtag":"as:Hashtag","ostatus":"http://ostatus.org#","atomUri":"ostatus:atomUri","inReplyToAtomUri":"ostatus:inReplyToAtomUri","conversation":"ostatus:conversation","toot":"http://joinmastodon.org/ns#","Emoji":"toot:Emoji","focalPoint":{"@container":"@list","@id":"toot:focalPoint"},"featured":{"@id":"toot:featured","@type":"@id"},"schema":"http://schema.org#","PropertyValue":"schema:PropertyValue","value":"schema:value"}],"id":"https://post.lurk.org/02d04ed5-dda6-48f3-a551-2e9c554de745","type":"Follow","actor":"https://post.lurk.org/users/manetta","object":"https://ap.virtualprivateserver.space/users/test","signature":{"type":"RsaSignature2017","creator":"https://post.lurk.org/users/manetta#main-key","created":"2018-11-28T16:15:35Z","signatureValue":"XUdBg+Zj9pkdOXlAYHhOtZlmU1Jdt63zwh2cXoJ8E8C1C+KvgGilkyfPTud9VNymVwdUQRl+YEW9KAZiiGaHb9H+tdVUr9BEkuR5E/tGehbMZr1sakC+qPehe4s3bRKEpJjTTJnTiSHaW7V6Qvr1u6+MVts6oj32az/ixuB/CfodSr3K/K+jZmmOl6SIUqX7Xg7xGwOxIsYaR7g9wbcJ4qyzKcTPZonPMsONq9/RSm3SeQBo7WO1FKlQiFxVP/y5eFaFP8GYDLZyK7Nj5kDL5TannfEpuF8f3oyTBErQhcFQYKcBZNbuaqX/WiIaGjtHIL2ctJe0Psb5Nfshx4MXmQ=="}}' -H "Content-Type: application/json" -X POST http://localhost:5001/users/test/inbox
-    """
+@bp.route('/c/<actor>/inbox', methods=['GET', 'POST'])
+def community_inbox(actor):
+    return shared_inbox()
 
-    if request.method == 'GET':
-        return '''This has been a <em>{}</em> request. <br>
-        It came with the following header: <br><br><em>{}</em><br><br>
-        You have searched for the actor <em>{}</em>. <br>
-        This is <em>{}</em>'s shared inbox: <br><br><em>{}</em>'''.format(request.method, request.headers, actor,
-                                                                          current_app.config['SERVER_NAME'], str(INBOX))
 
-    if request.method == 'POST':
-        INBOX.append(request.data)
-        return Response(status=200)
+@bp.route('/c/<actor>/followers', methods=['GET'])
+def community_followers(actor):
+    actor = actor.strip()
+    community = Community.query.filter_by(name=actor, banned=False, ap_id=None).first()
+    if community is not None:
+        result = {
+            "@context": default_context(),
+            "id": f'https://{current_app.config["SERVER_NAME"]}/c/actor/followers',
+            "type": "Collection",
+            "totalItems": community_members(community.id),
+            "items": []
+        }
+        resp = jsonify(result)
+        resp.content_type = 'application/activity+json'
+        return resp
+    else:
+        abort(404)
 
 
 @bp.route('/comment/<int:comment_id>', methods=['GET'])
