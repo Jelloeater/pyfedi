@@ -610,7 +610,7 @@ def post_reply_report(post_id: int, comment_id: int):
     form = ReportPostForm()
     if form.validate_on_submit():
         report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
-                        type=1, reporter_id=current_user.id, suspect_post_id=post.id, suspect_community_id=post.community.id,
+                        type=2, reporter_id=current_user.id, suspect_post_id=post.id, suspect_community_id=post.community.id,
                         suspect_user_id=post_reply.author.id, suspect_post_reply_id=post_reply.id)
         db.session.add(report)
 

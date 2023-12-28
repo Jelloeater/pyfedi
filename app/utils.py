@@ -191,6 +191,8 @@ def markdown_to_html(markdown_text) -> str:
 
 
 def markdown_to_text(markdown_text) -> str:
+    if not markdown_text or markdown_text == '':
+        return ''
     return markdown_text.replace("# ", '')
 
 

@@ -21,7 +21,7 @@ from PIL import Image, ImageOps
 from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
-    is_image_url, domain_from_url, gibberish, ensure_directory_exists
+    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text
 
 
 def public_key():
@@ -121,6 +121,7 @@ def post_to_activity(post: Post, community: Community):
                 "name": post.title,
                 "cc": [],
                 "content": post.body_html,
+                "summary": markdown_to_text(post.body),
                 "mediaType": "text/html",
                 "source": {
                     "content": post.body,

@@ -14,7 +14,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
     upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment, community_members
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
-    domain_from_url, markdown_to_html, community_membership, ap_datetime
+    domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text
 import werkzeug.exceptions
 
 INBOX = []
@@ -1016,6 +1016,7 @@ def comment_ap(comment_id):
                 reply.author.followers_url()
             ],
             'content': reply.body_html,
+            'summary': markdown_to_text(reply.body),
             'mediaType': 'text/html',
             'published': ap_datetime(reply.created_at),
             'distinguished': False,
