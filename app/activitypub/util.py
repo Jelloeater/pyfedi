@@ -304,6 +304,7 @@ def actor_json_to_model(activity_json, address, server):
         user = User(user_name=activity_json['preferredUsername'],
                     email=f"{address}@{server}",
                     about_html=parse_summary(activity_json),
+                    matrix_user_id=activity_json['matrixUserId'] if 'matrixUserId' in activity_json else '',
                     created=activity_json['published'] if 'published' in activity_json else utcnow(),
                     ap_id=f"{address}@{server}",
                     ap_public_url=activity_json['id'],

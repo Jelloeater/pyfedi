@@ -19,6 +19,8 @@
                 {{ render_field(form.password_field) }}
                 <hr />
                 {{ render_field(form.about) }}
+                {{ render_field(form.matrix_user_id) }}
+                <small class="field_hint">e.g. @something:matrix.org. Include leading @ and use : before server</small>
                 {{ render_field(form.profile_file) }}
                 <small class="field_hint">Provide a square image that looks good when small.</small>
                 {{ render_field(form.banner_file) }}

@@ -298,7 +298,7 @@ def comment_vote(comment_id, vote_direction):
 
     current_user.last_seen = utcnow()
     db.session.commit()
-    current_user.recalculate_attitude(vote_direction)
+    current_user.recalculate_attitude()
     db.session.commit()
 
     comment.post.flush_cache()

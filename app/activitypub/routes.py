@@ -181,6 +181,8 @@ def user_profile(actor):
                     "mediaType": "text/markdown"
                 }
                 actor_data['summary'] = markdown_to_html(user.about)
+            if user.matrix_user_id:
+                actor_data['matrixUserId'] = user.matrix_user_id
             resp = jsonify(actor_data)
             resp.content_type = 'application/activity+json'
             return resp

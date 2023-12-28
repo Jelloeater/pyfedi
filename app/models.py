@@ -239,6 +239,7 @@ class User(UserMixin, db.Model):
     about = db.Column(db.Text)      # markdown
     about_html = db.Column(db.Text) # html
     keywords = db.Column(db.String(256))
+    matrix_user_id = db.Column(db.String(256))
     show_nsfw = db.Column(db.Boolean, default=False)
     show_nsfl = db.Column(db.Boolean, default=False)
     created = db.Column(db.DateTime, default=utcnow)
