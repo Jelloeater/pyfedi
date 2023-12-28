@@ -43,7 +43,7 @@ from flask import Request, current_app
 from datetime import datetime
 from dateutil import parser
 from pyld import jsonld
-
+from email.utils import formatdate
 from app import db
 from app.activitypub.util import default_context
 from app.constants import DATETIME_MS_FORMAT
@@ -53,8 +53,9 @@ from app.models import utcnow, ActivityPubLog
 def http_date(epoch_seconds=None):
     if epoch_seconds is None:
         epoch_seconds = arrow.utcnow().timestamp()
-    formatted_date = arrow.get(epoch_seconds).format('ddd, DD MMM YYYY HH:mm:ss ZZ', 'en_US')
-    return formatted_date
+    return formatdate(epoch_seconds, usegmt=True)                                                   # takahe uses formatdate so let's try that
+    # formatted_date = arrow.get(epoch_seconds).format('ddd, DD MMM YYYY HH:mm:ss ZZ', 'en_US')     # mastodon does not like this
+    # return formatted_date
 
 
 def format_ld_date(value: datetime) -> str:

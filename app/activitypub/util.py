@@ -212,7 +212,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
             # indicate that user is currently being refreshed.
             refresh_in_progress = cache.get(f'refreshing_{user.id}')
             if not refresh_in_progress:
-                cache.set(f'refreshing_{user.id}', True, timeout=30)
+                cache.set(f'refreshing_{user.id}', True, timeout=300)
                 refresh_user_profile(user.id)
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
@@ -396,6 +396,7 @@ def post_json_to_model(post_json, user, community) -> Post:
                 type=constants.POST_TYPE_ARTICLE,
                 posted_at=post_json['published'],
                 last_active=post_json['published'],
+                instance_id=user.instance_id
                 )
     if 'source' in post_json and \
             post_json['source']['mediaType'] == 'text/markdown':
@@ -588,42 +589,52 @@ def find_instance_id(server):
     if instance:
         return instance.id
     else:
+        # Our instance does not know about {server} yet. Initially, create a sparse row in the 'instance' table and spawn a background
+        # task to update the row with more details later
+        new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
+        db.session.add(new_instance)
+        db.session.commit()
+
+        # Spawn background task
+        refresh_instance_profile(new_instance.id)
+
+        return new_instance.id
+
+
+def refresh_instance_profile(instance_id: int):
+    if current_app.debug:
+        refresh_instance_profile_task(instance_id)
+    else:
+        refresh_instance_profile_task.apply_async(args=(instance_id), countdown=randint(1, 10))
+
+
+@celery.task
+def refresh_instance_profile_task(instance_id: int):
+    instance = Instance.query.get(instance_id)
+    try:
+        instance_data = get_request(f"https://{instance.domain}", headers={'Accept': 'application/activity+json'})
+    except:
+        return
+    if instance_data.status_code == 200:
         try:
-            instance_data = get_request(f"https://{server}", headers={'Accept': 'application/activity+json'})
-        except:
-            new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
-            db.session.add(new_instance)
-            db.session.commit()
-            return new_instance.id
-        if instance_data.status_code == 200:
-            try:
-                instance_json = instance_data.json()
-                instance_data.close()
-            except requests.exceptions.JSONDecodeError as ex:
-                instance_json = {}
-            if 'type' in instance_json and instance_json['type'] == 'Application':
-                if instance_json['name'].lower() == 'kbin':
-                    software = 'Kbin'
-                elif instance_json['name'].lower() == 'mbin':
-                    software = 'Mbin'
-                else:
-                    software = 'Lemmy'
-                new_instance = Instance(domain=server,
-                                        inbox=instance_json['inbox'],
-                                        outbox=instance_json['outbox'],
-                                        software=software,
-                                        created_at=instance_json['published'] if 'published' in instance_json else utcnow()
-                                        )
+            instance_json = instance_data.json()
+            instance_data.close()
+        except requests.exceptions.JSONDecodeError as ex:
+            instance_json = {}
+        if 'type' in instance_json and instance_json['type'] == 'Application':
+            if instance_json['name'].lower() == 'kbin':
+                software = 'Kbin'
+            elif instance_json['name'].lower() == 'mbin':
+                software = 'Mbin'
             else:
-                new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
-            db.session.add(new_instance)
-            db.session.commit()
-            return new_instance.id
-        else:
-            new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
-            db.session.add(new_instance)
-            db.session.commit()
-            return new_instance.id
+                software = 'Lemmy'
+            instance.inbox = instance_json['inbox']
+            instance.outbox = instance_json['outbox']
+            instance.software = software
+        else:   # it's pretty much always /inbox so just assume that it is for whatever this instance is running (mostly likely Mastodon)
+            instance.inbox = f"https://{instance.domain}/inbox"
+        instance.updated_at = utcnow()
+        db.session.commit()
 
 
 # alter the effect of upvotes based on their instance. Default to 1.0
@@ -800,6 +811,7 @@ def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id
                 db.session.delete(to_delete)
                 db.session.commit()
             elif isinstance(to_delete, PostReply):
+                to_delete.post.flush_cache()
                 if to_delete.has_replies():
                     to_delete.body = 'Deleted by author' if to_delete.author.id == deletor.id else 'Deleted by moderator'
                     to_delete.body_html = markdown_to_html(to_delete.body)
