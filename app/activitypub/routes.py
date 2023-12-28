@@ -425,7 +425,8 @@ def process_inbox_request(request_json, activitypublog_id):
                                                        score=instance_weight(user.ap_domain),
                                                        ap_id=request_json['object']['id'],
                                                        ap_create_id=request_json['id'],
-                                                       ap_announce_id=None)
+                                                       ap_announce_id=None,
+                                                       instance_id=user.instance_id)
                                 if 'source' in request_json['object'] and \
                                         request_json['object']['source']['mediaType'] == 'text/markdown':
                                     post_reply.body = request_json['object']['source']['content']
@@ -530,7 +531,8 @@ def process_inbox_request(request_json, activitypublog_id):
                                                                nsfl=community.nsfl,
                                                                ap_id=request_json['object']['object']['id'],
                                                                ap_create_id=request_json['object']['id'],
-                                                               ap_announce_id=request_json['id'])
+                                                               ap_announce_id=request_json['id'],
+                                                               instance_id=user.instance_id)
                                         if 'source' in request_json['object']['object'] and \
                                                 request_json['object']['object']['source']['mediaType'] == 'text/markdown':
                                             post_reply.body = request_json['object']['object']['source']['content']

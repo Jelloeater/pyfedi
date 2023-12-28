@@ -26,16 +26,16 @@
                                 <li><a href="{{ url_for('post.post_block_domain', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
                                     {{ _('Block domain %(domain)s', domain=post.domain.name) }}</a></li>
                                 {% endif %}
-                                {% if post.instance_id %}
+                                {% if post.instance_id and post.instance_id != 1 %}
                                 <li><a href="{{ url_for('post.post_block_instance', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
-                                    {{ _('Hide every post from %(name)s', name=post.instance.domain) }}</a></li>
+                                    {{ _("Hide every post from author's instance: %(name)s", name=post.instance.domain) }}</a></li>
                                 {% endif %}
                             {% endif %}
                             <li><a href="{{ url_for('post.post_report', post_id=post.id) }}" class="no-underline"><span class="fe fe-report"></span>
                                 {{ _('Report to moderators') }}</a></li>
-
                         {% endif %}
                     </ul>
+                    <p>{{ _('If you want to perform more than one of these (e.g. block and report), hold down Ctrl and click, then complete the operation in the new tabs that open.') }}</p>
                 </div>
             </div>
         </div>

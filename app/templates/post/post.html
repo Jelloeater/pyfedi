@@ -89,13 +89,14 @@
                                 {{ comment['comment'].body_html | safe }}
                             </div>
                         </div>
-                        {% if current_user.is_authenticated and current_user.verified %}
-                            <div class="comment_actions hidable">
+                        <div class="comment_actions hidable">
+                            {% if current_user.is_authenticated and current_user.verified %}
                                 {% if post.comments_enabled %}
                                     <a href="{{ url_for('post.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
                                 {% endif %}
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                            <a href="{{ url_for('post.post_reply_options', post_id=post.id, comment_id=comment['comment'].id) }}" class="comment_actions_link" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a>
+                        </div>
                         {% if comment['replies'] %}
                             {% if comment['comment'].depth <= THREAD_CUTOFF_DEPTH %}
                                 <div class="replies hidable">

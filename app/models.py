@@ -590,6 +590,7 @@ class PostReply(db.Model):
     parent_id = db.Column(db.Integer)
     root_id = db.Column(db.Integer)
     depth = db.Column(db.Integer, default=0)
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     body_html_safe = db.Column(db.Boolean, default=False)
@@ -738,6 +739,7 @@ class Instance(db.Model):
     updated_at = db.Column(db.DateTime, default=utcnow)
 
     posts = db.relationship('Post', backref='instance', lazy='dynamic')
+    post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')
     communities = db.relationship('Community', backref='instance', lazy='dynamic')
 
 
@@ -850,7 +852,6 @@ class Report(db.Model):
     suspect_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     suspect_post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     suspect_post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
-    suspect_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
 

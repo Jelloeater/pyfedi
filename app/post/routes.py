@@ -450,6 +450,13 @@ def post_options(post_id: int):
     return render_template('post/post_options.html', post=post)
 
 
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/options', methods=['GET'])
+def post_reply_options(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    post_reply = PostReply.query.get_or_404(comment_id)
+    return render_template('post/post_reply_options.html', post=post, post_reply=post_reply)
+
+
 @bp.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
 @login_required
 def post_edit(post_id: int):
@@ -471,6 +478,7 @@ def post_edit(post_id: int):
             db.session.commit()
             post.flush_cache()
             flash(_('Your changes have been saved.'), 'success')
+            # todo: federate edit
             return redirect(url_for('activitypub.post_ap', post_id=post.id))
         else:
             if post.type == constants.POST_TYPE_ARTICLE:
@@ -513,7 +521,8 @@ def post_report(post_id: int):
     form = ReportPostForm()
     if form.validate_on_submit():
         report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
-                        type=1, reporter_id=current_user.id, suspect_post_id=post.id)
+                        type=1, reporter_id=current_user.id, suspect_user_id=post.author.id, suspect_post_id=post.id,
+                        suspect_community_id=post.community.id)
         db.session.add(report)
 
         # Notify moderators
@@ -591,3 +600,118 @@ def post_mea_culpa(post_id: int):
         return redirect(url_for('activitypub.post_ap', post_id=post.id))
 
     return render_template('post/post_mea_culpa.html', title=_('I changed my mind'), form=form, post=post)
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/report', methods=['GET', 'POST'])
+@login_required
+def post_reply_report(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    post_reply = PostReply.query.get_or_404(comment_id)
+    form = ReportPostForm()
+    if form.validate_on_submit():
+        report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
+                        type=1, reporter_id=current_user.id, suspect_post_id=post.id, suspect_community_id=post.community.id,
+                        suspect_user_id=post_reply.author.id, suspect_post_reply_id=post_reply.id)
+        db.session.add(report)
+
+        # Notify moderators
+        for mod in post.community.moderators():
+            notification = Notification(user_id=mod.user_id, title=_('A comment has been reported'),
+                                        url=f"https://{current_app.config['SERVER_NAME']}/comment/{post_reply.id}",
+                                        author_id=current_user.id)
+            db.session.add(notification)
+        post_reply.reports += 1
+        # todo: Also notify admins for certain types of report
+        db.session.commit()
+
+        # todo: federate report to originating instance
+        if not post.community.is_local() and form.report_remote.data:
+            ...
+
+        flash(_('Comment has been reported, thank you!'))
+        return redirect(post.community.local_url())
+    elif request.method == 'GET':
+        form.report_remote.data = True
+
+    return render_template('post/post_reply_report.html', title=_('Report comment'), form=form, post=post, post_reply=post_reply)
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/block_user', methods=['GET', 'POST'])
+@login_required
+def post_reply_block_user(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    post_reply = PostReply.query.get_or_404(comment_id)
+    existing = UserBlock.query.filter_by(blocker_id=current_user.id, blocked_id=post_reply.author.id).first()
+    if not existing:
+        db.session.add(UserBlock(blocker_id=current_user.id, blocked_id=post_reply.author.id))
+        db.session.commit()
+    flash(_('%(name)s has been blocked.', name=post_reply.author.user_name))
+
+    # todo: federate block to post_reply author instance
+
+    return redirect(url_for('activitypub.post_ap', post_id=post.id))
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/block_instance', methods=['GET', 'POST'])
+@login_required
+def post_reply_block_instance(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    post_reply = PostReply.query.get_or_404(comment_id)
+    existing = InstanceBlock.query.filter_by(user_id=current_user.id, instance_id=post_reply.instance_id).first()
+    if not existing:
+        db.session.add(InstanceBlock(user_id=current_user.id, instance_id=post_reply.instance_id))
+        db.session.commit()
+    flash(_('Content from %(name)s will be hidden.', name=post_reply.instance.domain))
+    return redirect(url_for('activitypub.post_ap', post_id=post.id))
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/edit', methods=['GET', 'POST'])
+@login_required
+def post_reply_edit(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    post_reply = PostReply.query.get_or_404(comment_id)
+    if post_reply.parent_id:
+        comment = PostReply.query.get_or_404(post_reply.parent_id)
+    else:
+        comment = None
+    form = NewReplyForm()
+    if post_reply.user_id == current_user.id or post.community.is_moderator():
+        if form.validate_on_submit():
+            post_reply.body = form.body.data
+            post_reply.body_html = markdown_to_html(form.body.data)
+            post_reply.notify_author = form.notify_author.data
+            post.community.last_active = utcnow()
+            post_reply.edited_at = utcnow()
+            db.session.commit()
+            post.flush_cache()
+            flash(_('Your changes have been saved.'), 'success')
+            # todo: federate edit
+            return redirect(url_for('activitypub.post_ap', post_id=post.id))
+        else:
+            form.body.data = post_reply.body
+            form.notify_author.data = not post_reply.notify_author
+            return render_template('post/post_reply_edit.html', title=_('Edit comment'), form=form, post=post, post_reply=post_reply,
+                                   comment=comment, markdown_editor=True)
+    else:
+        abort(401)
+
+
+@bp.route('/post/<int:post_id>/comment/<int:comment_id>/delete', methods=['GET', 'POST'])
+@login_required
+def post_reply_delete(post_id: int, comment_id: int):
+    post = Post.query.get_or_404(post_id)
+    post_reply = PostReply.query.get_or_404(comment_id)
+    community = post.community
+    if post_reply.user_id == current_user.id or community.is_moderator():
+        if post_reply.has_replies():
+            post_reply.body = 'Deleted by author' if post_reply.author.id == current_user.id else 'Deleted by moderator'
+            post_reply.body_html = markdown_to_html(post_reply.body)
+        else:
+            post_reply.delete_dependencies()
+            db.session.delete(post_reply)
+        g.site.last_active = community.last_active = utcnow()
+        db.session.commit()
+        post.flush_cache()
+        flash(_('Comment deleted.'))
+        # todo: federate delete
+    return redirect(url_for('activitypub.post_ap', post_id=post.id))

@@ -618,6 +618,7 @@ fieldset legend {
 }
 .comment .comment_actions {
   margin-top: -10px;
+  position: relative;
 }
 .comment .comment_actions a {
   text-decoration: none;

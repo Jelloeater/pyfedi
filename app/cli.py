@@ -56,7 +56,7 @@ def register(app):
             db.create_all()
             private_key, public_key = RsaKeys.generate_keypair()
             db.session.add(Site(name="PieFed", description='', public_key=public_key, private_key=private_key))
-            db.session.add(Instance(domain=app.config['SERVER_NAME'], software='PieFed'))
+            db.session.add(Instance(domain=app.config['SERVER_NAME'], software='PieFed'))   # Instance 1 is always the local instance
             db.session.add(Settings(name='allow_nsfw', value=json.dumps(False)))
             db.session.add(Settings(name='allow_nsfl', value=json.dumps(False)))
             db.session.add(Settings(name='allow_dislike', value=json.dumps(True)))
