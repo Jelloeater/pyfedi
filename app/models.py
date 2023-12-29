@@ -264,6 +264,7 @@ class User(UserMixin, db.Model):
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
+    instance = db.relationship('Instance', lazy='joined', foreign_keys=[instance_id])
 
     ap_id = db.Column(db.String(255), index=True)           # e.g. username@server
     ap_profile_id = db.Column(db.String(255), index=True)   # e.g. https://server/u/username
@@ -665,6 +666,8 @@ class Domain(db.Model):
     name = db.Column(db.String(255), index=True)
     post_count = db.Column(db.Integer, default=0)
     banned = db.Column(db.Boolean, default=False, index=True) # Domains can be banned site-wide (by admin) or DomainBlock'ed by users
+    notify_mods = db.Column(db.Boolean, default=False, index=True)
+    notify_admins = db.Column(db.Boolean, default=False, index=True)
 
 
 class DomainBlock(db.Model):
@@ -738,14 +741,20 @@ class Instance(db.Model):
     version = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow)
+    last_seen = db.Column(db.DateTime, default=utcnow)      # When an Activity was received from them
+    last_successful_send = db.Column(db.DateTime)           # When we successfully sent them an Activity
+    failures = db.Column(db.Integer, default=0)             # How many times we failed to send (reset to 0 after every successful send)
+    most_recent_attempt = db.Column(db.DateTime)            # When the most recent failure was
+    dormant = db.Column(db.Boolean, default=False)          # True once this instance is considered offline and not worth sending to any more
+    start_trying_again = db.Column(db.DateTime)             # When to start trying again. Should grow exponentially with each failure.
+    gone_forever = db.Column(db.Boolean, default=False)     # True once this instance is considered offline forever - never start trying again
 
     posts = db.relationship('Post', backref='instance', lazy='dynamic')
     post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')
     communities = db.relationship('Community', backref='instance', lazy='dynamic')
 
-    def alive(self):
-        # todo: determine aliveness based on number of failed connection attempts, etc
-        return True
+    def online(self):
+        return not self.dormant and not self.gone_forever
 
 
 class InstanceBlock(db.Model):
@@ -841,8 +850,8 @@ class Notification(db.Model):
     title = db.Column(db.String(50))
     url = db.Column(db.String(512))
     read = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))       # who the notification should go to
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))     # the person who caused the notification to happen
     created_at = db.Column(db.DateTime, default=utcnow)
 
 
@@ -885,6 +894,10 @@ class Site(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
     last_active = db.Column(db.DateTime, default=utcnow)
+
+    @staticmethod
+    def admins() -> List[User]:
+        return User.query.filter_by(deleted=False, banned=False).join(user_role).filter(user_role.c.role_id == 4).all()
 
 
 @login.user_loader

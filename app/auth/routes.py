@@ -76,7 +76,7 @@ def register():
                 verification_token = random_token(16)
                 form.user_name.data = form.user_name.data.strip()
                 user = User(user_name=form.user_name.data, email=form.real_email.data,
-                            verification_token=verification_token)
+                            verification_token=verification_token, instance=1)
                 user.set_password(form.password.data)
                 db.session.add(user)
                 db.session.commit()

@@ -9,7 +9,7 @@ from flask import current_app, request, g
 from sqlalchemy import text
 from app import db, cache, constants, celery
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
-    PostVote, PostReplyVote, ActivityPubLog
+    PostVote, PostReplyVote, ActivityPubLog, Notification, Site
 import time
 import base64
 import requests
@@ -439,12 +439,26 @@ def post_json_to_model(post_json, user, community) -> Post:
                 post.type = POST_TYPE_IMAGE
             else:
                 post.type = POST_TYPE_LINK
+
             domain = domain_from_url(post.url)
-            if not domain.banned:
-                post.domain_id = domain.id
-            else:
+            # notify about links to banned websites.
+            already_notified = set()        # often admins and mods are the same people - avoid notifying them twice
+            if domain.notify_mods:
+                for community_member in post.community.moderators():
+                    notify = Notification(title='Suspicious content', url=post.ap_id, user_id=community_member.user_id, author_id=user.id)
+                    db.session.add(notify)
+                    already_notified.add(community_member.user_id)
+            if domain.notify_admins:
+                for admin in Site.admins():
+                    if admin.id not in already_notified:
+                        notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=user.id)
+                        db.session.add(notify)
+            if domain.banned:
                 post = None
-    if 'image' in post_json:
+            if not domain.banned:
+                domain.post_count += 1
+                post.domain = domain
+    if 'image' in post_json and post:
         image = File(source_url=post_json['image']['url'])
         db.session.add(image)
         post.image = image
@@ -620,7 +634,7 @@ def find_instance_id(server):
         db.session.add(new_instance)
         db.session.commit()
 
-        # Spawn background task
+        # Spawn background task to fill in more details
         refresh_instance_profile(new_instance.id)
 
         return new_instance.id

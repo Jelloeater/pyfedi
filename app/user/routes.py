@@ -261,7 +261,7 @@ def send_deletion_requests(user_id):
             "type": "Delete"
         }
         for instance in instances:
-            if instance.inbox and instance.alive() and instance.id != 1: # instance id 1 is always the current instance
+            if instance.inbox and instance.online() and instance.id != 1: # instance id 1 is always the current instance
                 post_request(instance.inbox, payload, user.private_key, f"{user.profile_id()}#main-key")
 
         sleep(5)

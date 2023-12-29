@@ -8,7 +8,7 @@ from app.post.routes import continue_discussion, show_post
 from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, SUBSCRIPTION_MEMBER
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
-    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow, Site
+    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow, Site, Notification
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
@@ -17,8 +17,6 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text
 import werkzeug.exceptions
-
-INBOX = []
 
 
 @bp.route('/.well-known/webfinger')
@@ -402,11 +400,29 @@ def process_inbox_request(request_json, activitypublog_id):
                                         else:
                                             post.type = POST_TYPE_LINK
                                         domain = domain_from_url(post.url)
-                                        if not domain.banned:
-                                            post.domain_id = domain.id
-                                        else:
+                                        # notify about links to banned websites.
+                                        already_notified = set()  # often admins and mods are the same people - avoid notifying them twice
+                                        if domain.notify_mods:
+                                            for community_member in post.community.moderators():
+                                                notify = Notification(title='Suspicious content', url=post.ap_id,
+                                                                      user_id=community_member.user_id,
+                                                                      author_id=user.id)
+                                                db.session.add(notify)
+                                                already_notified.add(community_member.user_id)
+                                        if domain.notify_admins:
+                                            for admin in Site.admins():
+                                                if admin.id not in already_notified:
+                                                    notify = Notification(title='Suspicious content',
+                                                                          url=post.ap_id, user_id=admin.id,
+                                                                          author_id=user.id)
+                                                    db.session.add(notify)
+                                        if domain.banned:
                                             post = None
                                             activity_log.exception_message = domain.name + ' is blocked by admin'
+                                        if not domain.banned:
+                                            domain.post_count += 1
+                                            post.domain = domain
+
                                 if 'image' in request_json['object']:
                                     image = File(source_url=request_json['object']['image']['url'])
                                     db.session.add(image)
@@ -516,23 +532,41 @@ def process_inbox_request(request_json, activitypublog_id):
                                             else:
                                                 post.type = POST_TYPE_LINK
                                             domain = domain_from_url(post.url)
-                                            if not domain.banned:
-                                                post.domain_id = domain.id
-                                            else:
+                                            # notify about links to banned websites.
+                                            already_notified = set()  # often admins and mods are the same people - avoid notifying them twice
+                                            if domain.notify_mods:
+                                                for community_member in post.community.moderators():
+                                                    notify = Notification(title='Suspicious content', url=post.ap_id,
+                                                                          user_id=community_member.user_id,
+                                                                          author_id=user.id)
+                                                    db.session.add(notify)
+                                                    already_notified.add(community_member.user_id)
+                                            if domain.notify_admins:
+                                                for admin in Site.admins():
+                                                    if admin.id not in already_notified:
+                                                        notify = Notification(title='Suspicious content',
+                                                                              url=post.ap_id, user_id=admin.id,
+                                                                              author_id=user.id)
+                                                        db.session.add(notify)
+                                            if domain.banned:
                                                 post = None
                                                 activity_log.exception_message = domain.name + ' is blocked by admin'
-                                    if 'image' in request_json['object']['object']:
+                                            if not domain.banned:
+                                                domain.post_count += 1
+                                                post.domain = domain
+
+                                    if 'image' in request_json['object']['object'] and post:
                                         image = File(source_url=request_json['object']['object']['image']['url'])
                                         db.session.add(image)
                                         post.image = image
 
-                                    if post is not None:
-                                        db.session.add(post)
-                                        community.post_count += 1
-                                        activity_log.result = 'success'
-                                        db.session.commit()
-                                        if post.image_id:
-                                            make_image_sizes(post.image_id, 266, None, 'posts')
+                                        if post is not None:
+                                            db.session.add(post)
+                                            community.post_count += 1
+                                            activity_log.result = 'success'
+                                            db.session.commit()
+                                            if post.image_id:
+                                                make_image_sizes(post.image_id, 266, None, 'posts')
                                 else:
                                     post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
                                     if post_id or parent_comment_id or root_id:
@@ -924,6 +958,8 @@ def process_inbox_request(request_json, activitypublog_id):
                 # Flush the caches of any major object that was created. To be sure.
                 if 'user' in vars() and user is not None:
                     user.flush_cache()
+                    if user.instance_id:
+                        user.instance.last_seen = utcnow()
                 # if 'community' in vars() and community is not None:
                 #    community.flush_cache()
                 if 'post' in vars() and post is not None:
@@ -1095,7 +1131,7 @@ def comment_ap(comment_id):
         return resp
     else:
         reply = PostReply.query.get(comment_id)
-        continue_discussion(reply.post.id, comment_id)
+        return continue_discussion(reply.post.id, comment_id)
 
 
 @bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
