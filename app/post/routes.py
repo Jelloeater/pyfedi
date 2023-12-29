@@ -126,8 +126,7 @@ def show_post(post_id: int):
                 if instance[1] and not current_user.has_blocked_instance(instance[0]):
                     send_to_remote_instance(instance[1], post.community.id, announce)
 
-        return redirect(url_for('activitypub.post_ap',
-                                post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
+        return redirect(url_for('activitypub.post_ap', post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
         replies = post_replies(post.id, 'top')
         form.notify_author.data = True

@@ -21,7 +21,7 @@ from PIL import Image, ImageOps
 from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
-    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text
+    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request
 
 
 def public_key():
@@ -257,11 +257,31 @@ def extract_domain_and_actor(url_string: str):
     return server_domain, actor
 
 
+def user_removed_from_remote_server(actor_url, is_piefed=False):
+    result = False
+    response = None
+    try:
+        if is_piefed:
+            response = head_request(actor_url, headers={'Accept': 'application/activity+json'})
+        else:
+            response = get_request(actor_url, headers={'Accept': 'application/activity+json'})
+        if response.status_code == 404 or response.status_code == 410:
+            result = True
+        else:
+            result = False
+    except:
+        result = True
+    finally:
+        if response:
+            response.close()
+    return result
+
+
 def refresh_user_profile(user_id):
     if current_app.debug:
         refresh_user_profile_task(user_id)
     else:
-        refresh_user_profile_task.apply_async(args=(user_id), countdown=randint(1, 10))
+        refresh_user_profile_task.apply_async(args=(user_id,), countdown=randint(1, 10))
 
 
 @celery.task
@@ -305,6 +325,8 @@ def actor_json_to_model(activity_json, address, server):
                     email=f"{address}@{server}",
                     about_html=parse_summary(activity_json),
                     matrix_user_id=activity_json['matrixUserId'] if 'matrixUserId' in activity_json else '',
+                    indexable=activity_json['indexable'] if 'indexable' in activity_json else False,
+                    searchable=activity_json['discoverable'] if 'discoverable' in activity_json else True,
                     created=activity_json['published'] if 'published' in activity_json else utcnow(),
                     ap_id=f"{address}@{server}",
                     ap_public_url=activity_json['id'],
@@ -312,6 +334,7 @@ def actor_json_to_model(activity_json, address, server):
                     ap_inbox_url=activity_json['endpoints']['sharedInbox'],
                     ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
                     ap_preferred_username=activity_json['preferredUsername'],
+                    ap_manually_approves_followers=activity_json['manuallyApprovesFollowers'] if 'manuallyApprovesFollowers' in activity_json else False,
                     ap_fetched_at=utcnow(),
                     ap_domain=server,
                     public_key=activity_json['publicKey']['publicKeyPem'],
@@ -607,7 +630,7 @@ def refresh_instance_profile(instance_id: int):
     if current_app.debug:
         refresh_instance_profile_task(instance_id)
     else:
-        refresh_instance_profile_task.apply_async(args=(instance_id), countdown=randint(1, 10))
+        refresh_instance_profile_task.apply_async(args=(instance_id,), countdown=randint(1, 10))
 
 
 @celery.task
@@ -633,6 +656,8 @@ def refresh_instance_profile_task(instance_id: int):
             instance.inbox = instance_json['inbox']
             instance.outbox = instance_json['outbox']
             instance.software = software
+            if instance.inbox.endswith('/site_inbox'):      # Lemmy provides a /site_inbox but it always returns 400 when trying to POST to it. wtf.
+                instance.inbox = instance.inbox.replace('/site_inbox', '/inbox')
         else:   # it's pretty much always /inbox so just assume that it is for whatever this instance is running (mostly likely Mastodon)
             instance.inbox = f"https://{instance.domain}/inbox"
         instance.updated_at = utcnow()

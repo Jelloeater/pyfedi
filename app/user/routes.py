@@ -4,11 +4,14 @@ from flask import redirect, url_for, flash, request, make_response, session, Mar
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
-from app import db, cache
+from app import db, cache, celery
+from app.activitypub.signature import post_request
+from app.activitypub.util import default_context
 from app.community.util import save_icon_file, save_banner_file
-from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow
+from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow, File, Site, \
+    Instance
 from app.user import bp
-from app.user.forms import ProfileForm, SettingsForm
+from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
     is_image_url
 from sqlalchemy import desc, or_, text
@@ -204,6 +207,62 @@ def delete_profile(actor):
 
     goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
     return redirect(goto)
+
+
+@bp.route('/delete_account', methods=['GET', 'POST'])
+@login_required
+def delete_account():
+    form = DeleteAccountForm()
+    if form.validate_on_submit():
+        files = File.query.join(Post).filter(Post.user_id == current_user.id).all()
+        for file in files:
+            file.delete_from_disk()
+            file.source_url = ''
+        if current_user.avatar_id:
+            current_user.avatar.delete_from_disk()
+            current_user.avatar.source_url = ''
+        if current_user.cover_id:
+            current_user.cover.delete_from_disk()
+            current_user.cover.source_url = ''
+        current_user.banned = True
+        current_user.deleted = True
+
+        db.session.commit()
+
+        if current_app.debug:
+            send_deletion_requests(current_user.id)
+        else:
+            send_deletion_requests.delay(current_user.id)
+
+        logout_user()
+        flash(_('Your account has been deleted.'), 'success')
+        return redirect(url_for('main.index'))
+    elif request.method == 'GET':
+        ...
+
+    return render_template('user/delete_account.html', title=_('Delete my account'), form=form, user=current_user)
+
+
+@celery.task
+def send_deletion_requests(user_id):
+    user = User.query.get(user_id)
+    if user:
+        instances = Instance.query.all()
+        site = Site.query.get(1)
+        payload = {
+            "@context": default_context(),
+            "actor": user.ap_profile_id,
+            "id": f"{user.ap_profile_id}#delete",
+            "object": user.ap_profile_id,
+            "to": [
+                "https://www.w3.org/ns/activitystreams#Public"
+            ],
+            "type": "Delete"
+        }
+        for instance in instances:
+            if instance.inbox and instance.alive() and instance.id != 1: # instance id 1 is always the current instance
+                post_request(instance.inbox, payload, site.private_key,
+                             f"https://{current_app.config['SERVER_NAME']}#main-key")
 
 
 @bp.route('/u/<actor>/ban_purge', methods=['GET'])

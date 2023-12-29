@@ -1,0 +1,10 @@
+User-Agent: *
+  Disallow: /community/add_local
+  Disallow: /community/add_remote
+  Disallow: /auth/register
+  Disallow: /auth/reset_password_request
+  Disallow: /auth/login
+  Disallow: /admin
+  Disallow: /inbox
+  Disallow: /search/
+  Disallow: /modlog

@@ -204,7 +204,7 @@ class Community(db.Model):
     # returns a list of tuples (instance.id, instance.inbox)
     def following_instances(self):
         sql = 'select distinct i.id, i.inbox from "instance" as i inner join "user" as u on u.instance_id = i.id inner join "community_member" as cm on cm.user_id = u.id '
-        sql += 'where cm.community_id = :community_id and cm.is_banned = false'
+        sql += 'where cm.community_id = :community_id and cm.is_banned = false and i.id <> 1'
         return db.session.execute(text(sql), {'community_id': self.id})
 
     def delete_dependencies(self):
@@ -742,6 +742,10 @@ class Instance(db.Model):
     posts = db.relationship('Post', backref='instance', lazy='dynamic')
     post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')
     communities = db.relationship('Community', backref='instance', lazy='dynamic')
+
+    def alive(self):
+        # todo: determine aliveness based on number of failed connection attempts, etc
+        return True
 
 
 class InstanceBlock(db.Model):

@@ -399,8 +399,12 @@ fieldset legend {
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
-  border-radius: 5px;
+  border-radius: 5px 5px 0 0;
+  /* top-left | top-right | bottom-right | bottom-left */
   height: 176px;
+  margin-left: -12px;
+  margin-right: -12px;
+  margin-top: -9px;
 }
 @media (min-width: 992px) {
   .community_header {
@@ -409,7 +413,7 @@ fieldset legend {
 }
 @media (min-width: 992px) {
   .community_header #breadcrumb_nav {
-    padding-left: 20px;
+    padding-left: 13px;
     padding-top: 13px;
   }
 }
@@ -417,8 +421,12 @@ fieldset legend {
   background-color: rgba(0, 0, 0, 0.2);
   display: inline-block;
   padding: 5px 10px;
-  border-radius: 6px;
   margin-bottom: 0;
+}
+@media (min-width: 992px) {
+  .community_header #breadcrumb_nav .breadcrumb {
+    border-radius: 6px;
+  }
 }
 .community_header #breadcrumb_nav .breadcrumb .breadcrumb-item {
   color: white;

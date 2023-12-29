@@ -24,10 +24,13 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(user_name=form.user_name.data, ap_id=None).first()
         if user is None:
-            flash(_('No account exists with that user name address'), 'error')
+            flash(_('No account exists with that user name.'), 'error')
+            return redirect(url_for('auth.login'))
+        if user.deleted:
+            flash(_('No account exists with that user name.'), 'error')
             return redirect(url_for('auth.login'))
         if user.banned:
-            flash(_('You have been banned.', 'error'))
+            flash(_('You have been banned.'), 'error')
             return redirect(url_for('auth.login'))
         if not user.check_password(form.password.data):
             if user.password_hash is None:

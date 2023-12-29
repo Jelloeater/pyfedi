@@ -27,7 +27,11 @@ class SettingsForm(FlaskForm):
     ignore_bots = BooleanField(_l('Hide posts by bots'))
     nsfw = BooleanField(_l('Show NSFW posts'))
     nsfl = BooleanField(_l('Show NSFL posts'))
-    searchable = BooleanField(_l('Show profile in fediverse searches'))
+    searchable = BooleanField(_l('Show profile in user list'))
     indexable = BooleanField(_l('Allow search engines to index this profile'))
     manually_approves_followers = BooleanField(_l('Manually approve followers'))
     submit = SubmitField(_l('Save settings'))
+
+
+class DeleteAccountForm(FlaskForm):
+    submit = SubmitField(_l('Yes, delete my account'))

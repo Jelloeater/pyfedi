@@ -2,7 +2,7 @@ from app import db, constants, cache, celery
 from app.activitypub import bp
 from flask import request, Response, current_app, abort, jsonify, json, g
 
-from app.activitypub.signature import HttpSignature
+from app.activitypub.signature import HttpSignature, post_request
 from app.community.routes import show_community
 from app.post.routes import continue_discussion, show_post
 from app.user.routes import show_profile
@@ -12,7 +12,8 @@ from app.models import User, Community, CommunityJoinRequest, CommunityMember, C
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
-    upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment, community_members
+    upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment, community_members, \
+    user_removed_from_remote_server
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text
 import werkzeug.exceptions
@@ -136,17 +137,24 @@ def lemmy_federated_instances():
     })
 
 
-@bp.route('/u/<actor>', methods=['GET'])
+@bp.route('/u/<actor>', methods=['GET', 'HEAD'])
 def user_profile(actor):
     """ Requests to this endpoint can be for a JSON representation of the user, or a HTML rendering of their profile.
     The two types of requests are differentiated by the header """
     actor = actor.strip()
     if '@' in actor:
-        user = User.query.filter_by(ap_id=actor, deleted=False, banned=False).first()
+        user: User = User.query.filter_by(ap_id=actor, deleted=False, banned=False).first()
     else:
-        user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
+        user: User = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
 
     if user is not None:
+        if request.method == 'HEAD':
+            if is_activitypub_request():
+                resp = jsonify('')
+                resp.content_type = 'application/activity+json'
+                return resp
+            else:
+                return ''
         if is_activitypub_request():
             server = current_app.config['SERVER_NAME']
             actor_data = {  "@context": default_context(),
@@ -155,6 +163,9 @@ def user_profile(actor):
                             "preferredUsername": actor,
                             "inbox": f"https://{server}/u/{actor}/inbox",
                             "outbox": f"https://{server}/u/{actor}/outbox",
+                            "discoverable": user.searchable,
+                            "indexable": user.indexable,
+                            "manuallyApprovesFollowers": user.ap_manually_approves_followers,
                             "publicKey": {
                                 "id": f"https://{server}/u/{actor}#main-key",
                                 "owner": f"https://{server}/u/{actor}",
@@ -291,17 +302,16 @@ def shared_inbox():
             activity_log.activity_id = request_json['id']
             activity_log.activity_json = json.dumps(request_json)
             activity_log.result = 'processing'
+            db.session.add(activity_log)
+            db.session.commit()
 
-            # Mastodon spams the whole fediverse whenever any of their users are deleted. Ignore them, for now. The Activity includes the Actor signature so it should be possible to verify the POST and do the delete if valid, without a call to find_actor_or_create() and all the network activity that involves. One day.
+            # When a user is deleted, the only way to be fairly sure they get deleted everywhere is to tell the whole fediverse.
             if 'type' in request_json and request_json['type'] == 'Delete' and request_json['id'].endswith('#delete'):
-                activity_log.result = 'ignored'
-                activity_log.activity_type = 'Delete'
-                db.session.add(activity_log)
-                db.session.commit()
+                if current_app.debug:
+                    process_delete_request(request_json, activity_log.id)
+                else:
+                    process_delete_request.delay(request_json, activity_log.id)
                 return ''
-            else:
-                db.session.add(activity_log)
-                db.session.commit()
         else:
             activity_log.activity_id = ''
             activity_log.activity_json = json.dumps(request_json)
@@ -923,6 +933,55 @@ def process_inbox_request(request_json, activitypublog_id):
 
             if activity_log.exception_message is not None and activity_log.result == 'processing':
                 activity_log.result = 'failure'
+            db.session.commit()
+
+
+@celery.task
+def process_delete_request(request_json, activitypublog_id):
+    with current_app.app_context():
+        activity_log = ActivityPubLog.query.get(activitypublog_id)
+        if 'type' in request_json and request_json['type'] == 'Delete':
+            actor_to_delete = request_json['object']
+            user = User.query.filter_by(ap_profile_id=actor_to_delete).first()
+            if user:
+                # check that the user really has been deleted, to avoid spoofing attacks
+                if not user.is_local() and user_removed_from_remote_server(actor_to_delete, user.instance.software == 'PieFed'):
+                    # Delete all their images to save moderators from having to see disgusting stuff.
+                    files = File.query.join(Post).filter(Post.user_id == user.id).all()
+                    for file in files:
+                        file.delete_from_disk()
+                        file.source_url = ''
+                    if user.avatar_id:
+                        user.avatar.delete_from_disk()
+                        user.avatar.source_url = ''
+                    if user.cover_id:
+                        user.cover.delete_from_disk()
+                        user.cover.source_url = ''
+                    user.banned = True
+                    user.deleted = True
+                    activity_log.result = 'success'
+
+                    instances = Instance.query.all()
+                    site = Site.query.get(1)
+                    payload = {
+                      "@context": default_context(),
+                      "actor": user.ap_profile_id,
+                      "id": f"{user.ap_profile_id}#delete",
+                      "object": user.ap_profile_id,
+                      "to": [
+                        "https://www.w3.org/ns/activitystreams#Public"
+                      ],
+                      "type": "Delete"
+                    }
+                    for instance in instances:
+                        if instance.inbox:
+                            post_request(instance.inbox, payload, site.private_key, f"https://{current_app.config['SERVER_NAME']}#main-key")
+                else:
+                    activity_log.result = 'ignored'
+                    activity_log.exception_message = 'Only remote users can be deleted remotely'
+            else:
+                activity_log.result = 'ignored'
+                activity_log.exception_message = 'Does not exist here'
             db.session.commit()
 
 

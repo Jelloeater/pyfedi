@@ -6,7 +6,7 @@ from flask_babel import _
 from sqlalchemy import text, desc
 
 from app import db
-from app.activitypub.routes import process_inbox_request
+from app.activitypub.routes import process_inbox_request, process_delete_request
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site
 from app.utils import render_template, permission_required, set_setting, get_setting
@@ -131,10 +131,8 @@ def admin_activities():
 
     activities = ActivityPubLog.query.order_by(desc(ActivityPubLog.created_at)).paginate(page=page, per_page=1000, error_out=False)
 
-    next_url = url_for('admin.admin_activities',
-                       page=activities.next_num) if activities.has_next else None
-    prev_url = url_for('admin.admin_activities',
-                       page=activities.prev_num) if activities.has_prev and page != 1 else None
+    next_url = url_for('admin.admin_activities', page=activities.next_num) if activities.has_next else None
+    prev_url = url_for('admin.admin_activities', page=activities.prev_num) if activities.has_prev and page != 1 else None
 
     return render_template('admin/activities.html', title=_('ActivityPub Log'), next_url=next_url, prev_url=prev_url,
                            activities=activities)
@@ -154,5 +152,9 @@ def activity_json(activity_id):
 @permission_required('change instance settings')
 def activity_replay(activity_id):
     activity = ActivityPubLog.query.get_or_404(activity_id)
-    process_inbox_request(json.loads(activity.activity_json), activity.id)
+    request_json = json.loads(activity.activity_json)
+    if 'type' in request_json and request_json['type'] == 'Delete' and request_json['id'].endswith('#delete'):
+        process_delete_request(request_json, activity.id)
+    else:
+        process_inbox_request(request_json, activity.id)
     return 'Ok'

@@ -32,7 +32,10 @@ class RegistrationForm(FlaskForm):
     def validate_user_name(self, user_name):
         user = User.query.filter_by(user_name=user_name.data).first()
         if user is not None:
-            raise ValidationError(_('An account with this user name already exists.'))
+            if user.deleted:
+                raise ValidationError(_('This username was used in the past and cannot be reused.'))
+            else:
+                raise ValidationError(_('An account with this user name already exists.'))
         community = Community.query.filter_by(name=user_name.data).first()
         if community is not None:
             raise ValidationError(_('A community with this name exists so it cannot be used for a user.'))

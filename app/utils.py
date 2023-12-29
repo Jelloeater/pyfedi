@@ -84,6 +84,28 @@ def get_request(uri, params=None, headers=None) -> requests.Response:
     return response
 
 
+# do a HEAD request to a uri, return the result
+def head_request(uri, params=None, headers=None) -> requests.Response:
+    if headers is None:
+        headers = {'User-Agent': 'PieFed/1.0'}
+    else:
+        headers.update({'User-Agent': 'PieFed/1.0'})
+    try:
+        response = requests.head(uri, params=params, headers=headers, timeout=5, allow_redirects=True)
+    except requests.exceptions.SSLError as invalid_cert:
+        # Not our problem if the other end doesn't have proper SSL
+        current_app.logger.info(f"{uri} {invalid_cert}")
+        raise requests.exceptions.SSLError from invalid_cert
+    except ValueError as ex:
+        # Convert to a more generic error we handle
+        raise requests.exceptions.RequestException(f"InvalidCodepoint: {str(ex)}") from None
+    except requests.exceptions.ReadTimeout as read_timeout:
+        current_app.logger.info(f"{uri} {read_timeout}")
+        raise requests.exceptions.ReadTimeout from read_timeout
+
+    return response
+
+
 # saves an arbitrary object into a persistent key-value store. cached.
 @cache.memoize(timeout=50)
 def get_setting(name: str, default=None):
