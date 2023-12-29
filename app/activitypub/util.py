@@ -201,7 +201,7 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                 return None
         user = User.query.filter_by(
             ap_profile_id=actor).first()  # finds users formatted like https://kbin.social/u/tables
-        if user and user.banned:
+        if (user and user.banned) or (user and user.deleted) :
             return None
         if user is None:
             user = Community.query.filter_by(ap_profile_id=actor).first()

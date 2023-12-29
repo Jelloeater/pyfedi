@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from time import sleep
 
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
@@ -224,8 +225,9 @@ def delete_account():
         if current_user.cover_id:
             current_user.cover.delete_from_disk()
             current_user.cover.source_url = ''
+
+        # to verify the deletes, remote servers will GET /u/<actor> so we can't fully delete the account until the POSTs are done
         current_user.banned = True
-        current_user.deleted = True
 
         db.session.commit()
 
@@ -235,7 +237,7 @@ def delete_account():
             send_deletion_requests.delay(current_user.id)
 
         logout_user()
-        flash(_('Your account has been deleted.'), 'success')
+        flash(_('Account deletion in progress. Give it a few minutes.'), 'success')
         return redirect(url_for('main.index'))
     elif request.method == 'GET':
         ...
@@ -248,12 +250,11 @@ def send_deletion_requests(user_id):
     user = User.query.get(user_id)
     if user:
         instances = Instance.query.all()
-        site = Site.query.get(1)
         payload = {
             "@context": default_context(),
-            "actor": user.ap_profile_id,
-            "id": f"{user.ap_profile_id}#delete",
-            "object": user.ap_profile_id,
+            "actor": user.profile_id(),
+            "id": f"{user.profile_id()}#delete",
+            "object": user.profile_id(),
             "to": [
                 "https://www.w3.org/ns/activitystreams#Public"
             ],
@@ -261,8 +262,14 @@ def send_deletion_requests(user_id):
         }
         for instance in instances:
             if instance.inbox and instance.alive() and instance.id != 1: # instance id 1 is always the current instance
-                post_request(instance.inbox, payload, site.private_key,
-                             f"https://{current_app.config['SERVER_NAME']}#main-key")
+                post_request(instance.inbox, payload, user.private_key, f"{user.profile_id()}#main-key")
+
+        sleep(5)
+
+        user.banned = True
+        user.deleted = True
+
+        db.session.commit()
 
 
 @bp.route('/u/<actor>/ban_purge', methods=['GET'])

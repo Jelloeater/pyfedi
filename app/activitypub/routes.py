@@ -145,7 +145,7 @@ def user_profile(actor):
     if '@' in actor:
         user: User = User.query.filter_by(ap_id=actor, deleted=False, banned=False).first()
     else:
-        user: User = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
+        user: User = User.query.filter_by(user_name=actor, deleted=False, ap_id=None).first()
 
     if user is not None:
         if request.method == 'HEAD':
