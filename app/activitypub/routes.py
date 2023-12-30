@@ -1,3 +1,5 @@
+from typing import Union
+
 from app import db, constants, cache, celery
 from app.activitypub import bp
 from flask import request, Response, current_app, abort, jsonify, json, g
@@ -13,7 +15,8 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
     upvote_post, activity_already_ingested, make_image_sizes, delete_post_or_comment, community_members, \
-    user_removed_from_remote_server
+    user_removed_from_remote_server, create_post, create_post_reply, update_post_reply_from_activity, \
+    update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text
 import werkzeug.exceptions
@@ -372,114 +375,11 @@ def process_inbox_request(request_json, activitypublog_id):
                         if object_type in new_content_types:  # create a new post
                             in_reply_to = request_json['object']['inReplyTo'] if 'inReplyTo' in request_json['object'] else None
                             if not in_reply_to:
-                                post = Post(user_id=user.id, community_id=community.id,
-                                            title=request_json['object']['name'],
-                                            comments_enabled=request_json['object']['commentsEnabled'],
-                                            sticky=request_json['object']['stickied'] if 'stickied' in request_json['object'] else False,
-                                            nsfw=request_json['object']['sensitive'],
-                                            nsfl=request_json['object']['nsfl'] if 'nsfl' in request_json['object'] else False,
-                                            ap_id=request_json['object']['id'],
-                                            ap_create_id=request_json['id'],
-                                            ap_announce_id=None,
-                                            type=constants.POST_TYPE_ARTICLE,
-                                            up_votes=1,
-                                            score=instance_weight(user.ap_domain)
-                                            )
-                                if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
-                                    post.body = request_json['object']['source']['content']
-                                    post.body_html = markdown_to_html(post.body)
-                                elif 'content' in request_json['object'] and request_json['object']['content'] is not None:
-                                    post.body_html = allowlist_html(request_json['object']['content'])
-                                    post.body = html_to_markdown(post.body_html)
-                                if 'attachment' in request_json['object'] and len(request_json['object']['attachment']) > 0 and \
-                                        'type' in request_json['object']['attachment'][0]:
-                                    if request_json['object']['attachment'][0]['type'] == 'Link':
-                                        post.url = request_json['object']['attachment'][0]['href']
-                                        if is_image_url(post.url):
-                                            post.type = POST_TYPE_IMAGE
-                                        else:
-                                            post.type = POST_TYPE_LINK
-                                        domain = domain_from_url(post.url)
-                                        # notify about links to banned websites.
-                                        already_notified = set()  # often admins and mods are the same people - avoid notifying them twice
-                                        if domain.notify_mods:
-                                            for community_member in post.community.moderators():
-                                                notify = Notification(title='Suspicious content', url=post.ap_id,
-                                                                      user_id=community_member.user_id,
-                                                                      author_id=user.id)
-                                                db.session.add(notify)
-                                                already_notified.add(community_member.user_id)
-                                        if domain.notify_admins:
-                                            for admin in Site.admins():
-                                                if admin.id not in already_notified:
-                                                    notify = Notification(title='Suspicious content',
-                                                                          url=post.ap_id, user_id=admin.id,
-                                                                          author_id=user.id)
-                                                    db.session.add(notify)
-                                        if domain.banned:
-                                            post = None
-                                            activity_log.exception_message = domain.name + ' is blocked by admin'
-                                        if not domain.banned:
-                                            domain.post_count += 1
-                                            post.domain = domain
-
-                                if 'image' in request_json['object']:
-                                    image = File(source_url=request_json['object']['image']['url'])
-                                    db.session.add(image)
-                                    post.image = image
-
-                                if post is not None:
-                                    db.session.add(post)
-                                    community.post_count += 1
-                                    community.last_active = utcnow()
-                                    activity_log.result = 'success'
-                                    db.session.commit()
-
-                                    if post.image_id:
-                                        make_image_sizes(post.image_id, 266, None, 'posts')
-
-                                    vote = PostVote(user_id=user.id, author_id=post.user_id,
-                                                    post_id=post.id,
-                                                    effect=instance_weight(user.ap_domain))
-                                    db.session.add(vote)
+                                post = create_post(activity_log, community, request_json, user)
                             else:
-                                post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
-                                post_reply = PostReply(user_id=user.id, community_id=community.id,
-                                                       post_id=post_id, parent_id=parent_comment_id,
-                                                       root_id=root_id,
-                                                       nsfw=community.nsfw,
-                                                       nsfl=community.nsfl,
-                                                       up_votes=1,
-                                                       score=instance_weight(user.ap_domain),
-                                                       ap_id=request_json['object']['id'],
-                                                       ap_create_id=request_json['id'],
-                                                       ap_announce_id=None,
-                                                       instance_id=user.instance_id)
-                                if 'source' in request_json['object'] and \
-                                        request_json['object']['source']['mediaType'] == 'text/markdown':
-                                    post_reply.body = request_json['object']['source']['content']
-                                    post_reply.body_html = markdown_to_html(post_reply.body)
-                                elif 'content' in request_json['object']:
-                                    post_reply.body_html = allowlist_html(request_json['object']['content'])
-                                    post_reply.body = html_to_markdown(post_reply.body_html)
-
-                                if post_reply is not None:
-                                    post = Post.query.get(post_id)
-                                    if post.comments_enabled:
-                                        db.session.add(post_reply)
-                                        post.reply_count += 1
-                                        community.post_reply_count += 1
-                                        community.last_active = post.last_active = utcnow()
-                                        activity_log.result = 'success'
-                                        db.session.commit()
-                                        vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id,
-                                                             post_reply_id=post_reply.id,
-                                                             effect=instance_weight(user.ap_domain))
-                                        db.session.add(vote)
-                                    else:
-                                        activity_log.exception_message = 'Comments disabled'
+                                post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
                         else:
-                            activity_log.exception_message = 'Unacceptable type (kbin): ' + object_type
+                            activity_log.exception_message = 'Unacceptable type (create): ' + object_type
                     else:
                         if user is None or community is None:
                             activity_log.exception_message = 'Blocked or unfound user or community'
@@ -502,106 +402,10 @@ def process_inbox_request(request_json, activitypublog_id):
                             if object_type in new_content_types:  # create a new post
                                 in_reply_to = request_json['object']['object']['inReplyTo'] if 'inReplyTo' in \
                                                                                                request_json['object']['object'] else None
-
                                 if not in_reply_to:
-                                    post = Post(user_id=user.id, community_id=community.id,
-                                                title=request_json['object']['object']['name'],
-                                                comments_enabled=request_json['object']['object']['commentsEnabled'],
-                                                sticky=request_json['object']['object']['stickied'] if 'stickied' in request_json['object']['object'] else False,
-                                                nsfw=request_json['object']['object']['sensitive'] if 'sensitive' in request_json['object']['object'] else False,
-                                                nsfl=request_json['object']['object']['nsfl'] if 'nsfl' in request_json['object']['object'] else False,
-                                                ap_id=request_json['object']['object']['id'],
-                                                ap_create_id=request_json['object']['id'],
-                                                ap_announce_id=request_json['id'],
-                                                type=constants.POST_TYPE_ARTICLE
-                                                )
-                                    if 'source' in request_json['object']['object'] and \
-                                            request_json['object']['object']['source']['mediaType'] == 'text/markdown':
-                                        post.body = request_json['object']['object']['source']['content']
-                                        post.body_html = markdown_to_html(post.body)
-                                    elif 'content' in request_json['object']['object']:
-                                        post.body_html = allowlist_html(request_json['object']['object']['content'])
-                                        post.body = html_to_markdown(post.body_html)
-                                    if 'attachment' in request_json['object']['object'] and \
-                                            len(request_json['object']['object']['attachment']) > 0 and \
-                                            'type' in request_json['object']['object']['attachment'][0]:
-                                        if request_json['object']['object']['attachment'][0]['type'] == 'Link':
-                                            post.url = request_json['object']['object']['attachment'][0]['href']
-                                            if is_image_url(post.url):
-                                                post.type = POST_TYPE_IMAGE
-                                            else:
-                                                post.type = POST_TYPE_LINK
-                                            domain = domain_from_url(post.url)
-                                            # notify about links to banned websites.
-                                            already_notified = set()  # often admins and mods are the same people - avoid notifying them twice
-                                            if domain.notify_mods:
-                                                for community_member in post.community.moderators():
-                                                    notify = Notification(title='Suspicious content', url=post.ap_id,
-                                                                          user_id=community_member.user_id,
-                                                                          author_id=user.id)
-                                                    db.session.add(notify)
-                                                    already_notified.add(community_member.user_id)
-                                            if domain.notify_admins:
-                                                for admin in Site.admins():
-                                                    if admin.id not in already_notified:
-                                                        notify = Notification(title='Suspicious content',
-                                                                              url=post.ap_id, user_id=admin.id,
-                                                                              author_id=user.id)
-                                                        db.session.add(notify)
-                                            if domain.banned:
-                                                post = None
-                                                activity_log.exception_message = domain.name + ' is blocked by admin'
-                                            if not domain.banned:
-                                                domain.post_count += 1
-                                                post.domain = domain
-
-                                    if 'image' in request_json['object']['object'] and post:
-                                        image = File(source_url=request_json['object']['object']['image']['url'])
-                                        db.session.add(image)
-                                        post.image = image
-
-                                        if post is not None:
-                                            db.session.add(post)
-                                            community.post_count += 1
-                                            activity_log.result = 'success'
-                                            db.session.commit()
-                                            if post.image_id:
-                                                make_image_sizes(post.image_id, 266, None, 'posts')
+                                    post = create_post(activity_log, community, request_json['object'], user, announce_id=request_json['id'])
                                 else:
-                                    post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
-                                    if post_id or parent_comment_id or root_id:
-                                        post_reply = PostReply(user_id=user.id, community_id=community.id,
-                                                               post_id=post_id, parent_id=parent_comment_id,
-                                                               root_id=root_id,
-                                                               nsfw=community.nsfw,
-                                                               nsfl=community.nsfl,
-                                                               ap_id=request_json['object']['object']['id'],
-                                                               ap_create_id=request_json['object']['id'],
-                                                               ap_announce_id=request_json['id'],
-                                                               instance_id=user.instance_id)
-                                        if 'source' in request_json['object']['object'] and \
-                                                request_json['object']['object']['source']['mediaType'] == 'text/markdown':
-                                            post_reply.body = request_json['object']['object']['source']['content']
-                                            post_reply.body_html = markdown_to_html(post_reply.body)
-                                        elif 'content' in request_json['object']['object']:
-                                            post_reply.body_html = allowlist_html(
-                                                request_json['object']['object']['content'])
-                                            post_reply.body = html_to_markdown(post_reply.body_html)
-
-                                        if post_reply is not None:
-                                            post = Post.query.get(post_id)
-                                            if post.comments_enabled:
-                                                db.session.add(post_reply)
-                                                community.post_reply_count += 1
-                                                community.last_active = utcnow()
-                                                post.last_active = utcnow()
-                                                post.reply_count += 1
-                                                activity_log.result = 'success'
-                                                db.session.commit()
-                                            else:
-                                                activity_log.exception_message = 'Comments disabled'
-                                    else:
-                                        activity_log.exception_message = 'Parent not found'
+                                    post = create_post_reply(activity_log, community, in_reply_to, request_json['object'], user, announce_id=request_json['id'])
                             else:
                                 activity_log.exception_message = 'Unacceptable type: ' + object_type
                         else:
@@ -680,31 +484,14 @@ def process_inbox_request(request_json, activitypublog_id):
                     elif request_json['object']['type'] == 'Page': # Editing a post
                         post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                         if post:
-                            post.title = request_json['object']['name']
-                            if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
-                                post.body = request_json['object']['source']['content']
-                                post.body_html = markdown_to_html(post.body)
-                            elif 'content' in request_json['object']:
-                                post.body_html = allowlist_html(request_json['object']['content'])
-                                post.body = html_to_markdown(post.body_html)
-                            if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
-                                post.url = request_json['object']['attachment']['href']
-                            post.edited_at = utcnow()
-                            db.session.commit()
+                            update_post_from_activity(post, request_json)
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'Post not found'
                     elif request_json['object']['type'] == 'Note':  # Editing a reply
                         reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
                         if reply:
-                            if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
-                                reply.body = request_json['object']['source']['content']
-                                reply.body_html = markdown_to_html(reply.body)
-                            elif 'content' in request_json['object']:
-                                reply.body_html = allowlist_html(request_json['object']['content'])
-                                reply.body = html_to_markdown(reply.body_html)
-                            reply.edited_at = utcnow()
-                            db.session.commit()
+                            update_post_reply_from_activity(reply, request_json)
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'PostReply not found'
@@ -745,17 +532,10 @@ def process_inbox_request(request_json, activitypublog_id):
                                 "type": "Accept",
                                 "id": f"https://{current_app.config['SERVER_NAME']}/activities/accept/" + gibberish(32)
                             }
-                            try:
-                                HttpSignature.signed_request(user.ap_inbox_url, accept, community.private_key,
-                                                             f"https://{current_app.config['SERVER_NAME']}/c/{community.name}#main-key")
-                            except Exception as e:
-                                accept_log = ActivityPubLog(direction='out', activity_json=json.dumps(accept),
-                                                            result='failure', activity_id=accept['id'],
-                                                            exception_message='could not send Accept' + str(e))
-                                db.session.add(accept_log)
-                                db.session.commit()
-                                return ''
-                            activity_log.result = 'success'
+                            if post_request(user.ap_inbox_url, accept, community.private_key, f"https://{current_app.config['SERVER_NAME']}/c/{community.name}#main-key"):
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'Error sending Accept'
                         else:
                             activity_log.exception_message = 'user is banned from this community'
                 # Accept: remote server is accepting our previous follow request
@@ -787,6 +567,7 @@ def process_inbox_request(request_json, activitypublog_id):
                             join_request = CommunityJoinRequest.query.filter_by(user_id=user.id, community_id=community.id).first()
                             if member:
                                 db.session.delete(member)
+                                community.subscriptions_count -= 1
                             if join_request:
                                 db.session.delete(join_request)
                             db.session.commit()
@@ -798,39 +579,7 @@ def process_inbox_request(request_json, activitypublog_id):
                         post = None
                         comment = None
                         target_ap_id = request_json['object']['object']
-                        if '/comment/' in target_ap_id:
-                            comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
-                        if '/post/' in target_ap_id:
-                            post = Post.query.filter_by(ap_id=target_ap_id).first()
-                        if (user and not user.is_local()) and post:
-                            user.last_seen = utcnow()
-                            existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
-                            if existing_vote:
-                                post.author.reputation -= existing_vote.effect
-                                if existing_vote.effect < 0:  # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
-                                    post.down_votes -= 1
-                                else:
-                                    post.up_votes -= 1
-                                post.score -= existing_vote.effect
-                                db.session.delete(existing_vote)
-                                activity_log.result = 'success'
-                        if (user and not user.is_local()) and comment:
-                            existing_vote = PostReplyVote.query.filter_by(user_id=user.id, post_reply_id=comment.id).first()
-                            if existing_vote:
-                                comment.author.reputation -= existing_vote.effect
-                                if existing_vote.effect < 0:  # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
-                                    comment.down_votes -= 1
-                                else:
-                                    comment.up_votes -= 1
-                                comment.score -= existing_vote.effect
-                                db.session.delete(existing_vote)
-                                activity_log.result = 'success'
-                        else:
-                            if user is None or comment is None:
-                                activity_log.exception_message = 'Blocked or unfound user or comment'
-                            if user and user.is_local():
-                                activity_log.exception_message = 'Activity about local content which is already present'
-                                activity_log.result = 'ignored'
+                        post = undo_vote(activity_log, comment, post, target_ap_id, user)
 
                     elif request_json['object']['type'] == 'Dislike':  # Undoing a downvote - probably unused
                         activity_log.activity_type = request_json['object']['type']
@@ -839,63 +588,21 @@ def process_inbox_request(request_json, activitypublog_id):
                         post = None
                         comment = None
                         target_ap_id = request_json['object']['object']
-                        if '/comment/' in target_ap_id:
-                            comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
-                        if '/post/' in target_ap_id:
-                            post = Post.query.filter_by(ap_id=target_ap_id).first()
-                        if (user and not user.is_local()) and post:
-                            existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
-                            if existing_vote:
-                                post.author.reputation -= existing_vote.effect
-                                post.down_votes -= 1
-                                post.score -= existing_vote.effect
-                                db.session.delete(existing_vote)
-                                activity_log.result = 'success'
-                        if (user and not user.is_local()) and comment:
-                            existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
-                                                                          post_reply_id=comment.id).first()
-                            if existing_vote:
-                                comment.author.reputation -= existing_vote.effect
-                                comment.down_votes -= 1
-                                comment.score -= existing_vote.effect
-                                db.session.delete(existing_vote)
-                                activity_log.result = 'success'
-
-                        if user is None:
-                            activity_log.exception_message = 'Blocked or unfound user'
-                        if user and user.is_local():
-                            activity_log.exception_message = 'Activity about local content which is already present'
-                            activity_log.result = 'ignored'
+                        post = undo_downvote(activity_log, comment, post, target_ap_id, user)
 
                 elif request_json['type'] == 'Update':
                     activity_log.activity_type = 'Update'
                     if request_json['object']['type'] == 'Page':  # Editing a post
                         post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                         if post:
-                            if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
-                                post.body = request_json['object']['source']['content']
-                                post.body_html = markdown_to_html(post.body)
-                            elif 'content' in request_json['object']:
-                                post.body_html = allowlist_html(request_json['object']['content'])
-                                post.body = html_to_markdown(post.body_html)
-                            if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
-                                post.url = request_json['object']['attachment']['href']
-                            post.edited_at = utcnow()
-                            db.session.commit()
+                            update_post_from_activity(post, request_json)
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'Post not found'
                     elif request_json['object']['type'] == 'Note':  # Editing a reply
                         reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
                         if reply:
-                            if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
-                                reply.body = request_json['object']['source']['content']
-                                reply.body_html = markdown_to_html(reply.body)
-                            elif 'content' in request_json['object']:
-                                reply.body_html = allowlist_html(request_json['object']['content'])
-                                reply.body = html_to_markdown(reply.body_html)
-                            reply.edited_at = utcnow()
-                            db.session.commit()
+                            update_post_reply_from_activity(reply, request_json)
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'PostReply not found'

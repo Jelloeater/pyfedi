@@ -862,6 +862,215 @@ def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id
                 db.session.commit()
 
 
+def create_post_reply(activity_log: ActivityPubLog, community: Community, in_reply_to, request_json: dict, user: User, announce_id=None) -> Union[Post, None]:
+    post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
+    if post_id or parent_comment_id or root_id:
+        post_reply = PostReply(user_id=user.id, community_id=community.id,
+                               post_id=post_id, parent_id=parent_comment_id,
+                               root_id=root_id,
+                               nsfw=community.nsfw,
+                               nsfl=community.nsfl,
+                               up_votes=1,
+                               score=instance_weight(user.ap_domain),
+                               ap_id=request_json['object']['id'],
+                               ap_create_id=request_json['id'],
+                               ap_announce_id=announce_id,
+                               instance_id=user.instance_id)
+        if 'source' in request_json['object'] and \
+                request_json['object']['source']['mediaType'] == 'text/markdown':
+            post_reply.body = request_json['object']['source']['content']
+            post_reply.body_html = markdown_to_html(post_reply.body)
+        elif 'content' in request_json['object']:
+            post_reply.body_html = allowlist_html(request_json['object']['content'])
+            post_reply.body = html_to_markdown(post_reply.body_html)
+        if post_id is not None:
+            post = Post.query.get(post_id)
+            if post.comments_enabled:
+                db.session.add(post_reply)
+                post.reply_count += 1
+                community.post_reply_count += 1
+                community.last_active = post.last_active = utcnow()
+                activity_log.result = 'success'
+                db.session.commit()
+                vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id,
+                                     post_reply_id=post_reply.id,
+                                     effect=instance_weight(user.ap_domain))
+                db.session.add(vote)
+            else:
+                activity_log.exception_message = 'Comments disabled, reply discarded'
+                activity_log.result = 'ignored'
+            return post
+        else:
+            activity_log.exception_message = 'Could not find parent post'
+            return None
+    else:
+        activity_log.exception_message = 'Parent not found'
+
+
+def create_post(activity_log: ActivityPubLog, community: Community, request_json: dict, user: User, announce_id=None) -> Union[Post, None]:
+    post = Post(user_id=user.id, community_id=community.id,
+                title=request_json['object']['name'],
+                comments_enabled=request_json['object']['commentsEnabled'],
+                sticky=request_json['object']['stickied'] if 'stickied' in request_json['object'] else False,
+                nsfw=request_json['object']['sensitive'],
+                nsfl=request_json['object']['nsfl'] if 'nsfl' in request_json['object'] else False,
+                ap_id=request_json['object']['id'],
+                ap_create_id=request_json['id'],
+                ap_announce_id=announce_id,
+                type=constants.POST_TYPE_ARTICLE,
+                up_votes=1,
+                score=instance_weight(user.ap_domain)
+                )
+    if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+        post.body = request_json['object']['source']['content']
+        post.body_html = markdown_to_html(post.body)
+    elif 'content' in request_json['object'] and request_json['object']['content'] is not None:
+        post.body_html = allowlist_html(request_json['object']['content'])
+        post.body = html_to_markdown(post.body_html)
+    if 'attachment' in request_json['object'] and len(request_json['object']['attachment']) > 0 and \
+            'type' in request_json['object']['attachment'][0]:
+        if request_json['object']['attachment'][0]['type'] == 'Link':
+            post.url = request_json['object']['attachment'][0]['href']
+            if is_image_url(post.url):
+                post.type = POST_TYPE_IMAGE
+            else:
+                post.type = POST_TYPE_LINK
+            domain = domain_from_url(post.url)
+            # notify about links to banned websites.
+            already_notified = set()  # often admins and mods are the same people - avoid notifying them twice
+            if domain.notify_mods:
+                for community_member in post.community.moderators():
+                    notify = Notification(title='Suspicious content', url=post.ap_id,
+                                          user_id=community_member.user_id,
+                                          author_id=user.id)
+                    db.session.add(notify)
+                    already_notified.add(community_member.user_id)
+            if domain.notify_admins:
+                for admin in Site.admins():
+                    if admin.id not in already_notified:
+                        notify = Notification(title='Suspicious content',
+                                              url=post.ap_id, user_id=admin.id,
+                                              author_id=user.id)
+                        db.session.add(notify)
+            if domain.banned:
+                post = None
+                activity_log.exception_message = domain.name + ' is blocked by admin'
+            if not domain.banned:
+                domain.post_count += 1
+                post.domain = domain
+    if 'image' in request_json['object']:
+        image = File(source_url=request_json['object']['image']['url'])
+        db.session.add(image)
+        post.image = image
+    if post is not None:
+        db.session.add(post)
+        community.post_count += 1
+        community.last_active = utcnow()
+        activity_log.result = 'success'
+        db.session.commit()
+
+        if post.image_id:
+            make_image_sizes(post.image_id, 266, None, 'posts')
+
+        vote = PostVote(user_id=user.id, author_id=post.user_id,
+                        post_id=post.id,
+                        effect=instance_weight(user.ap_domain))
+        db.session.add(vote)
+    return post
+
+
+def update_post_reply_from_activity(reply: PostReply, request_json: dict):
+    if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+        reply.body = request_json['object']['source']['content']
+        reply.body_html = markdown_to_html(reply.body)
+    elif 'content' in request_json['object']:
+        reply.body_html = allowlist_html(request_json['object']['content'])
+        reply.body = html_to_markdown(reply.body_html)
+    reply.edited_at = utcnow()
+    db.session.commit()
+
+
+def update_post_from_activity(post: Post, request_json: dict):
+    post.title = request_json['object']['name']
+    if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+        post.body = request_json['object']['source']['content']
+        post.body_html = markdown_to_html(post.body)
+    elif 'content' in request_json['object']:
+        post.body_html = allowlist_html(request_json['object']['content'])
+        post.body = html_to_markdown(post.body_html)
+    if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
+        post.url = request_json['object']['attachment']['href']
+    post.edited_at = utcnow()
+    db.session.commit()
+
+
+def undo_downvote(activity_log, comment, post, target_ap_id, user):
+    if '/comment/' in target_ap_id:
+        comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
+    if '/post/' in target_ap_id:
+        post = Post.query.filter_by(ap_id=target_ap_id).first()
+    if (user and not user.is_local()) and post:
+        existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+        if existing_vote:
+            post.author.reputation -= existing_vote.effect
+            post.down_votes -= 1
+            post.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+            activity_log.result = 'success'
+    if (user and not user.is_local()) and comment:
+        existing_vote = PostReplyVote.query.filter_by(user_id=user.id,
+                                                      post_reply_id=comment.id).first()
+        if existing_vote:
+            comment.author.reputation -= existing_vote.effect
+            comment.down_votes -= 1
+            comment.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+            activity_log.result = 'success'
+    if user is None:
+        activity_log.exception_message = 'Blocked or unfound user'
+    if user and user.is_local():
+        activity_log.exception_message = 'Activity about local content which is already present'
+        activity_log.result = 'ignored'
+    return post
+
+
+def undo_vote(activity_log, comment, post, target_ap_id, user):
+    if '/comment/' in target_ap_id:
+        comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
+    if '/post/' in target_ap_id:
+        post = Post.query.filter_by(ap_id=target_ap_id).first()
+    if (user and not user.is_local()) and post:
+        user.last_seen = utcnow()
+        existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
+        if existing_vote:
+            post.author.reputation -= existing_vote.effect
+            if existing_vote.effect < 0:  # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
+                post.down_votes -= 1
+            else:
+                post.up_votes -= 1
+            post.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+            activity_log.result = 'success'
+    if (user and not user.is_local()) and comment:
+        existing_vote = PostReplyVote.query.filter_by(user_id=user.id, post_reply_id=comment.id).first()
+        if existing_vote:
+            comment.author.reputation -= existing_vote.effect
+            if existing_vote.effect < 0:  # Lemmy sends 'like' for upvote and 'dislike' for down votes. Cool! When it undoes an upvote it sends an 'Undo Like'. Fine. When it undoes a downvote it sends an 'Undo Like' - not 'Undo Dislike'?!
+                comment.down_votes -= 1
+            else:
+                comment.up_votes -= 1
+            comment.score -= existing_vote.effect
+            db.session.delete(existing_vote)
+            activity_log.result = 'success'
+    else:
+        if user is None or comment is None:
+            activity_log.exception_message = 'Blocked or unfound user or comment'
+        if user and user.is_local():
+            activity_log.exception_message = 'Activity about local content which is already present'
+            activity_log.result = 'ignored'
+    return post
+
+
 def lemmy_site_data():
     site = g.site
     data = {
