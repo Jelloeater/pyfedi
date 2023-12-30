@@ -3,14 +3,14 @@ from flask import redirect, url_for, flash, request, make_response, session, Mar
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
-from app import db
+from app import db, cache
 from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.auth.util import random_token
 from app.models import User, utcnow, IpBan
 from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
 from app.activitypub.signature import RsaKeys
-from app.utils import render_template, ip_address, user_ip_banned, user_cookie_banned
+from app.utils import render_template, ip_address, user_ip_banned, user_cookie_banned, banned_ip_addresses
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -50,6 +50,7 @@ def login():
                 new_ip_ban = IpBan(ip_address=ip_address(), notes=user.user_name + ' used new IP address')
                 db.session.add(new_ip_ban)
                 db.session.commit()
+                cache.delete_memoized('banned_ip_addresses')
 
             # Set a cookie so we have another way to track banned people
             response.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))

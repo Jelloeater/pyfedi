@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <form method="get">
+            <input type="search" name="search"> <input type="submit" name="submit" value="Search">
+        </form>
+        <table class="table table-striped">
+            <tr>
+               <th>Name</th>
+               <th>Title</th>
+               <th># Posts</th>
+               <th>Home</th>
+               <th>Popular</th>
+               <th>All</th>
+               <th>Quality</th>
+               <th>Actions</th>
+            </tr>
+            {% for community in communities %}
+                <tr>
+                    <td>{{ community.name }}</td>
+                    <td><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" />
+                        {{ community.display_name() }}</td>
+                    <td>{{ community.post_count  }}</td>
+                    <th>{{ '&check;'|safe if community.show_home else '&cross;'|safe }}</th>
+                    <th>{{ '&check;'|safe if community.show_popular else '&cross;'|safe }}</th>
+                    <th>{{ '&check;'|safe if community.show_all else '&cross;'|safe }}</th>
+                    <th>{{ '<span class="fe fe-arrow-down"> </span>'|safe if community.low_quality else ' ' }}</th>
+                    <td><a href="/c/{{ community.link() }}">View</a> |
+                        <a href="{{ url_for('admin.admin_community_edit', community_id=community.id) }}">Edit</a> |
+                        <a href="{{ url_for('admin.admin_community_delete', community_id=community.id) }}" class="confirm_first">Delete</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        <nav aria-label="Pagination" class="mt-4">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}" class="btn btn-primary">
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                    </a>
+                {% endif %}
+                {% if next_url %}
+                    <a href="{{ next_url }}" class="btn btn-primary">
+                        {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+        </nav>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_field %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col col-login mx-auto">
+        <h3>{{ _('Edit %(community_name)s', community_name=community.display_name()) }}</h3>
+        <form method="post" enctype="multipart/form-data" id="add_local_community_form">
+            {{ form.csrf_token() }}
+            {{ render_field(form.title) }}
+            <div class="form-group">{{ form.url.label(class_="form-control-label required") }}
+                /c/{{ form.url(class_="form-control", maxlength=255) }}
+                {% for error in form.url.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            {{ render_field(form.description) }}
+            {% if community.icon_id %}
+                <img class="community_icon_big rounded-circle" src="{{ community.icon_image() }}" />
+            {% endif %}
+            {{ render_field(form.icon_file) }}
+            <small class="field_hint">Provide a square image that looks good when small.</small>
+            {% if community.image_id %}
+                <a href="{{ community.header_image() }}"><img class="community_icon_big" src="{{ community.header_image() }}" /></a>
+            {% endif %}
+            {{ render_field(form.banner_file) }}
+            <small class="field_hint">Provide a wide image - letterbox orientation.</small>
+            {{ render_field(form.rules) }}
+            {{ render_field(form.nsfw) }}
+            {% if not community.is_local() %}
+            <fieldset class="border pl-2 pt-2 mb-4">
+                <legend>{{ _('Will not be overwritten by remote server') }}</legend>
+            {% endif %}
+                {{ render_field(form.show_home) }}
+                {{ render_field(form.show_popular) }}
+                {{ render_field(form.show_all) }}
+                {{ render_field(form.low_quality) }}
+                {{ render_field(form.content_retention) }}
+            {% if not community.is_local() %}
+            </fieldset>
+            {% endif %}
+            {{ render_field(form.submit) }}
+        </form>
+    </div>
+</div>
+{% endblock %}

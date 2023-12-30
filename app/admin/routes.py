@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
 
-from flask import request, flash, json, url_for, current_app
+from flask import request, flash, json, url_for, current_app, redirect
 from flask_login import login_required, current_user
 from flask_babel import _
 from sqlalchemy import text, desc
 
 from app import db
 from app.activitypub.routes import process_inbox_request, process_delete_request
-from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm
-from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site
+from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm
+from app.community.util import save_icon_file, save_banner_file
+from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community
 from app.utils import render_template, permission_required, set_setting, get_setting
 from app.admin import bp
 
@@ -158,3 +159,76 @@ def activity_replay(activity_id):
     else:
         process_inbox_request(request_json, activity.id)
     return 'Ok'
+
+
+@bp.route('/communities', methods=['GET'])
+@login_required
+@permission_required('administer all communities')
+def admin_communities():
+
+    page = request.args.get('page', 1, type=int)
+
+    communities = Community.query.order_by(Community.title).paginate(page=page, per_page=1000, error_out=False)
+
+    next_url = url_for('admin.admin_communities', page=communities.next_num) if communities.has_next else None
+    prev_url = url_for('admin.admin_communities', page=communities.prev_num) if communities.has_prev and page != 1 else None
+
+    return render_template('admin/communities.html', title=_('Communities'), next_url=next_url, prev_url=prev_url,
+                           communities=communities)
+
+
+@bp.route('/community/<int:community_id>/edit', methods=['GET', 'POST'])
+@login_required
+@permission_required('administer all communities')
+def admin_community_edit(community_id):
+    form = EditCommunityForm()
+    community = Community.query.get_or_404(community_id)
+    if form.validate_on_submit():
+        community.name = form.url.data
+        community.title = form.title.data
+        community.description = form.description.data
+        community.rules = form.rules.data
+        community.nsfw = form.nsfw.data
+        community.show_home = form.show_home.data
+        community.show_popular = form.show_popular.data
+        community.show_all = form.show_all.data
+        community.low_quality = form.low_quality.data
+        community.content_retention = form.content_retention.data
+        icon_file = request.files['icon_file']
+        if icon_file and icon_file.filename != '':
+            if community.icon_id:
+                community.icon.delete_from_disk()
+            file = save_icon_file(icon_file)
+            if file:
+                community.icon = file
+        banner_file = request.files['banner_file']
+        if banner_file and banner_file.filename != '':
+            if community.image_id:
+                community.image.delete_from_disk()
+            file = save_banner_file(banner_file)
+            if file:
+                community.image = file
+        db.session.commit()
+        flash(_('Saved'))
+        return redirect(url_for('admin.admin_communities'))
+    else:
+        if not community.is_local():
+            flash(_('This is a remote community - most settings here will be regularly overwritten with data from the original server.'), 'warning')
+        form.url.data = community.name
+        form.title.data = community.title
+        form.description.data = community.description
+        form.rules.data = community.rules
+        form.nsfw.data = community.nsfw
+        form.show_home.data = community.show_home
+        form.show_popular.data = community.show_popular
+        form.show_all.data = community.show_all
+        form.low_quality.data = community.low_quality
+        form.content_retention.data = community.content_retention
+    return render_template('admin/edit_community.html', title=_('Edit community'), form=form, community=community)
+
+
+@bp.route('/community/<int:community_id>/delete', methods=['GET'])
+@login_required
+@permission_required('administer all communities')
+def admin_community_delete(community_id):
+    return ''

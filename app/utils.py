@@ -365,7 +365,7 @@ def user_cookie_banned() -> bool:
     return cookie is not None
 
 
-@cache.cached(timeout=300)
+@cache.memoize(timeout=300)
 def banned_ip_addresses() -> List[str]:
     ips = IpBan.query.all()
     return [ip.ip_address for ip in ips]

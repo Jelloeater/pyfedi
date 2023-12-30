@@ -13,7 +13,7 @@ class AddLocalCommunity(FlaskForm):
     icon_file = FileField(_('Icon image'))
     banner_file = FileField(_('Banner image'))
     rules = TextAreaField(_l('Rules'))
-    nsfw = BooleanField('18+ NSFW')
+    nsfw = BooleanField('NSFW')
     submit = SubmitField(_l('Create'))
 
     def validate(self, extra_validators=None):
@@ -45,7 +45,7 @@ class CreatePostForm(FlaskForm):
     image_file = FileField(_('Image'))
     # flair = SelectField(_l('Flair'), coerce=int)
     nsfw = BooleanField(_l('NSFW'))
-    nsfl = BooleanField(_l('NSFL'))
+    nsfl = BooleanField(_l('Content warning'))
     notify_author = BooleanField(_l('Notify about replies'))
     submit = SubmitField(_l('Save'))
 

@@ -44,7 +44,9 @@
                 <ul class="list-group list-group-flush">
                     {% for community in active_communities %}
                         <li class="list-group-item">
-                            <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />{{ community.display_name() }}</a>
+                            <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />
+                                {{ community.display_name() }}
+                            </a>
                         </li>
                     {% endfor %}
                 </ul>

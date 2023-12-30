@@ -26,7 +26,7 @@ from datetime import timezone
 @login_required
 def add_local():
     form = AddLocalCommunity()
-    if get_setting('allow_nsfw', False) is False:
+    if g.site.enable_nsfw is False:
         form.nsfw.render_kw = {'disabled': True}
 
     if form.validate_on_submit() and not community_url_exists(form.url.data):
@@ -289,9 +289,9 @@ def unsubscribe(actor):
 def add_post(actor):
     community = actor_to_community(actor)
     form = CreatePostForm()
-    if get_setting('allow_nsfw', False) is False:
+    if g.site.enable_nsfw is False:
         form.nsfw.render_kw = {'disabled': True}
-    if get_setting('allow_nsfl', False) is False:
+    if g.site.enable_nsfl is False:
         form.nsfl.render_kw = {'disabled': True}
     if community.nsfw:
         form.nsfw.data = True

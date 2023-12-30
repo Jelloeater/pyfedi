@@ -89,6 +89,7 @@ class Community(db.Model):
     last_active = db.Column(db.DateTime, default=utcnow)
     public_key = db.Column(db.Text)
     private_key = db.Column(db.Text)
+    content_retention = db.Column(db.Integer, default=-1)
 
     ap_id = db.Column(db.String(255), index=True)
     ap_profile_id = db.Column(db.String(255), index=True)
@@ -107,6 +108,11 @@ class Community(db.Model):
     new_mods_wanted = db.Column(db.Boolean, default=False)
     searchable = db.Column(db.Boolean, default=True)
     private_mods = db.Column(db.Boolean, default=False)
+
+    # Which feeds posts from this community show up in
+    show_home = db.Column(db.Boolean, default=False)        # For anonymous users. When logged in, the home feed shows posts from subscribed communities
+    show_popular = db.Column(db.Boolean, default=True)
+    show_all = db.Column(db.Boolean, default=True)
 
     search_vector = db.Column(TSVectorType('name', 'title', 'description', 'rules'))
 
@@ -749,6 +755,7 @@ class Instance(db.Model):
     dormant = db.Column(db.Boolean, default=False)          # True once this instance is considered offline and not worth sending to any more
     start_trying_again = db.Column(db.DateTime)             # When to start trying again. Should grow exponentially with each failure.
     gone_forever = db.Column(db.Boolean, default=False)     # True once this instance is considered offline forever - never start trying again
+    ip_address = db.Column(db.String(50))
 
     posts = db.relationship('Post', backref='instance', lazy='dynamic')
     post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')

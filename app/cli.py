@@ -110,6 +110,7 @@ def register(app):
             admin_role.permissions.append(RolePermission(permission='ban users'))
             admin_role.permissions.append(RolePermission(permission='manage users'))
             admin_role.permissions.append(RolePermission(permission='change instance settings'))
+            admin_role.permissions.append(RolePermission(permission='administer all communities'))
             db.session.add(admin_role)
 
             # Admin user
