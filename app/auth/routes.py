@@ -74,6 +74,7 @@ def logout():
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
+    disallowed_usernames = ['admin']
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
@@ -84,6 +85,8 @@ def register():
             if form.real_email.data.lower().startswith('postmaster@') or form.real_email.data.lower().startswith('abuse@') or \
                     form.real_email.data.lower().startswith('noc@'):
                 flash(_('Sorry, you cannot use that email address'), 'error')
+            if form.user_name.data in disallowed_usernames:
+                flash(_('Sorry, you cannot use that user name'), 'error')
             else:
                 verification_token = random_token(16)
                 form.user_name.data = form.user_name.data.strip()

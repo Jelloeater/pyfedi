@@ -67,7 +67,7 @@ def edit_profile(actor):
     if current_user.id != user.id:
         abort(401)
     form = ProfileForm()
-    if form.validate_on_submit():
+    if form.validate_on_submit() and not current_user.banned:
         current_user.email = form.email.data
         if form.password_field.data.strip() != '':
             current_user.set_password(form.password_field.data)

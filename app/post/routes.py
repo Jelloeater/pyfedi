@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import redirect, url_for, flash, current_app, abort, request, g
+from flask import redirect, url_for, flash, current_app, abort, request, g, make_response
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
@@ -18,7 +18,7 @@ from app.models import Post, PostReply, \
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
-    request_etag_matches, ip_address
+    request_etag_matches, ip_address, user_ip_banned
 
 
 def show_post(post_id: int):
@@ -42,6 +42,13 @@ def show_post(post_id: int):
         if not post.comments_enabled:
             flash('Comments have been disabled.', 'warning')
             return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
+        if current_user.banned:
+            flash('You have been banned.', 'error')
+            logout_user()
+            resp = make_response(redirect(url_for('main.index')))
+            resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
+            return resp
 
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
@@ -225,9 +232,10 @@ def post_vote(post_id: int, vote_direction):
 
     current_user.last_seen = utcnow()
     current_user.ip_address = ip_address()
-    db.session.commit()
-    current_user.recalculate_attitude()
-    db.session.commit()
+    if not current_user.banned:
+        db.session.commit()
+        current_user.recalculate_attitude()
+        db.session.commit()
     post.flush_cache()
     return render_template('post/_post_voting_buttons.html', post=post,
                            upvoted_class=upvoted_class,
@@ -323,6 +331,12 @@ def continue_discussion(post_id, comment_id):
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
 @login_required
 def add_reply(post_id: int, comment_id: int):
+    if current_user.banned:
+        flash('You have been banned.', 'error')
+        logout_user()
+        resp = make_response(redirect(url_for('main.index')))
+        resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
+        return resp
     post = Post.query.get_or_404(post_id)
 
     if not post.comments_enabled:
