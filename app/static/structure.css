@@ -593,6 +593,7 @@ fieldset legend {
   height: 20px;
   right: 14px;
   top: 5px;
+  opacity: 1 !important;
 }
 .voting_buttons .htmx-request.htmx-indicator {
   display: inline;

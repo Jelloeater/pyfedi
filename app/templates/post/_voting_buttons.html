@@ -3,13 +3,13 @@
  hx-post="/comment/{{ comment.id }}/upvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
         <span class="fe fe-arrow-up"></span>
         {{ comment.up_votes }}
-        <img class="htmx-indicator" src="/static/images/spinner.svg" alt="">
+        <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
 </div>
 <div class="downvote_button digits_{{ digits(comment.down_votes) }} {{ downvoted_class }}"
  hx-post="/comment/{{ comment.id }}/downvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
         <span class="fe fe-arrow-down"></span>
         {{ comment.down_votes }}
-        <img class="htmx-indicator" src="/static/images/spinner.svg" alt="">
+        <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
 </div>
 {% else %}
 <div class="upvote_button digits_{{ digits(comment.up_votes) }} {{ upvoted_class }}">
