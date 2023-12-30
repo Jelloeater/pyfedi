@@ -7,8 +7,12 @@
             <div class="col col-login mx-auto">
                 <div class="card mt-5">
                     <div class="card-body p-6" id="registration_form">
-                        <div class="card-title text-center">{{ _('Create new account') }}</div>
-                        {{ render_form(form) }}
+                        {% if site.registration_mode != 'Closed' %}
+                            <div class="card-title text-center">{{ _('Create new account') }}</div>
+                            {{ render_form(form) }}
+                        {% else %}
+                            {{ _('Registration is closed. Only admins can create accounts.') }}
+                        {% endif %}
                     </div>
                 </div>
             </div>

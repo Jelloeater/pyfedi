@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app
+from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, g
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
@@ -7,10 +7,10 @@ from app import db
 from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.auth.util import random_token
-from app.models import User, utcnow
+from app.models import User, utcnow, IpBan
 from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
 from app.activitypub.signature import RsaKeys
-from app.utils import render_template
+from app.utils import render_template, ip_address, user_ip_banned, user_cookie_banned
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -29,9 +29,6 @@ def login():
         if user.deleted:
             flash(_('No account exists with that user name.'), 'error')
             return redirect(url_for('auth.login'))
-        if user.banned:
-            flash(_('You have been banned.'), 'error')
-            return redirect(url_for('auth.login'))
         if not user.check_password(form.password.data):
             if user.password_hash is None:
                 if "@gmail.com" in user.email:
@@ -43,9 +40,24 @@ def login():
                 return redirect(url_for('auth.login'))
             flash(_('Invalid password'))
             return redirect(url_for('auth.login'))
+        if user.banned or user_ip_banned() or user_cookie_banned():
+            flash(_('You have been banned.'), 'error')
+
+            response = make_response(redirect(url_for('auth.login')))
+            # Detect if a banned user tried to log in from a new IP address
+            if user.banned and not user_ip_banned():
+                # If so, ban their new IP address as well
+                new_ip_ban = IpBan(ip_address=ip_address(), notes=user.user_name + ' used new IP address')
+                db.session.add(new_ip_ban)
+                db.session.commit()
+
+            # Set a cookie so we have another way to track banned people
+            response.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
+            return response
         login_user(user, remember=True)
         current_user.last_seen = utcnow()
         current_user.verification_token = ''
+        current_user.ip_address = ip_address()
         db.session.commit()
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
@@ -76,7 +88,8 @@ def register():
                 verification_token = random_token(16)
                 form.user_name.data = form.user_name.data.strip()
                 user = User(user_name=form.user_name.data, email=form.real_email.data,
-                            verification_token=verification_token, instance=1)
+                            verification_token=verification_token, instance=1, ipaddress=ip_address(),
+                            banned=user_ip_banned() or user_cookie_banned())
                 user.set_password(form.password.data)
                 db.session.add(user)
                 db.session.commit()
@@ -89,13 +102,11 @@ def register():
 
                 flash(_('Great, you are now a registered user!'))
 
-        # set a cookie so the login button is emphasised on the public site, for future visits
         resp = make_response(redirect(url_for('main.index')))
-        resp.set_cookie('logged_in_before', value='1', expires=datetime.now() + timedelta(weeks=300),
-                        domain='.chorebuster.net')
+        if user_ip_banned():
+            resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
         return resp
-    return render_template('auth/register.html', title=_('Register'),
-                           form=form)
+    return render_template('auth/register.html', title=_('Register'), form=form, site=g.site)
 
 
 @bp.route('/reset_password_request', methods=['GET', 'POST'])

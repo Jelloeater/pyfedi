@@ -18,7 +18,7 @@ from app.models import Post, PostReply, \
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
-    request_etag_matches
+    request_etag_matches, ip_address
 
 
 def show_post(post_id: int):
@@ -224,6 +224,7 @@ def post_vote(post_id: int, vote_direction):
                 flash('Failed to send vote', 'warning')
 
     current_user.last_seen = utcnow()
+    current_user.ip_address = ip_address()
     db.session.commit()
     current_user.recalculate_attitude()
     db.session.commit()
@@ -296,6 +297,7 @@ def comment_vote(comment_id, vote_direction):
                 flash('Failed to send vote', 'error')
 
     current_user.last_seen = utcnow()
+    current_user.ip_address = ip_address()
     db.session.commit()
     current_user.recalculate_attitude()
     db.session.commit()
@@ -333,6 +335,7 @@ def add_reply(post_id: int, comment_id: int):
     form = NewReplyForm()
     if form.validate_on_submit():
         current_user.last_seen = utcnow()
+        current_user.ip_address = ip_address()
         reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, depth=in_reply_to.depth + 1,
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,

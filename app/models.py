@@ -260,6 +260,7 @@ class User(UserMixin, db.Model):
     bot = db.Column(db.Boolean, default=False)
     ignore_bots = db.Column(db.Boolean, default=False)
     unread_notifications = db.Column(db.Integer, default=0)
+    ip_address = db.Column(db.String(50))
     instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
@@ -868,6 +869,13 @@ class Report(db.Model):
     suspect_post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
+
+
+class IpBan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(50), index=True)
+    notes = db.Column(db.String(150))
+    created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class Site(db.Model):

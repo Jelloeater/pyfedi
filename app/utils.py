@@ -21,7 +21,7 @@ from wtforms.fields  import SelectField, SelectMultipleField
 from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
 
-from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog
+from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan
 
 
 # Flask's render_template function, with support for themes added
@@ -345,3 +345,27 @@ def ap_datetime(date_time: datetime) -> str:
 class MultiCheckboxField(SelectMultipleField):
     widget = ListWidget(prefix_label=False)
     option_widget = CheckboxInput()
+
+
+def ip_address() -> str:
+    ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+    if ',' in ip:  # Remove all but first ip addresses
+        ip = ip[:ip.index(',')].strip()
+    return ip
+
+
+def user_ip_banned() -> bool:
+    current_ip_address = ip_address()
+    if current_ip_address:
+        return current_ip_address in banned_ip_addresses()
+
+
+def user_cookie_banned() -> bool:
+    cookie = request.cookies.get('sesion', None)
+    return cookie is not None
+
+
+@cache.cached(timeout=300)
+def banned_ip_addresses() -> List[str]:
+    ips = IpBan.query.all()
+    return [ip.ip_address for ip in ips]
