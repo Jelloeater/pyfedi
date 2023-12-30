@@ -558,6 +558,7 @@ fieldset legend {
   border: solid 1px #0071CE;
 }
 .voting_buttons .upvote_button, .voting_buttons .downvote_button {
+  position: relative;
   padding-left: 3px;
   border-radius: 3px;
   cursor: pointer;
@@ -581,6 +582,20 @@ fieldset legend {
 }
 .voting_buttons .downvote_button {
   margin-top: 5px;
+}
+.voting_buttons .htmx-indicator {
+  position: absolute;
+}
+.voting_buttons .htmx-request .htmx-indicator {
+  display: inline;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  right: 14px;
+  top: 5px;
+}
+.voting_buttons .htmx-request.htmx-indicator {
+  display: inline;
 }
 .voting_buttons a {
   text-decoration: none;

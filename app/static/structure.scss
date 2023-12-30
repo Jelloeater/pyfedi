@@ -258,6 +258,7 @@ nav, etc which are used site-wide */
   }
 
   .upvote_button, .downvote_button {
+    position: relative;
     padding-left: 3px;
     border-radius: 3px;
     cursor: pointer;
@@ -286,6 +287,21 @@ nav, etc which are used site-wide */
 
   .downvote_button {
     margin-top: 5px;
+  }
+
+  .htmx-indicator{
+    position: absolute;
+  }
+  .htmx-request .htmx-indicator{
+    display:inline;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: 14px;
+    top: 5px;
+  }
+  .htmx-request.htmx-indicator{
+    display:inline;
   }
 
   a {
