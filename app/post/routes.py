@@ -24,6 +24,9 @@ from app.utils import get_setting, render_template, allowlist_html, markdown_to_
 def show_post(post_id: int):
     post = Post.query.get_or_404(post_id)
 
+    if post.community.banned:
+        abort(404)
+
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{post.id}_{hash(post.last_active)}"
     if current_user.is_anonymous and request_etag_matches(current_etag):
@@ -320,6 +323,8 @@ def comment_vote(comment_id, vote_direction):
 def continue_discussion(post_id, comment_id):
     post = Post.query.get_or_404(post_id)
     comment = PostReply.query.get_or_404(comment_id)
+    if post.community.banned:
+        abort(404)
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     replies = get_comment_branch(post.id, comment.id, 'top')

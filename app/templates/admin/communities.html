@@ -21,7 +21,6 @@
                <th>Home</th>
                <th>Popular</th>
                <th>All</th>
-               <th>Quality</th>
                <th>Actions</th>
             </tr>
             {% for community in communities %}
@@ -33,7 +32,6 @@
                     <th>{{ '&check;'|safe if community.show_home else '&cross;'|safe }}</th>
                     <th>{{ '&check;'|safe if community.show_popular else '&cross;'|safe }}</th>
                     <th>{{ '&check;'|safe if community.show_all else '&cross;'|safe }}</th>
-                    <th>{{ '<span class="fe fe-arrow-down"> </span>'|safe if community.low_quality else ' ' }}</th>
                     <td><a href="/c/{{ community.link() }}">View</a> |
                         <a href="{{ url_for('admin.admin_community_edit', community_id=community.id) }}">Edit</a> |
                         <a href="{{ url_for('admin.admin_community_delete', community_id=community.id) }}" class="confirm_first">Delete</a>

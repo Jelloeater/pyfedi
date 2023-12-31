@@ -61,7 +61,7 @@ def list_communities():
     if search_param == '':
         communities = Community.query.filter_by(banned=False).all()
     else:
-        query = search(select(Community), search_param, sort=True)
+        query = search(select(Community), search_param, sort=True)  # todo: exclude banned communities from search
         communities = db.session.scalars(query).all()
 
     return render_template('list_communities.html', communities=communities, search=search_param, title=_('Communities'),

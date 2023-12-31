@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db, constants
-from app.models import Post, Domain
+from app.models import Post, Domain, Community
 from app.domain import bp
 from app.utils import get_setting, render_template
 from sqlalchemy import desc
@@ -19,9 +19,12 @@ def show_domain(domain_id):
             domain = None
     if domain:
         if current_user.is_anonymous or current_user.ignore_bots:
-            posts = Post.query.filter(Post.from_bot == False, Post.domain_id == domain.id).order_by(desc(Post.last_active)).all()
+            posts = Post.query.join(Community, Community.id == Post.community_id).\
+                filter(Post.from_bot == False, Post.domain_id == domain.id, Community.banned == False).\
+                order_by(desc(Post.last_active)).all()
         else:
-            posts = Post.query.filter(Post.domain_id == domain.id).order_by(desc(Post.last_active)).all()
+            posts = Post.query.join(Community).filter(Post.domain_id == domain.id, Community.banned == False).order_by(desc(Post.last_active)).all()
+        # todo: pagination
         return render_template('domain/domain.html', domain=domain, title=domain.name, posts=posts,
                                POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE, POST_TYPE_LINK=constants.POST_TYPE_LINK)
     else:

@@ -214,7 +214,6 @@ class Community(db.Model):
         return db.session.execute(text(sql), {'community_id': self.id})
 
     def delete_dependencies(self):
-        # this will be fine for remote communities but for local ones it is necessary to federate every deletion out to subscribers
         for post in self.posts:
             post.delete_dependencies()
             db.session.delete(post)

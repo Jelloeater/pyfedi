@@ -1,4 +1,4 @@
-from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, g
+from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, g, json
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
@@ -13,7 +13,7 @@ from app.community.util import search_for_community, community_url_exists, actor
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
-    File, PostVote, utcnow, Report, Notification, InstanceBlock
+    File, PostVote, utcnow, Report, Notification, InstanceBlock, ActivityPubLog
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
@@ -93,6 +93,9 @@ def show_community(community: Community):
     current_etag = f"{community.id}_{hash(community.last_active)}"
     if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
+
+    if community.banned:
+        abort(404)
 
     page = request.args.get('page', 1, type=int)
 
@@ -242,6 +245,7 @@ def unsubscribe(actor):
                 proceed = True
                 # Undo the Follow
                 if '@' in actor:    # this is a remote community, so activitypub is needed
+                    undo_id = f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15)
                     follow = {
                         "actor": f"https://{current_app.config['SERVER_NAME']}/u/{current_user.user_name}",
                         "to": [community.ap_profile_id],
@@ -253,11 +257,17 @@ def unsubscribe(actor):
                         'actor': current_user.profile_id(),
                         'to': [community.ap_profile_id],
                         'type': 'Undo',
-                        'id': f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15),
+                        'id': undo_id,
                         'object': follow
                     }
+                    activity = ActivityPubLog(direction='out', activity_id=undo_id, activity_type='Undo',
+                                              activity_json=json.dumps(undo), result='processing')
+                    db.session.add(activity)
+                    db.session.commit()
                     success = post_request(community.ap_inbox_url, undo, current_user.private_key,
                                                                current_user.profile_id() + '#main-key')
+                    activity.result = 'success'
+                    db.session.commit()
                     if not success:
                         flash('There was a problem while trying to subscribe', 'error')
 
@@ -428,8 +438,12 @@ def community_delete(community_id: int):
     if community.is_owner() or current_user.is_admin():
         form = DeleteCommunityForm()
         if form.validate_on_submit():
-            community.delete_dependencies()
-            db.session.delete(community)
+            if community.is_local():
+                community.banned = True
+                # todo: federate deletion out to all instances. At end of federation process, delete_dependencies() and delete community
+            else:
+                community.delete_dependencies()
+                db.session.delete(community)
             db.session.commit()
             flash(_('Community deleted'))
             return redirect('/communities')

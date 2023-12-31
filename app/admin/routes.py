@@ -1,16 +1,18 @@
 from datetime import datetime, timedelta
+from time import sleep
 
 from flask import request, flash, json, url_for, current_app, redirect
 from flask_login import login_required, current_user
 from flask_babel import _
 from sqlalchemy import text, desc
 
-from app import db
+from app import db, celery
 from app.activitypub.routes import process_inbox_request, process_delete_request
+from app.activitypub.signature import post_request
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm
 from app.community.util import save_icon_file, save_banner_file
-from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community
-from app.utils import render_template, permission_required, set_setting, get_setting
+from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, User
+from app.utils import render_template, permission_required, set_setting, get_setting, gibberish
 from app.admin import bp
 
 
@@ -168,7 +170,7 @@ def admin_communities():
 
     page = request.args.get('page', 1, type=int)
 
-    communities = Community.query.order_by(Community.title).paginate(page=page, per_page=1000, error_out=False)
+    communities = Community.query.filter_by(banned=False).order_by(Community.title).paginate(page=page, per_page=1000, error_out=False)
 
     next_url = url_for('admin.admin_communities', page=communities.next_num) if communities.has_next else None
     prev_url = url_for('admin.admin_communities', page=communities.prev_num) if communities.has_prev and page != 1 else None
@@ -231,4 +233,53 @@ def admin_community_edit(community_id):
 @login_required
 @permission_required('administer all communities')
 def admin_community_delete(community_id):
-    return ''
+    community = Community.query.get_or_404(community_id)
+
+    community.banned = True  # Unsubscribing everyone could take a long time so until that is completed hide this community from the UI by banning it.
+    community.last_active = utcnow()
+    db.session.commit()
+
+    unsubscribe_everyone_then_delete(community.id)
+
+    flash(_('Community deleted'))
+    return redirect(url_for('admin.admin_communities'))
+
+
+def unsubscribe_everyone_then_delete(community_id):
+    if current_app.debug:
+        unsubscribe_everyone_then_delete_task(community_id)
+    else:
+        unsubscribe_everyone_then_delete_task.delay(community_id)
+
+
+@celery.task
+def unsubscribe_everyone_then_delete_task(community_id):
+    community = Community.query.get_or_404(community_id)
+    if not community.is_local():
+        members = CommunityMember.query.filter_by(community_id=community_id).all()
+        for member in members:
+            user = User.query.get(member.user_id)
+            undo_id = f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15)
+            follow = {
+                "actor": f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}",
+                "to": [community.ap_profile_id],
+                "object": community.ap_profile_id,
+                "type": "Follow",
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{gibberish(15)}"
+            }
+            undo = {
+                'actor': user.profile_id(),
+                'to': [community.ap_profile_id],
+                'type': 'Undo',
+                'id': undo_id,
+                'object': follow
+            }
+            activity = ActivityPubLog(direction='out', activity_id=undo_id, activity_type='Undo', activity_json=json.dumps(undo), result='processing')
+            db.session.add(activity)
+            db.session.commit()
+            post_request(community.ap_inbox_url, undo, user.private_key, user.profile_id() + '#main-key')
+            activity.result = 'success'
+            db.session.commit()
+    sleep(5)
+    community.delete_dependencies()
+    db.session.delete(community)    # todo: when a remote community is deleted it will be able to be re-created by using the 'Add remote' function. Not ideal. Consider soft-delete.
