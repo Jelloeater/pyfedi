@@ -1,8 +1,8 @@
 # PieFed Governance
 
-The PieFed project uses a governance model commonly described as Benevolent Dictator For Life
+The PieFed project currently uses a governance model commonly described as Benevolent Dictator For Life
 ([BDFL](https://en.wikipedia.org/wiki/Benevolent_dictator_for_life)). This document outlines our implementation of
-this model.
+this model. A new governance model will be adopted when the project outgrows BDFL.
 
 ## Terms
 

@@ -268,6 +268,7 @@ class User(UserMixin, db.Model):
     unread_notifications = db.Column(db.Integer, default=0)
     ip_address = db.Column(db.String(50))
     instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
+    reports = db.Column(db.Integer, default=0)  # how many times this user has been reported.
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
@@ -456,9 +457,13 @@ class User(UserMixin, db.Model):
     def created_recently(self):
         return self.created and self.created > utcnow() - timedelta(days=7)
 
-    def has_blocked_instance(self, instance_id):
+    def has_blocked_instance(self, instance_id: int):
         instance_block = InstanceBlock.query.filter_by(user_id=self.id, instance_id=instance_id).first()
         return instance_block is not None
+
+    def has_blocked_user(self, user_id: int):
+        existing_block = UserBlock.query.filter_by(blocker_id=self.id, blocked_id=user_id).first()
+        return existing_block is not None
 
     @staticmethod
     def verify_reset_password_token(token):

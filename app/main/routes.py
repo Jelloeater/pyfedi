@@ -11,7 +11,7 @@ from flask_babel import _, get_locale
 from sqlalchemy import select, desc
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
-    ap_datetime
+    ap_datetime, ip_address
 from app.models import Community, CommunityMember, Post, Site, User
 
 
@@ -99,8 +99,10 @@ def robots():
 
 @bp.route('/test')
 def test():
-    refresh_user_profile(12)
-    return 'done'
+    ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+    if ',' in ip:  # Remove all but first ip addresses
+        ip = ip[:ip.index(',')].strip()
+    return ip
 
 
 def verification_warning():

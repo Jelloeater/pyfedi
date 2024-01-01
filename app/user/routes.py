@@ -10,9 +10,9 @@ from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
 from app.community.util import save_icon_file, save_banner_file
 from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow, File, Site, \
-    Instance
+    Instance, Report, UserBlock
 from app.user import bp
-from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm
+from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportUserForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
     is_image_url
 from sqlalchemy import desc, or_, text
@@ -199,6 +199,99 @@ def unban_profile(actor):
 
     goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
     return redirect(goto)
+
+
+@bp.route('/u/<actor>/block', methods=['GET'])
+@login_required
+def block_profile(actor):
+    actor = actor.strip()
+    user = User.query.filter_by(user_name=actor, deleted=False).first()
+    if user is None:
+        user = User.query.filter_by(ap_id=actor, deleted=False).first()
+        if user is None:
+            abort(404)
+
+    if user.id == current_user.id:
+        flash(_('You cannot block yourself.'), 'error')
+    else:
+        existing_block = UserBlock.query.filter_by(blocker_id=current_user.id, blocked_id=user.id).first()
+        if not existing_block:
+            block = UserBlock(blocker_id=current_user.id, blocked_id=user.id)
+            db.session.add(block)
+            db.session.commit()
+
+        if not user.is_local():
+            ...
+            # federate block
+
+        flash(f'{actor} has been blocked.')
+
+    goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+    return redirect(goto)
+
+
+@bp.route('/u/<actor>/unblock', methods=['GET'])
+@login_required
+def unblock_profile(actor):
+    actor = actor.strip()
+    user = User.query.filter_by(user_name=actor, deleted=False).first()
+    if user is None:
+        user = User.query.filter_by(ap_id=actor, deleted=False).first()
+        if user is None:
+            abort(404)
+
+    if user.id == current_user.id:
+        flash(_('You cannot unblock yourself.'), 'error')
+    else:
+        existing_block = UserBlock.query.filter_by(blocker_id=current_user.id, blocked_id=user.id).first()
+        if existing_block:
+            db.session.delete(existing_block)
+            db.session.commit()
+
+        if not user.is_local():
+            ...
+            # federate unblock
+
+        flash(f'{actor} has been unblocked.')
+
+    goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+    return redirect(goto)
+
+
+@bp.route('/u/<actor>/report', methods=['GET', 'POST'])
+@login_required
+def report_profile(actor):
+    if '@' in actor:
+        user: User = User.query.filter_by(ap_id=actor, deleted=False, banned=False).first()
+    else:
+        user: User = User.query.filter_by(user_name=actor, deleted=False, ap_id=None).first()
+    form = ReportUserForm()
+    if user and not user.banned:
+        if form.validate_on_submit():
+            report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
+                            type=0, reporter_id=current_user.id, suspect_user_id=user.id)
+            db.session.add(report)
+
+            # Notify site admin
+            already_notified = set()
+            for admin in Site.admins():
+                if admin.id not in already_notified:
+                    notify = Notification(title='Reported user', url=user.ap_id, user_id=admin.id, author_id=current_user.id)
+                    db.session.add(notify)
+            user.reports += 1
+            db.session.commit()
+
+            # todo: federate report to originating instance
+            if not user.is_local() and form.report_remote.data:
+                ...
+
+            flash(_('%(user_name)s has been reported, thank you!', user_name=actor))
+            goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{actor}'
+            return redirect(goto)
+        elif request.method == 'GET':
+            form.report_remote.data = True
+
+    return render_template('user/user_report.html', title=_('Report user'), form=form, user=user)
 
 
 @bp.route('/u/<actor>/delete', methods=['GET'])

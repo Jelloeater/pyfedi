@@ -704,4 +704,8 @@ fieldset legend {
   font-weight: bold;
 }
 
+.profile_action_buttons {
+  float: right;
+}
+
 /*# sourceMappingURL=structure.css.map */

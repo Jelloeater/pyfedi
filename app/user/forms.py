@@ -5,6 +5,8 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField, Email
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Optional
 from flask_babel import _, lazy_gettext as _l
 
+from app.utils import MultiCheckboxField
+
 
 class ProfileForm(FlaskForm):
     title = StringField(_l('Display name'), validators=[Optional(), Length(max=255)])
@@ -36,3 +38,29 @@ class SettingsForm(FlaskForm):
 
 class DeleteAccountForm(FlaskForm):
     submit = SubmitField(_l('Yes, delete my account'))
+
+
+class ReportUserForm(FlaskForm):
+    reason_choices = [('1', _l('Breaks community rules')), ('7', _l('Spam')), ('2', _l('Harassment')),
+                      ('3', _l('Threatening violence')), ('4', _l('Hate / genocide')),
+                      ('15', _l('Misinformation / disinformation')),
+                      ('16', _l('Racism, sexism, transphobia')),
+                      ('6', _l('Sharing personal info - doxing')),
+                      ('5', _l('Minor abuse or sexualization')),
+                      ('8', _l('Non-consensual intimate media')),
+                      ('9', _l('Prohibited transaction')), ('10', _l('Impersonation')),
+                      ('11', _l('Copyright violation')), ('12', _l('Trademark violation')),
+                      ('13', _l('Self-harm or suicide')),
+                      ('14', _l('Other'))]
+    reasons = MultiCheckboxField(_l('Reason'), choices=reason_choices)
+    description = StringField(_l('More info'))
+    report_remote = BooleanField('Also send report to originating instance')
+    submit = SubmitField(_l('Report'))
+
+    def reasons_to_string(self, reason_data) -> str:
+        result = []
+        for reason_id in reason_data:
+            for choice in self.reason_choices:
+                if choice[0] == reason_id:
+                    result.append(str(choice[1]))
+        return ', '.join(result)

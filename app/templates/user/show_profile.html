@@ -35,6 +35,21 @@
             </nav>
             <h1 class="mt-2">{{ user.display_name() if user.is_local() else user.ap_id }}</h1>
         {% endif %}
+        {% if current_user.is_authenticated %}
+            <div class="profile_action_buttons">
+                {% if user.matrix_user_id %}
+                    <a class="btn btn-primary" href="https://matrix.to/#/{{ user.matrix_user_id }}" rel="nofollow">{{ _('Send message') }}</a>
+                {% endif %}
+                {% if current_user.id != user.id %}
+                    {% if current_user.has_blocked_user(user.id) %}
+                        <a class="btn btn-primary" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow">{{ _('Unblock user') }}</a>
+                    {% else %}
+                        <a class="btn btn-primary confirm_first" href="{{ url_for('user.block_profile', actor=user.link()) }}" rel="nofollow">{{ _('Block user') }}</a>
+                    {% endif %}
+                    <a class="btn btn-primary" href="{{ url_for('user.report_profile', actor=user.link()) }}" rel="nofollow">{{ _('Report user') }}</a>
+                {% endif %}
+            </div>
+        {% endif %}
         <p class="small">{{ _('Joined') }}: {{ moment(user.created).fromNow(refresh=True) }}<br />
             {{ _('Attitude') }}: <span title="{{ _('Ratio of upvotes cast to downvotes cast. Higher is more positive.') }}">{{ (user.attitude * 100) | round | int }}%</span></p>
         {{ user.about_html|safe }}

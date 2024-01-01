@@ -14,7 +14,7 @@ from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import Post, PostReply, \
-    PostReplyVote, PostVote, Notification, utcnow, UserBlock, DomainBlock, InstanceBlock, Report
+    PostReplyVote, PostVote, Notification, utcnow, UserBlock, DomainBlock, InstanceBlock, Report, Site
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
@@ -547,13 +547,19 @@ def post_report(post_id: int):
         db.session.add(report)
 
         # Notify moderators
+        already_notified = set()
         for mod in post.community.moderators():
             notification = Notification(user_id=mod.user_id, title=_('A post has been reported'),
                                         url=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}",
                                         author_id=current_user.id)
             db.session.add(notification)
+            already_notified.add(mod.id)
         post.reports += 1
-        # todo: Also notify admins for certain types of report
+        # todo: only notify admins for certain types of report
+        for admin in Site.admins():
+            if admin.id not in already_notified:
+                notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=current_user.id)
+                db.session.add(notify)
         db.session.commit()
 
         # todo: federate report to originating instance
@@ -636,13 +642,19 @@ def post_reply_report(post_id: int, comment_id: int):
         db.session.add(report)
 
         # Notify moderators
+        already_notified = set()
         for mod in post.community.moderators():
             notification = Notification(user_id=mod.user_id, title=_('A comment has been reported'),
                                         url=f"https://{current_app.config['SERVER_NAME']}/comment/{post_reply.id}",
                                         author_id=current_user.id)
             db.session.add(notification)
+            already_notified.add(mod.id)
         post_reply.reports += 1
-        # todo: Also notify admins for certain types of report
+        # todo: only notify admins for certain types of report
+        for admin in Site.admins():
+            if admin.id not in already_notified:
+                notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=current_user.id)
+                db.session.add(notify)
         db.session.commit()
 
         # todo: federate report to originating instance
