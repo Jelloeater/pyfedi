@@ -1,4 +1,4 @@
-Hello {{ user.user_name }},
+Hello {{ user.display_name() }},
 
 To verify your email address:
 

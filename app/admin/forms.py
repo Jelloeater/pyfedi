@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, HiddenField, BooleanField, TextAreaField, SelectField, \
     FileField, IntegerField
-from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Optional
 from flask_babel import _, lazy_gettext as _l
 
 
@@ -77,3 +77,19 @@ class EditCommunityForm(FlaskForm):
                 self.url.errors.append(_('- cannot be in Url. Use _ instead?'))
                 return False
         return True
+
+
+class EditUserForm(FlaskForm):
+    about = TextAreaField(_l('Bio'), validators=[Optional(), Length(min=3, max=5000)])
+    matrix_user_id = StringField(_l('Matrix User ID'), validators=[Optional(), Length(max=255)])
+    profile_file = FileField(_('Avatar image'))
+    banner_file = FileField(_('Top banner image'))
+    bot = BooleanField(_l('This profile is a bot'))
+    newsletter = BooleanField(_l('Subscribe to email newsletter'))
+    ignore_bots = BooleanField(_l('Hide posts by bots'))
+    nsfw = BooleanField(_l('Show NSFW posts'))
+    nsfl = BooleanField(_l('Show NSFL posts'))
+    searchable = BooleanField(_l('Show profile in user list'))
+    indexable = BooleanField(_l('Allow search engines to index this profile'))
+    manually_approves_followers = BooleanField(_l('Manually approve followers'))
+    submit = SubmitField(_l('Save'))

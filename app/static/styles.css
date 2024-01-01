@@ -513,10 +513,6 @@ nav.navbar {
   color: #777;
 }
 
-.comment_author a {
-  font-weight: bold;
-}
-
 .low_score .hide_button a, .low_score .comment_author a {
   font-weight: normal;
   color: #777;

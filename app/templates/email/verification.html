@@ -1,4 +1,4 @@
-<p>Hi {{ user.user_name }},</p>
+<p>Hi {{ user.display_name() }},</p>
 <p>
     To verify your email address
     <a href="{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}">

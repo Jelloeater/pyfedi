@@ -31,9 +31,9 @@
                                     {{ _("Hide every post from author's instance: %(name)s", name=post.instance.domain) }}</a></li>
                                 {% endif %}
                             {% endif %}
-                            <li><a href="{{ url_for('post.post_report', post_id=post.id) }}" class="no-underline"><span class="fe fe-report"></span>
-                                {{ _('Report to moderators') }}</a></li>
                         {% endif %}
+                        <li><a href="{{ url_for('post.post_report', post_id=post.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-report"></span>
+                                {{ _('Report to moderators') }}</a></li>
                     </ul>
                     <p>{{ _('If you want to perform more than one of these (e.g. block and report), hold down Ctrl and click, then complete the operation in the new tabs that open.') }}</p>
                 </div>

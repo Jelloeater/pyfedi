@@ -7,14 +7,14 @@
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-                <li class="breadcrumb-item"><a href="/u/{{ user.user_name }}">{{ user.user_name }}</a></li>
+                <li class="breadcrumb-item"><a href="/u/{{ user.user_name }}">{{ user.display_name() }}</a></li>
                 <li class="breadcrumb-item active">{{ _('Edit profile') }}</li>
               </ol>
             </nav>
             <h1 class="mt-2">{{ _('Edit profile of %(name)s', name=user.user_name) }}</h1>
             <form method='post' enctype="multipart/form-data">
                 {{ form.csrf_token() }}
-
+                {{ render_field(form.title) }}
                 {{ render_field(form.email) }}
                 {{ render_field(form.password_field) }}
                 <hr />

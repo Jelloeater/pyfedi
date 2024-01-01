@@ -7,6 +7,7 @@ from flask_babel import _, lazy_gettext as _l
 
 
 class ProfileForm(FlaskForm):
+    title = StringField(_l('Display name'), validators=[Optional(), Length(max=255)])
     email = EmailField(_l('Email address'), validators=[Email(), DataRequired(), Length(min=5, max=255)])
     password_field = PasswordField(_l('Set new password'), validators=[Optional(), Length(min=1, max=50)],
                                    render_kw={"autocomplete": 'Off'})

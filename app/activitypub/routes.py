@@ -18,7 +18,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     user_removed_from_remote_server, create_post, create_post_reply, update_post_reply_from_activity, \
     update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
-    domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text
+    domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address
 import werkzeug.exceptions
 
 
@@ -162,6 +162,7 @@ def user_profile(actor):
                             "type": "Person",
                             "id": f"https://{server}/u/{actor}",
                             "preferredUsername": actor,
+                            "name": user.title if user.title else user.user_name,
                             "inbox": f"https://{server}/u/{actor}/inbox",
                             "outbox": f"https://{server}/u/{actor}/outbox",
                             "discoverable": user.searchable,
@@ -309,9 +310,9 @@ def shared_inbox():
             # When a user is deleted, the only way to be fairly sure they get deleted everywhere is to tell the whole fediverse.
             if 'type' in request_json and request_json['type'] == 'Delete' and request_json['id'].endswith('#delete'):
                 if current_app.debug:
-                    process_delete_request(request_json, activity_log.id)
+                    process_delete_request(request_json, activity_log.id, ip_address())
                 else:
-                    process_delete_request.delay(request_json, activity_log.id)
+                    process_delete_request.delay(request_json, activity_log.id, ip_address())
                 return ''
         else:
             activity_log.activity_id = ''
@@ -323,9 +324,9 @@ def shared_inbox():
         if actor is not None:
             if HttpSignature.verify_request(request, actor.public_key, skip_date=True):
                 if current_app.debug:
-                    process_inbox_request(request_json, activity_log.id)
+                    process_inbox_request(request_json, activity_log.id, ip_address())
                 else:
-                    process_inbox_request.delay(request_json, activity_log.id)
+                    process_inbox_request.delay(request_json, activity_log.id, ip_address())
                 return ''
             else:
                 activity_log.exception_message = 'Could not verify signature'
@@ -340,7 +341,7 @@ def shared_inbox():
 
 
 @celery.task
-def process_inbox_request(request_json, activitypublog_id):
+def process_inbox_request(request_json, activitypublog_id, ip_address):
     with current_app.app_context():
         activity_log = ActivityPubLog.query.get(activitypublog_id)
         site = Site.query.get(1)    # can't use g.site because celery doesn't use Flask's g variable
@@ -667,6 +668,7 @@ def process_inbox_request(request_json, activitypublog_id):
                     user.flush_cache()
                     if user.instance_id:
                         user.instance.last_seen = utcnow()
+                        user.instance.ip_address = ip_address
                 # if 'community' in vars() and community is not None:
                 #    community.flush_cache()
                 if 'post' in vars() and post is not None:
@@ -680,7 +682,7 @@ def process_inbox_request(request_json, activitypublog_id):
 
 
 @celery.task
-def process_delete_request(request_json, activitypublog_id):
+def process_delete_request(request_json, activitypublog_id, ip_address):
     with current_app.app_context():
         activity_log = ActivityPubLog.query.get(activitypublog_id)
         if 'type' in request_json and request_json['type'] == 'Delete':
@@ -688,37 +690,25 @@ def process_delete_request(request_json, activitypublog_id):
             user = User.query.filter_by(ap_profile_id=actor_to_delete).first()
             if user:
                 # check that the user really has been deleted, to avoid spoofing attacks
-                if not user.is_local() and user_removed_from_remote_server(actor_to_delete, user.instance.software == 'PieFed'):
-                    # Delete all their images to save moderators from having to see disgusting stuff.
-                    files = File.query.join(Post).filter(Post.user_id == user.id).all()
-                    for file in files:
-                        file.delete_from_disk()
-                        file.source_url = ''
-                    if user.avatar_id:
-                        user.avatar.delete_from_disk()
-                        user.avatar.source_url = ''
-                    if user.cover_id:
-                        user.cover.delete_from_disk()
-                        user.cover.source_url = ''
-                    user.banned = True
-                    user.deleted = True
-                    activity_log.result = 'success'
-
-                    instances = Instance.query.all()
-                    site = Site.query.get(1)
-                    payload = {
-                      "@context": default_context(),
-                      "actor": user.ap_profile_id,
-                      "id": f"{user.ap_profile_id}#delete",
-                      "object": user.ap_profile_id,
-                      "to": [
-                        "https://www.w3.org/ns/activitystreams#Public"
-                      ],
-                      "type": "Delete"
-                    }
-                    for instance in instances:
-                        if instance.inbox:
-                            post_request(instance.inbox, payload, site.private_key, f"https://{current_app.config['SERVER_NAME']}#main-key")
+                if not user.is_local():
+                    if user_removed_from_remote_server(actor_to_delete, is_piefed=user.instance.software == 'PieFed'):
+                        # Delete all their images to save moderators from having to see disgusting stuff.
+                        files = File.query.join(Post).filter(Post.user_id == user.id).all()
+                        for file in files:
+                            file.delete_from_disk()
+                            file.source_url = ''
+                        if user.avatar_id:
+                            user.avatar.delete_from_disk()
+                            user.avatar.source_url = ''
+                        if user.cover_id:
+                            user.cover.delete_from_disk()
+                            user.cover.source_url = ''
+                        user.banned = True
+                        user.deleted = True
+                        activity_log.result = 'success'
+                    else:
+                        activity_log.result = 'ignored'
+                        activity_log.exception_message = 'User not actually deleted.'
                 else:
                     activity_log.result = 'ignored'
                     activity_log.exception_message = 'Only remote users can be deleted remotely'

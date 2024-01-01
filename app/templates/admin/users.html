@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <form method="get">
+            <input type="search" name="search">
+            <input type="radio" name="local_remote" value="local" id="local_remote_local"><label for="local_remote_local"> Local</label>
+            <input type="radio" name="local_remote" value="remote" id="local_remote_remote"><label for="local_remote_remote"> Remote</label>
+            <input type="submit" name="submit" value="Search" class="btn btn-primary">
+        </form>
+        <table class="table table-striped">
+            <tr>
+               <th>Name</th>
+               <th>Local/Remote</th>
+               <th>Attitude</th>
+               <th>Banned</th>
+               <th>Actions</th>
+            </tr>
+            {% for user in users %}
+                <tr>
+                    <td><img src="{{ user.avatar_thumbnail() }}" class="community_icon rounded-circle" loading="lazy" />
+                        {{ user.display_name() }}</td>
+                    <td>{{ 'Local' if user.is_local() else 'Remote' }}</td>
+                    <td>{{ user.attitude * 100 }}</td>
+                    <td>{{ '<span class="red">Banned</span>'|safe if user.banned }} </td>
+                    <td><a href="/u/{{ user.link() }}">View local</a> |
+                        {% if not user.is_local() %}
+                            <a href="{{ user.ap_profile_id }}">View remote</a> |
+                        {% else %}
+                            View remote |
+                        {% endif %}
+                        <a href="{{ url_for('admin.admin_user_edit', user_id=user.id) }}">Edit</a> |
+                        <a href="{{ url_for('admin.admin_user_delete', user_id=user.id) }}" class="confirm_first">Delete</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        <nav aria-label="Pagination" class="mt-4">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}" class="btn btn-primary">
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                    </a>
+                {% endif %}
+                {% if next_url %}
+                    <a href="{{ next_url }}" class="btn btn-primary">
+                        {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+        </nav>
+    </div>
+</div>
+{% endblock %}

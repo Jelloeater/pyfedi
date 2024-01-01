@@ -68,6 +68,7 @@ def edit_profile(actor):
         abort(401)
     form = ProfileForm()
     if form.validate_on_submit() and not current_user.banned:
+        current_user.title = form.title.data
         current_user.email = form.email.data
         if form.password_field.data.strip() != '':
             current_user.set_password(form.password_field.data)
@@ -77,11 +78,25 @@ def edit_profile(actor):
         current_user.bot = form.bot.data
         profile_file = request.files['profile_file']
         if profile_file and profile_file.filename != '':
+            # remove old avatar
+            file = File.query.get(current_user.avatar_id)
+            file.delete_from_disk()
+            current_user.avatar_id = None
+            db.session.delete(file)
+
+            # add new avatar
             file = save_icon_file(profile_file, 'users')
             if file:
                 current_user.avatar = file
         banner_file = request.files['banner_file']
         if banner_file and banner_file.filename != '':
+            # remove old cover
+            file = File.query.get(current_user.cover_id)
+            file.delete_from_disk()
+            current_user.cover_id = None
+            db.session.delete(file)
+
+            # add new cover
             file = save_banner_file(banner_file, 'users')
             if file:
                 current_user.cover = file
@@ -92,6 +107,7 @@ def edit_profile(actor):
 
         return redirect(url_for('user.edit_profile', actor=actor))
     elif request.method == 'GET':
+        form.title.data = current_user.title
         form.email.data = current_user.email
         form.about.data = current_user.about
         form.matrix_user_id.data = current_user.matrix_user_id
@@ -200,6 +216,7 @@ def delete_profile(actor):
         else:
             user.banned = True
             user.deleted = True
+            user.delete_dependencies()
             db.session.commit()
 
             flash(f'{actor} has been deleted.')

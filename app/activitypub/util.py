@@ -322,6 +322,7 @@ def refresh_user_profile_task(user_id):
 def actor_json_to_model(activity_json, address, server):
     if activity_json['type'] == 'Person':
         user = User(user_name=activity_json['preferredUsername'],
+                    title=activity_json['name'] if 'name' in activity_json else None,
                     email=f"{address}@{server}",
                     about_html=parse_summary(activity_json),
                     matrix_user_id=activity_json['matrixUserId'] if 'matrixUserId' in activity_json else '',

@@ -9,10 +9,12 @@ from sqlalchemy import text, desc
 from app import db, celery
 from app.activitypub.routes import process_inbox_request, process_delete_request
 from app.activitypub.signature import post_request
-from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm
+from app.activitypub.util import default_context
+from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm
 from app.community.util import save_icon_file, save_banner_file
-from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, User
-from app.utils import render_template, permission_required, set_setting, get_setting, gibberish
+from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
+    User, Instance, File
+from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html
 from app.admin import bp
 
 
@@ -157,9 +159,9 @@ def activity_replay(activity_id):
     activity = ActivityPubLog.query.get_or_404(activity_id)
     request_json = json.loads(activity.activity_json)
     if 'type' in request_json and request_json['type'] == 'Delete' and request_json['id'].endswith('#delete'):
-        process_delete_request(request_json, activity.id)
+        process_delete_request(request_json, activity.id, None)
     else:
-        process_inbox_request(request_json, activity.id)
+        process_inbox_request(request_json, activity.id, None)
     return 'Ok'
 
 
@@ -259,27 +261,177 @@ def unsubscribe_everyone_then_delete_task(community_id):
         members = CommunityMember.query.filter_by(community_id=community_id).all()
         for member in members:
             user = User.query.get(member.user_id)
-            undo_id = f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15)
-            follow = {
-                "actor": f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}",
-                "to": [community.ap_profile_id],
-                "object": community.ap_profile_id,
-                "type": "Follow",
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{gibberish(15)}"
-            }
-            undo = {
-                'actor': user.profile_id(),
-                'to': [community.ap_profile_id],
-                'type': 'Undo',
-                'id': undo_id,
-                'object': follow
-            }
-            activity = ActivityPubLog(direction='out', activity_id=undo_id, activity_type='Undo', activity_json=json.dumps(undo), result='processing')
-            db.session.add(activity)
-            db.session.commit()
-            post_request(community.ap_inbox_url, undo, user.private_key, user.profile_id() + '#main-key')
-            activity.result = 'success'
-            db.session.commit()
+            unsubscribe_from_community(community, user)
+    else:
+        # todo: federate delete of local community out to all following instances
+        ...
+
     sleep(5)
     community.delete_dependencies()
     db.session.delete(community)    # todo: when a remote community is deleted it will be able to be re-created by using the 'Add remote' function. Not ideal. Consider soft-delete.
+
+
+@bp.route('/users', methods=['GET'])
+@login_required
+@permission_required('administer all users')
+def admin_users():
+
+    page = request.args.get('page', 1, type=int)
+
+    users = User.query.filter_by(deleted=False).order_by(User.user_name).paginate(page=page, per_page=1000, error_out=False)
+
+    next_url = url_for('admin.admin_users', page=users.next_num) if users.has_next else None
+    prev_url = url_for('admin.admin_users', page=users.prev_num) if users.has_prev and page != 1 else None
+
+    return render_template('admin/users.html', title=_('Users'), next_url=next_url, prev_url=prev_url, users=users)
+
+
+@bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
+@login_required
+@permission_required('administer all users')
+def admin_user_edit(user_id):
+    form = EditUserForm()
+    user = User.query.get_or_404(user_id)
+    if form.validate_on_submit():
+        user.about = form.about.data
+        user.about_html = markdown_to_html(form.about.data)
+        user.matrix_user_id = form.matrix_user_id.data
+        user.bot = form.bot.data
+        profile_file = request.files['profile_file']
+        if profile_file and profile_file.filename != '':
+            # remove old avatar
+            file = File.query.get(user.avatar_id)
+            file.delete_from_disk()
+            user.avatar_id = None
+            db.session.delete(file)
+
+            # add new avatar
+            file = save_icon_file(profile_file, 'users')
+            if file:
+                user.avatar = file
+        banner_file = request.files['banner_file']
+        if banner_file and banner_file.filename != '':
+            # remove old cover
+            file = File.query.get(user.cover_id)
+            file.delete_from_disk()
+            user.cover_id = None
+            db.session.delete(file)
+
+            # add new cover
+            file = save_banner_file(banner_file, 'users')
+            if file:
+                user.cover = file
+        user.newsletter = form.newsletter.data
+        user.ignore_bots = form.ignore_bots.data
+        user.show_nsfw = form.nsfw.data
+        user.show_nsfl = form.nsfl.data
+        user.searchable = form.searchable.data
+        user.indexable = form.indexable.data
+        user.ap_manually_approves_followers = form.manually_approves_followers.data
+        db.session.commit()
+        user.flush_cache()
+        flash(_('Saved'))
+        return redirect(url_for('admin.admin_users'))
+    else:
+        if not user.is_local():
+            flash(_('This is a remote user - most settings here will be regularly overwritten with data from the original server.'), 'warning')
+        form.about.data = user.about
+        form.matrix_user_id.data = user.matrix_user_id
+        form.newsletter.data = user.newsletter
+        form.bot.data = user.bot
+        form.ignore_bots.data = user.ignore_bots
+        form.nsfw.data = user.show_nsfw
+        form.nsfl.data = user.show_nsfl
+        form.searchable.data = user.searchable
+        form.indexable.data = user.indexable
+        form.manually_approves_followers.data = user.ap_manually_approves_followers
+
+    return render_template('admin/edit_user.html', title=_('Edit user'), form=form, user=user)
+
+
+@bp.route('/user/<int:user_id>/delete', methods=['GET'])
+@login_required
+@permission_required('administer all users')
+def admin_user_delete(user_id):
+    user = User.query.get_or_404(user_id)
+
+    user.banned = True  # Unsubscribing everyone could take a long time so until that is completed hide this user from the UI by banning it.
+    user.last_active = utcnow()
+    db.session.commit()
+
+    if user.is_local():
+        unsubscribe_from_everything_then_delete(user.id)
+    else:
+        user.deleted = True
+        user.delete_dependencies()
+        db.session.commit()
+
+    flash(_('User deleted'))
+    return redirect(url_for('admin.admin_users'))
+
+
+def unsubscribe_from_everything_then_delete(user_id):
+    if current_app.debug:
+        unsubscribe_from_everything_then_delete_task(user_id)
+    else:
+        unsubscribe_from_everything_then_delete_task.delay(user_id)
+
+
+@celery.task
+def unsubscribe_from_everything_then_delete_task(user_id):
+    user = User.query.get(user_id)
+    if user:
+
+        # unsubscribe
+        communities = CommunityMember.query.filter_by(user_id=user_id).all()
+        for membership in communities:
+            community = Community.query.get(membership.community_id)
+            unsubscribe_from_community(community, user)
+
+        # federate deletion of account
+        if user.is_local():
+            instances = Instance.query.all()
+            site = Site.query.get(1)
+            payload = {
+                "@context": default_context(),
+                "actor": user.ap_profile_id,
+                "id": f"{user.ap_profile_id}#delete",
+                "object": user.ap_profile_id,
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "type": "Delete"
+            }
+            for instance in instances:
+                if instance.inbox and instance.id != 1:
+                    post_request(instance.inbox, payload, site.private_key,
+                                 f"https://{current_app.config['SERVER_NAME']}#main-key")
+
+        user.deleted = True
+        user.delete_dependencies()
+        db.session.commit()
+
+
+def unsubscribe_from_community(community, user):
+    undo_id = f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15)
+    follow = {
+        "actor": f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}",
+        "to": [community.ap_profile_id],
+        "object": community.ap_profile_id,
+        "type": "Follow",
+        "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{gibberish(15)}"
+    }
+    undo = {
+        'actor': user.profile_id(),
+        'to': [community.ap_profile_id],
+        'type': 'Undo',
+        'id': undo_id,
+        'object': follow
+    }
+    activity = ActivityPubLog(direction='out', activity_id=undo_id, activity_type='Undo',
+                              activity_json=json.dumps(undo), result='processing')
+    db.session.add(activity)
+    db.session.commit()
+    post_request(community.ap_inbox_url, undo, user.private_key, user.profile_id() + '#main-key')
+    activity.result = 'success'
+    db.session.commit()

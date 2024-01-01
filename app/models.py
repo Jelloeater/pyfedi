@@ -235,6 +235,7 @@ class User(UserMixin, db.Model):
     query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
     user_name = db.Column(db.String(255), index=True)
+    title = db.Column(db.String(256))
     email = db.Column(db.String(255), index=True)
     password_hash = db.Column(db.String(128))
     verified = db.Column(db.Boolean, default=False)
@@ -305,7 +306,10 @@ class User(UserMixin, db.Model):
 
     def display_name(self):
         if self.deleted is False:
-            return self.user_name
+            if self.title:
+                return self.title
+            else:
+                return self.user_name
         else:
             return '[deleted]'
 
@@ -469,10 +473,23 @@ class User(UserMixin, db.Model):
         cache.delete('/u/' + self.user_name + '_False')
         cache.delete('/u/' + self.user_name + '_True')
 
+    def delete_dependencies(self):
+        if self.cover_id:
+            file = File.query.get(self.cover_id)
+            file.delete_from_disk()
+            self.cover_id = None
+            db.session.delete(file)
+        if self.avatar_id:
+            file = File.query.get(self.avatar_id)
+            file.delete_from_disk()
+            self.avatar_id = None
+            db.session.delete(file)
+
     def purge_content(self):
         files = File.query.join(Post).filter(Post.user_id == self.id).all()
         for file in files:
             file.delete_from_disk()
+        self.delete_dependencies()
         db.session.query(Report).filter(Report.reporter_id == self.id).delete()
         db.session.query(Report).filter(Report.suspect_user_id == self.id).delete()
         db.session.query(ActivityLog).filter(ActivityLog.user_id == self.id).delete()
