@@ -254,6 +254,10 @@ nav.navbar {
   width: 96%;
 }
 
+.reported {
+  background-color: antiquewhite;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     background-color: $dark-grey;

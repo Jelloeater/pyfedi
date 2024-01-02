@@ -893,10 +893,15 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
                 community.last_active = post.last_active = utcnow()
                 activity_log.result = 'success'
                 db.session.commit()
-                vote = PostReplyVote(user_id=user.id, author_id=post_reply.user_id,
-                                     post_reply_id=post_reply.id,
-                                     effect=instance_weight(user.ap_domain))
-                db.session.add(vote)
+                if user.reputation > 100:
+                    vote = PostReplyVote(user_id=1, author_id=post_reply.user_id,
+                                         post_reply_id=post_reply.id,
+                                         effect=instance_weight(user.ap_domain))
+                    db.session.add(vote)
+                    post_reply.up_votes += 1
+                    post_reply.score += 1
+                    post_reply.ranking += 1
+                    db.session.commit()
             else:
                 activity_log.exception_message = 'Comments disabled, reply discarded'
                 activity_log.result = 'ignored'
@@ -920,7 +925,8 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
                 ap_announce_id=announce_id,
                 type=constants.POST_TYPE_ARTICLE,
                 up_votes=1,
-                score=instance_weight(user.ap_domain)
+                score=instance_weight(user.ap_domain),
+                instance_id=user.instance_id
                 )
     if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
         post.body = request_json['object']['source']['content']
@@ -972,11 +978,15 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
 
         if post.image_id:
             make_image_sizes(post.image_id, 266, None, 'posts')
-
-        vote = PostVote(user_id=user.id, author_id=post.user_id,
-                        post_id=post.id,
-                        effect=instance_weight(user.ap_domain))
-        db.session.add(vote)
+        if user.reputation > 100:
+            vote = PostVote(user_id=1, author_id=post.user_id,
+                            post_id=post.id,
+                            effect=instance_weight(user.ap_domain))
+            db.session.add(vote)
+            post.up_votes += 1
+            post.score += 1
+            post.ranking += 1
+            db.session.commit()
     return post
 
 

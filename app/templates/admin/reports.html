@@ -18,29 +18,30 @@
         </form>
         <table class="table table-striped">
             <tr>
-               <th>Name</th>
                <th>Local/Remote</th>
-               <th>Attitude</th>
-               <th>Banned</th>
-               <th>Reports</th>
+               <th>Reasons</th>
+               <th>Description</th>
+               <th>Type</th>
+               <th>Created</th>
                <th>Actions</th>
             </tr>
-            {% for user in users %}
+            {% for report in reports %}
                 <tr>
-                    <td><img src="{{ user.avatar_thumbnail() }}" class="community_icon rounded-circle" loading="lazy" />
-                        {{ user.display_name() }}</td>
-                    <td>{{ 'Local' if user.is_local() else 'Remote' }}</td>
-                    <td>{{ user.attitude * 100 }}</td>
-                    <td>{{ '<span class="red">Banned</span>'|safe if user.banned }} </td>
-                    <td>{{ user.reports if user.reports > 0 }} </td>
-                    <td><a href="/u/{{ user.link() }}">View local</a> |
-                        {% if not user.is_local() %}
-                            <a href="{{ user.ap_profile_id }}">View remote</a> |
-                        {% else %}
-                            View remote |
+                    <td>{{ 'Local' if report.is_local() else 'Remote' }}</td>
+                    <td>{{ report.reasons }}</td>
+                    <td>{{ report.description }}</td>
+                    <td>{{ report.type_text() }}</td>
+                    <td>{{ report.created_at }}</td>
+                    <td>
+                        {% if report.suspect_post_reply_id %}
+                            <a href="/post/{{ report.suspect_post_id }}#comment_{{ report.suspect_post_reply_id }}">View</a>
+                        {% elif report.suspect_post_id %}
+                            <a href="/post/{{ report.suspect_post_id }}">View</a>
+                        {% elif report.suspect_user_id %}
+                            <a href="/user/{{ report.suspect_user_id }}">View</a>
+                        {% elif report.suspect_community_id %}
+                            <a href="/user/{{ report.suspect_community_id }}">View</a>
                         {% endif %}
-                        <a href="{{ url_for('admin.admin_user_edit', user_id=user.id) }}">Edit</a> |
-                        <a href="{{ url_for('admin.admin_user_delete', user_id=user.id) }}" class="confirm_first">Delete</a>
                     </td>
                 </tr>
             {% endfor %}

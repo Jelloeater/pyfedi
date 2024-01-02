@@ -18,7 +18,9 @@
                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
                 </a></small></p>
             {% endif %}
-            <p><small>submitted {{ moment(post.posted_at).fromNow() }} by {{ render_username(post.author) }}
+            <p>{% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
+                    <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
+                {% endif %}<small>submitted {{ moment(post.posted_at).fromNow() }} by {{ render_username(post.author) }}
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
             </small></p>
             <div class="post_image">
@@ -46,9 +48,11 @@
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 </div>
             {% endif %}
-            <p class="small">submitted {{ moment(post.posted_at).fromNow() }} by
+            <p>{% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
+                    <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
+                {% endif %}<small>submitted {{ moment(post.posted_at).fromNow() }} by
                 {{ render_username(post.author) }}
-                {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
+                {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}</small>
             </p>
             {% if post.type == POST_TYPE_LINK %}
                 <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}

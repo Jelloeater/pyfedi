@@ -11,9 +11,10 @@ from app.activitypub.routes import process_inbox_request, process_delete_request
 from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm
+from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
-    User, Instance, File
+    User, Instance, File, Report
 from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html
 from app.admin import bp
 
@@ -277,13 +278,21 @@ def unsubscribe_everyone_then_delete_task(community_id):
 def admin_users():
 
     page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    local_remote = request.args.get('local_remote', '')
 
-    users = User.query.filter_by(deleted=False).order_by(User.user_name).paginate(page=page, per_page=1000, error_out=False)
+    users = User.query.filter_by(deleted=False)
+    if local_remote == 'local':
+        users = users.filter_by(ap_id=None)
+    if local_remote == 'remote':
+        users = users.filter(User.ap_id != None)
+    users = users.order_by(User.user_name).paginate(page=page, per_page=1000, error_out=False)
 
     next_url = url_for('admin.admin_users', page=users.next_num) if users.has_next else None
     prev_url = url_for('admin.admin_users', page=users.prev_num) if users.has_prev and page != 1 else None
 
-    return render_template('admin/users.html', title=_('Users'), next_url=next_url, prev_url=prev_url, users=users)
+    return render_template('admin/users.html', title=_('Users'), next_url=next_url, prev_url=prev_url, users=users,
+                           local_remote=local_remote, search=search)
 
 
 @bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
@@ -370,68 +379,24 @@ def admin_user_delete(user_id):
     return redirect(url_for('admin.admin_users'))
 
 
-def unsubscribe_from_everything_then_delete(user_id):
-    if current_app.debug:
-        unsubscribe_from_everything_then_delete_task(user_id)
-    else:
-        unsubscribe_from_everything_then_delete_task.delay(user_id)
+@bp.route('/reports', methods=['GET'])
+@login_required
+@permission_required('administer all users')
+def admin_reports():
 
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    local_remote = request.args.get('local_remote', '')
 
-@celery.task
-def unsubscribe_from_everything_then_delete_task(user_id):
-    user = User.query.get(user_id)
-    if user:
+    reports = Report.query.filter_by(status=0)
+    if local_remote == 'local':
+        reports = reports.filter_by(ap_id=None)
+    if local_remote == 'remote':
+        reports = reports.filter(Report.ap_id != None)
+    reports = reports.order_by(desc(Report.created_at)).paginate(page=page, per_page=1000, error_out=False)
 
-        # unsubscribe
-        communities = CommunityMember.query.filter_by(user_id=user_id).all()
-        for membership in communities:
-            community = Community.query.get(membership.community_id)
-            unsubscribe_from_community(community, user)
+    next_url = url_for('admin.admin_reports', page=reports.next_num) if reports.has_next else None
+    prev_url = url_for('admin.admin_reports', page=reports.prev_num) if reports.has_prev and page != 1 else None
 
-        # federate deletion of account
-        if user.is_local():
-            instances = Instance.query.all()
-            site = Site.query.get(1)
-            payload = {
-                "@context": default_context(),
-                "actor": user.ap_profile_id,
-                "id": f"{user.ap_profile_id}#delete",
-                "object": user.ap_profile_id,
-                "to": [
-                    "https://www.w3.org/ns/activitystreams#Public"
-                ],
-                "type": "Delete"
-            }
-            for instance in instances:
-                if instance.inbox and instance.id != 1:
-                    post_request(instance.inbox, payload, site.private_key,
-                                 f"https://{current_app.config['SERVER_NAME']}#main-key")
-
-        user.deleted = True
-        user.delete_dependencies()
-        db.session.commit()
-
-
-def unsubscribe_from_community(community, user):
-    undo_id = f"https://{current_app.config['SERVER_NAME']}/activities/undo/" + gibberish(15)
-    follow = {
-        "actor": f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}",
-        "to": [community.ap_profile_id],
-        "object": community.ap_profile_id,
-        "type": "Follow",
-        "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{gibberish(15)}"
-    }
-    undo = {
-        'actor': user.profile_id(),
-        'to': [community.ap_profile_id],
-        'type': 'Undo',
-        'id': undo_id,
-        'object': follow
-    }
-    activity = ActivityPubLog(direction='out', activity_id=undo_id, activity_type='Undo',
-                              activity_json=json.dumps(undo), result='processing')
-    db.session.add(activity)
-    db.session.commit()
-    post_request(community.ap_inbox_url, undo, user.private_key, user.profile_id() + '#main-key')
-    activity.result = 'success'
-    db.session.commit()
+    return render_template('admin/reports.html', title=_('Reports'), next_url=next_url, prev_url=prev_url, reports=reports,
+                           local_remote=local_remote, search=search)

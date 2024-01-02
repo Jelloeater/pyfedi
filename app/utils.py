@@ -360,6 +360,11 @@ def user_ip_banned() -> bool:
         return current_ip_address in banned_ip_addresses()
 
 
+def instance_banned(domain: str) -> bool:
+    banned = BannedInstances.query.filter_by(domain=domain).first()
+    return banned is not None
+
+
 def user_cookie_banned() -> bool:
     cookie = request.cookies.get('sesion', None)
     return cookie is not None

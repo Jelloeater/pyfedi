@@ -18,7 +18,7 @@ from app.models import Post, PostReply, \
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
-    request_etag_matches, ip_address, user_ip_banned
+    request_etag_matches, ip_address, user_ip_banned, instance_banned
 
 
 def show_post(post_id: int):
@@ -68,9 +68,19 @@ def show_post(post_id: int):
         db.session.add(reply)
         db.session.commit()
         reply.ap_id = reply.profile_id()
-        reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
-                                   effect=1.0)
-        db.session.add(reply_vote)
+        if current_user.reputation > 100:
+            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
+                                       effect=1.0)
+            reply.up_votes += 1
+            reply.score += 1
+            reply.ranking += 1
+            db.session.add(reply_vote)
+        elif current_user.reputation < -100:
+            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
+                                       effect=-1.0)
+            reply.score -= 1
+            reply.ranking -= 1
+            db.session.add(reply_vote)
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')
@@ -133,7 +143,7 @@ def show_post(post_id: int):
             }
 
             for instance in post.community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
                     send_to_remote_instance(instance[1], post.community.id, announce)
 
         return redirect(url_for('activitypub.post_ap', post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
@@ -225,7 +235,7 @@ def post_vote(post_id: int, vote_direction):
                 'object': action_json
             }
             for instance in post.community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
                     send_to_remote_instance(instance[1], post.community.id, announce)
         else:
             success = post_request(post.community.ap_inbox_url, action_json, current_user.private_key,
@@ -368,9 +378,19 @@ def add_reply(post_id: int, comment_id: int):
         db.session.commit()
         reply.ap_id = reply.profile_id()
         db.session.commit()
-        reply_vote = PostReplyVote(user_id=current_user.id, author_id=current_user.id, post_reply_id=reply.id,
-                                   effect=1.0)
-        db.session.add(reply_vote)
+        if current_user.reputation > 100:
+            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
+                                       effect=1.0)
+            reply.up_votes += 1
+            reply.score += 1
+            reply.ranking += 1
+            db.session.add(reply_vote)
+        elif current_user.reputation < -100:
+            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
+                                       effect=-1.0)
+            reply.score -= 1
+            reply.ranking -= 1
+            db.session.add(reply_vote)
         post.reply_count = post_reply_count(post.id)
         post.last_active = post.community.last_active = utcnow()
         db.session.commit()
@@ -452,7 +472,7 @@ def add_reply(post_id: int, comment_id: int):
             }
 
             for instance in post.community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
                     send_to_remote_instance(instance[1], post.community.id, announce)
 
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:

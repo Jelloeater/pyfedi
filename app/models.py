@@ -175,6 +175,7 @@ class Community(db.Model):
         else:
             return self.ap_id
 
+    @cache.memoize(timeout=30)
     def moderators(self):
         return CommunityMember.query.filter((CommunityMember.community_id == self.id) &
                                      (or_(
@@ -210,7 +211,7 @@ class Community(db.Model):
     # returns a list of tuples (instance.id, instance.inbox)
     def following_instances(self):
         sql = 'select distinct i.id, i.inbox from "instance" as i inner join "user" as u on u.instance_id = i.id inner join "community_member" as cm on cm.user_id = u.id '
-        sql += 'where cm.community_id = :community_id and cm.is_banned = false and i.id <> 1'
+        sql += 'where cm.community_id = :community_id and cm.is_banned = false and i.id <> 1 and i.dormant = false and i.gone_forever = false'
         return db.session.execute(text(sql), {'community_id': self.id})
 
     def delete_dependencies(self):
@@ -897,6 +898,17 @@ class Report(db.Model):
     suspect_post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
+
+    # textual representation of self.type
+    def type_text(self):
+        types = ('User', 'Post', 'Comment', 'Community')
+        if self.type is None:
+            return ''
+        else:
+            return types[self.type]
+
+    def is_local(self):
+        return True
 
 
 class IpBan(db.Model):

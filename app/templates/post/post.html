@@ -84,8 +84,11 @@
                                 {% endif %}
                                 {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter" class="small">[OP]</span>{% endif %}
                                 <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
+                                {% if comment['comment'].reports and current_user.is_authenticated and post.community.is_moderator(current_user)%}
+                                    <span class="red fe fe-report" title="{{ _('Reported. Check comment for issues.') }}"></span>
+                                {% endif %}
                             </div>
-                            <div class="comment_body hidable">
+                            <div class="comment_body hidable {% if comment['comment'].reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}reported{% endif %}">
                                 {{ comment['comment'].body_html | safe }}
                             </div>
                         </div>

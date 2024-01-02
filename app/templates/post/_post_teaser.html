@@ -1,4 +1,4 @@
-<div class="post_teaser">
+<div class="post_teaser {{ 'reported' if post.reports and current_user.is_authenticated and post.community.is_moderator() }}">
     <div class="row">
         <div class="col-12">
             <div class="row main_row">
@@ -28,6 +28,9 @@
                                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
                             </a>
                             <span class="domain_link">(<a href="/d/{{ post.domain_id }}">{{ post.domain.name }}</a>)</span>
+                        {% endif %}
+                        {% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
+                            <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
                         {% endif %}
                     </h3>
                     <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>

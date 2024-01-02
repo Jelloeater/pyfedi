@@ -17,7 +17,7 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
-    request_etag_matches, return_304
+    request_etag_matches, return_304, instance_banned
 from feedgen.feed import FeedGenerator
 from datetime import timezone
 
@@ -360,6 +360,10 @@ def add_post(actor):
             "object": page,
             '@context': default_context()
         }
+        if post.type == POST_TYPE_LINK:
+            page.attachment = [{'href': post.url, 'type': 'Link'}]
+        if post.image_id:
+            page.image = [{'type': 'Image', 'url': post.image.source_url}]
         if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
             success = post_request(community.ap_inbox_url, create, current_user.private_key,
                                    current_user.ap_profile_id + '#main-key')
@@ -384,7 +388,7 @@ def add_post(actor):
 
             sent_to = 0
             for instance in community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]):
+                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
                     send_to_remote_instance(instance[1], community.id, announce)
                     sent_to += 1
             if sent_to:
