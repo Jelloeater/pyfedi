@@ -371,6 +371,8 @@ def actor_json_to_model(activity_json, address, server):
                               rules_html=markdown_to_html(activity_json['rules'] if 'rules' in activity_json else ''),
                               nsfw=activity_json['sensitive'],
                               restricted_to_mods=activity_json['postingRestrictedToMods'],
+                              new_mods_wanted=activity_json['newModsWanted'] if 'newModsWanted' in activity_json else False,
+                              private_mods=activity_json['privateMods'] if 'privateMods' in activity_json else False,
                               created_at=activity_json['published'] if 'published' in activity_json else utcnow(),
                               last_active=activity_json['updated'] if 'updated' in activity_json else utcnow(),
                               ap_id=f"{address[1:]}",

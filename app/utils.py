@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from datetime import datetime
-from typing import List, Literal
+from typing import List, Literal, Union
 
 import markdown2
 import math
@@ -14,14 +14,15 @@ from bs4 import BeautifulSoup
 import requests
 import os
 import imghdr
-from flask import current_app, json, redirect, url_for, request, make_response, Response
+from flask import current_app, json, redirect, url_for, request, make_response, Response, g
 from flask_login import current_user
 from sqlalchemy import text
 from wtforms.fields  import SelectField, SelectMultipleField
 from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
 
-from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan
+from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
+    Site, Post, PostReply
 
 
 # Flask's render_template function, with support for themes added
@@ -374,3 +375,64 @@ def user_cookie_banned() -> bool:
 def banned_ip_addresses() -> List[str]:
     ips = IpBan.query.all()
     return [ip.ip_address for ip in ips]
+
+
+def can_downvote(user, content: Union[Post, PostReply], site=None) -> bool:
+    if user is None or content is None or user.banned:
+        return False
+
+    if site is None:
+        try:
+            site = g.site
+        except:
+            site = Site.query.get(1)
+
+    if not site.enable_downvotes and content.community.is_local():
+        return False
+
+    if content.community.is_moderator(user) or user.is_admin():
+        return True
+
+    if content.community.local_only and not user.is_local():
+        return False
+
+    return True
+
+
+def can_upvote(user, content: Union[Post, PostReply]) -> bool:
+    if user is None or content is None or user.banned:
+        return False
+
+    if content.community.is_moderator(user) or user.is_admin():
+        return True
+
+    return True
+
+
+def can_create(user, content: Union[Community, Post, PostReply]) -> bool:
+    if user is None or content is None or user.banned:
+        return False
+
+    if isinstance(content, Community):
+        if content.is_moderator(user) or user.is_admin():
+            return True
+
+        if content.restricted_to_mods:
+            return False
+
+        if content.local_only and not user.is_local():
+            return False
+    else:
+        if content.community.is_moderator(user) or user.is_admin():
+            return True
+
+        if content.community.restricted_to_mods and isinstance(content, Post):
+            return False
+
+        if content.community.local_only and not user.is_local():
+            return False
+
+        if isinstance(content, PostReply) and content.post.comments_enabled is False:
+            return False
+
+    return True

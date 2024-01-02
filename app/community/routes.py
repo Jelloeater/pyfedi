@@ -17,7 +17,7 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
-    request_etag_matches, return_304, instance_banned
+    request_etag_matches, return_304, instance_banned, can_create
 from feedgen.feed import FeedGenerator
 from datetime import timezone
 
@@ -313,8 +313,13 @@ def add_post(actor):
 
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
+    if not can_create(current_user, community):
+        abort(401)
+
     if form.validate_on_submit():
         community = Community.query.get_or_404(form.communities.data)
+        if not can_create(current_user, community):
+            abort(401)
         post = Post(user_id=current_user.id, community_id=form.communities.data, instance_id=1)
         save_post(form, post)
         community.post_count += 1

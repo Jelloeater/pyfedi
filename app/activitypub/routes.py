@@ -18,7 +18,8 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     user_removed_from_remote_server, create_post, create_post_reply, update_post_reply_from_activity, \
     update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
-    domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address
+    domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address, can_downvote, \
+    can_upvote, can_create
 import werkzeug.exceptions
 
 
@@ -247,7 +248,9 @@ def community_profile(actor):
                 "moderators": f"https://{server}/c/{actor}/moderators",
                 "featured": f"https://{server}/c/{actor}/featured",
                 "attributedTo": f"https://{server}/c/{actor}/moderators",
-                "postingRestrictedToMods": community.restricted_to_mods,
+                "postingRestrictedToMods": community.restricted_to_mods or community.local_only,
+                "newModsWanted": community.new_mods_wanted,
+                "privateMods": community.private_mods,
                 "url": f"https://{server}/c/{actor}",
                 "publicKey": {
                     "id": f"https://{server}/c/{actor}#main-key",
@@ -403,10 +406,11 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             if object_type in new_content_types:  # create a new post
                                 in_reply_to = request_json['object']['object']['inReplyTo'] if 'inReplyTo' in \
                                                                                                request_json['object']['object'] else None
-                                if not in_reply_to:
-                                    post = create_post(activity_log, community, request_json['object'], user, announce_id=request_json['id'])
-                                else:
-                                    post = create_post_reply(activity_log, community, in_reply_to, request_json['object'], user, announce_id=request_json['id'])
+                                if can_create(user, community):
+                                    if not in_reply_to:
+                                        post = create_post(activity_log, community, request_json['object'], user, announce_id=request_json['id'])
+                                    else:
+                                        post = create_post_reply(activity_log, community, in_reply_to, request_json['object'], user, announce_id=request_json['id'])
                             else:
                                 activity_log.exception_message = 'Unacceptable type: ' + object_type
                         else:
@@ -421,8 +425,14 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         user_ap_id = request_json['object']['actor']
                         liked_ap_id = request_json['object']['object']
                         user = find_actor_or_create(user_ap_id)
-                        if user and not user.is_local():
-                            liked = find_liked_object(liked_ap_id)
+                        liked = find_liked_object(liked_ap_id)
+
+                        if user is None:
+                            activity_log.exception_message = 'Blocked or unfound user'
+                        elif user.is_local():
+                            activity_log.exception_message = 'Activity about local content which is already present'
+                            activity_log.result = 'ignored'
+                        elif can_upvote(user, liked):
                             # insert into voted table
                             if liked is None:
                                 activity_log.exception_message = 'Liked object not found'
@@ -439,11 +449,8 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 # todo: recalculate 'hotness' of liked post/reply
                                 # todo: if vote was on content in local community, federate the vote out to followers
                         else:
-                            if user is None:
-                                activity_log.exception_message = 'Blocked or unfound user'
-                            if user and user.is_local():
-                                activity_log.exception_message = 'Activity about local content which is already present'
-                                activity_log.result = 'ignored'
+                            activity_log.exception_message = 'Cannot upvote this'
+                            activity_log.result = 'ignored'
 
                     elif request_json['object']['type'] == 'Dislike':
                         activity_log.activity_type = request_json['object']['type']
@@ -453,28 +460,29 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             user_ap_id = request_json['object']['actor']
                             liked_ap_id = request_json['object']['object']
                             user = find_actor_or_create(user_ap_id)
-                            if user and not user.is_local():
-                                disliked = find_liked_object(liked_ap_id)
+                            disliked = find_liked_object(liked_ap_id)
+                            if user is None:
+                                activity_log.exception_message = 'Blocked or unfound user'
+                            elif user.is_local():
+                                activity_log.exception_message = 'Activity about local content which is already present'
+                                activity_log.result = 'ignored'
+                            elif can_downvote(user, disliked, site):
                                 # insert into voted table
                                 if disliked is None:
                                     activity_log.exception_message = 'Liked object not found'
-                                elif disliked is not None and isinstance(disliked, Post):
-                                    downvote_post(disliked, user)
+                                elif isinstance(disliked, (Post, PostReply)):
+                                    if isinstance(disliked, Post):
+                                        downvote_post(disliked, user)
+                                    elif isinstance(disliked, PostReply):
+                                        downvote_post_reply(disliked, user)
                                     activity_log.result = 'success'
-                                elif disliked is not None and isinstance(disliked, PostReply):
-                                    downvote_post_reply(disliked, user)
-                                    activity_log.result = 'success'
+                                    # todo: recalculate 'hotness' of liked post/reply
+                                    # todo: if vote was on content in the local community, federate the vote out to followers
                                 else:
                                     activity_log.exception_message = 'Could not detect type of like'
-                                if activity_log.result == 'success':
-                                    ...  # todo: recalculate 'hotness' of liked post/reply
-                                    # todo: if vote was on content in local community, federate the vote out to followers
                             else:
-                                if user is None:
-                                    activity_log.exception_message = 'Blocked or unfound user'
-                                if user and user.is_local():
-                                    activity_log.exception_message = 'Activity about local content which is already present'
-                                    activity_log.result = 'ignored'
+                                activity_log.exception_message = 'Cannot downvote this'
+                                activity_log.result = 'ignored'
                     elif request_json['object']['type'] == 'Delete':
                         activity_log.activity_type = request_json['object']['type']
                         user_ap_id = request_json['object']['actor']
@@ -634,12 +642,14 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                     if '/post/' in target_ap_id:
                         post = Post.query.filter_by(ap_id=target_ap_id).first()
-                    if (user and not user.is_local()) and post:
+                    if (user and not user.is_local()) and post and can_upvote(user, post):
                         upvote_post(post, user)
                         activity_log.result = 'success'
-                    elif (user and not user.is_local()) and comment:
+                    elif (user and not user.is_local()) and comment and can_upvote(user, comment):
                         upvote_post_reply(comment, user)
                         activity_log.result = 'success'
+                    else:
+                        activity_log.exception_message = 'Could not find user or content for vote'
 
                 elif request_json['type'] == 'Dislike':  # Downvote
                     if get_setting('allow_dislike', True) is False:
@@ -655,10 +665,10 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
                         if '/post/' in target_ap_id:
                             post = Post.query.filter_by(ap_id=target_ap_id).first()
-                        if (user and not user.is_local()) and comment:
+                        if (user and not user.is_local()) and comment and can_downvote(user, comment, site):
                             downvote_post_reply(comment, user)
                             activity_log.result = 'success'
-                        elif (user and not user.is_local()) and post:
+                        elif (user and not user.is_local()) and post and can_downvote(user, post, site):
                             downvote_post(post, user)
                             activity_log.result = 'success'
                         else:

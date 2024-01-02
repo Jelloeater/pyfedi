@@ -105,6 +105,7 @@ class Community(db.Model):
 
     banned = db.Column(db.Boolean, default=False)
     restricted_to_mods = db.Column(db.Boolean, default=False)
+    local_only = db.Column(db.Boolean, default=False)       # only users on this instance can post
     new_mods_wanted = db.Column(db.Boolean, default=False)
     searchable = db.Column(db.Boolean, default=True)
     private_mods = db.Column(db.Boolean, default=False)
@@ -116,8 +117,8 @@ class Community(db.Model):
 
     search_vector = db.Column(TSVectorType('name', 'title', 'description', 'rules'))
 
-    posts = db.relationship('Post', backref='community', lazy='dynamic', cascade="all, delete-orphan")
-    replies = db.relationship('PostReply', backref='community', lazy='dynamic', cascade="all, delete-orphan")
+    posts = db.relationship('Post', lazy='dynamic', cascade="all, delete-orphan")
+    replies = db.relationship('PostReply', lazy='dynamic', cascade="all, delete-orphan")
     icon = db.relationship('File', foreign_keys=[icon_id], single_parent=True, backref='community', cascade="all, delete-orphan")
     image = db.relationship('File', foreign_keys=[image_id], single_parent=True, cascade="all, delete-orphan")
 
@@ -574,6 +575,7 @@ class Post(db.Model):
     image = db.relationship(File, lazy='joined', foreign_keys=[image_id], cascade="all, delete")
     domain = db.relationship('Domain', lazy='joined', foreign_keys=[domain_id])
     author = db.relationship('User', lazy='joined', overlaps='posts', foreign_keys=[user_id])
+    community = db.relationship('Community', lazy='joined', overlaps='posts', foreign_keys=[community_id])
     replies = db.relationship('PostReply', lazy='dynamic', backref='post')
 
     def is_local(self):
@@ -647,6 +649,7 @@ class PostReply(db.Model):
     search_vector = db.Column(TSVectorType('body'))
 
     author = db.relationship('User', lazy='joined', foreign_keys=[user_id], single_parent=True, overlaps="post_replies")
+    community = db.relationship('Community', lazy='joined', overlaps='replies', foreign_keys=[community_id])
 
     def is_local(self):
         return self.ap_id is None or self.ap_id.startswith('https://' + current_app.config['SERVER_NAME'])

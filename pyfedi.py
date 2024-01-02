@@ -7,7 +7,8 @@ import os, click
 from flask import session, g, json
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
 from app.models import Site
-from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership
+from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership, \
+    can_create, can_upvote, can_downvote
 
 app = create_app()
 cli.register(app)
@@ -33,6 +34,9 @@ with app.app_context():
     app.jinja_env.globals['community_membership'] = community_membership
     app.jinja_env.globals['json_loads'] = json.loads
     app.jinja_env.globals['user_access'] = user_access
+    app.jinja_env.globals['can_create'] = can_create
+    app.jinja_env.globals['can_upvote'] = can_upvote
+    app.jinja_env.globals['can_downvote'] = can_downvote
     app.jinja_env.filters['shorten'] = shorten_string
     app.jinja_env.filters['shorten_url'] = shorten_url
 

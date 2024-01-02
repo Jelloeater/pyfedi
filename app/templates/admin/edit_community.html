@@ -33,10 +33,13 @@
             <small class="field_hint">Provide a wide image - letterbox orientation.</small>
             {{ render_field(form.rules) }}
             {{ render_field(form.nsfw) }}
+            {{ render_field(form.restricted_to_mods) }}
             {% if not community.is_local() %}
             <fieldset class="border pl-2 pt-2 mb-4">
                 <legend>{{ _('Will not be overwritten by remote server') }}</legend>
             {% endif %}
+                {{ render_field(form.local_only) }}
+                {{ render_field(form.new_mods_wanted) }}
                 {{ render_field(form.show_home) }}
                 {{ render_field(form.show_popular) }}
                 {{ render_field(form.show_all) }}

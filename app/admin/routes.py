@@ -194,6 +194,9 @@ def admin_community_edit(community_id):
         community.description = form.description.data
         community.rules = form.rules.data
         community.nsfw = form.nsfw.data
+        community.local_only = form.local_only.data
+        community.restricted_to_mods = form.restricted_to_mods.data
+        community.new_mods_wanted = form.new_mods_wanted.data
         community.show_home = form.show_home.data
         community.show_popular = form.show_popular.data
         community.show_all = form.show_all.data
@@ -224,6 +227,9 @@ def admin_community_edit(community_id):
         form.description.data = community.description
         form.rules.data = community.rules
         form.nsfw.data = community.nsfw
+        form.local_only.data = community.local_only
+        form.new_mods_wanted.data = community.new_mods_wanted
+        form.restricted_to_mods.data = community.restricted_to_mods
         form.show_home.data = community.show_home
         form.show_popular.data = community.show_popular
         form.show_all.data = community.show_all
