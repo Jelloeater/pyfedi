@@ -14,8 +14,8 @@ from flask_babel import _, get_locale
 from sqlalchemy import select, desc
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
-    ap_datetime, ip_address
-from app.models import Community, CommunityMember, Post, Site, User, utcnow
+    ap_datetime, ip_address, retrieve_block_list
+from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain
 
 
 @bp.route('/', methods=['HEAD', 'GET', 'POST'])

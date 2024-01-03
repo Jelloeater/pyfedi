@@ -274,7 +274,7 @@ def blocked_domains(user_id) -> List[int]:
 
 def retrieve_block_list():
     try:
-        response = requests.get('https://github.com/rimu/no-qanon/blob/master/domains.txt', timeout=1)
+        response = requests.get('https://raw.githubusercontent.com/rimu/no-qanon/master/domains.txt', timeout=1)
     except:
         return None
     if response and response.status_code == 200:
