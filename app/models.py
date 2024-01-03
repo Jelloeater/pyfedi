@@ -28,6 +28,54 @@ class FullTextSearchQuery(BaseQuery, SearchQueryMixin):
     pass
 
 
+class BannedInstances(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(256), index=True)
+    reason = db.Column(db.String(256))
+    initiator = db.Column(db.String(256))
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+
+class AllowedInstances(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(256), index=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+
+class Instance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(256), index=True)
+    inbox = db.Column(db.String(256))
+    shared_inbox = db.Column(db.String(256))
+    outbox = db.Column(db.String(256))
+    vote_weight = db.Column(db.Float, default=1.0)
+    software = db.Column(db.String(50))
+    version = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow)
+    last_seen = db.Column(db.DateTime, default=utcnow)      # When an Activity was received from them
+    last_successful_send = db.Column(db.DateTime)           # When we successfully sent them an Activity
+    failures = db.Column(db.Integer, default=0)             # How many times we failed to send (reset to 0 after every successful send)
+    most_recent_attempt = db.Column(db.DateTime)            # When the most recent failure was
+    dormant = db.Column(db.Boolean, default=False, index=True)          # True once this instance is considered offline and not worth sending to any more
+    start_trying_again = db.Column(db.DateTime)             # When to start trying again. Should grow exponentially with each failure.
+    gone_forever = db.Column(db.Boolean, default=False, index=True)     # True once this instance is considered offline forever - never start trying again
+    ip_address = db.Column(db.String(50))
+
+    posts = db.relationship('Post', backref='instance', lazy='dynamic')
+    post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')
+    communities = db.relationship('Community', backref='instance', lazy='dynamic')
+
+    def online(self):
+        return not self.dormant and not self.gone_forever
+
+
+class InstanceBlock(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), primary_key=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     file_path = db.Column(db.String(255))
@@ -209,11 +257,14 @@ class Community(db.Model):
         else:
             return f"https://{current_app.config['SERVER_NAME']}/c/{self.ap_id}"
 
-    # returns a list of tuples (instance.id, instance.inbox)
-    def following_instances(self):
-        sql = 'select distinct i.id, i.inbox from "instance" as i inner join "user" as u on u.instance_id = i.id inner join "community_member" as cm on cm.user_id = u.id '
-        sql += 'where cm.community_id = :community_id and cm.is_banned = false and i.id <> 1 and i.dormant = false and i.gone_forever = false'
-        return db.session.execute(text(sql), {'community_id': self.id})
+    # instances that have users which are members of this community. (excluding the current instance)
+    def following_instances(self, include_dormant=False) -> List[Instance]:
+        instances = Instance.query.join(User, User.instance_id == Instance.id).join(CommunityMember, CommunityMember.user_id == User.id)
+        instances = instances.filter(CommunityMember.community_id == self.id, CommunityMember.is_banned == False)
+        if not include_dormant:
+            instances = instances.filter(Instance.dormant == False)
+        instances = instances.filter(Instance.id != 1, Instance.gone_forever == False)
+        return instances.all()
 
     def delete_dependencies(self):
         for post in self.posts:
@@ -316,6 +367,7 @@ class User(UserMixin, db.Model):
         else:
             return '[deleted]'
 
+    @cache.memoize(timeout=10)
     def avatar_thumbnail(self) -> str:
         if self.avatar_id is not None:
             if self.avatar.thumbnail_path is not None:
@@ -327,6 +379,7 @@ class User(UserMixin, db.Model):
                 return self.avatar_image()
         return ''
 
+    @cache.memoize(timeout=10)
     def avatar_image(self) -> str:
         if self.avatar_id is not None:
             if self.avatar.file_path is not None:
@@ -358,6 +411,7 @@ class User(UserMixin, db.Model):
     def is_local(self):
         return self.ap_id is None or self.ap_profile_id.startswith('https://' + current_app.config['SERVER_NAME'])
 
+    @cache.memoize(timeout=30)
     def is_admin(self):
         for role in self.roles:
             if role.name == 'Admin':
@@ -745,54 +799,6 @@ class UserBlock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     blocker_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     blocked_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=utcnow)
-
-
-class BannedInstances(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(256), index=True)
-    reason = db.Column(db.String(256))
-    initiator = db.Column(db.String(256))
-    created_at = db.Column(db.DateTime, default=utcnow)
-
-
-class AllowedInstances(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(256), index=True)
-    created_at = db.Column(db.DateTime, default=utcnow)
-
-
-class Instance(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(256), index=True)
-    inbox = db.Column(db.String(256))
-    shared_inbox = db.Column(db.String(256))
-    outbox = db.Column(db.String(256))
-    vote_weight = db.Column(db.Float, default=1.0)
-    software = db.Column(db.String(50))
-    version = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=utcnow)
-    updated_at = db.Column(db.DateTime, default=utcnow)
-    last_seen = db.Column(db.DateTime, default=utcnow)      # When an Activity was received from them
-    last_successful_send = db.Column(db.DateTime)           # When we successfully sent them an Activity
-    failures = db.Column(db.Integer, default=0)             # How many times we failed to send (reset to 0 after every successful send)
-    most_recent_attempt = db.Column(db.DateTime)            # When the most recent failure was
-    dormant = db.Column(db.Boolean, default=False)          # True once this instance is considered offline and not worth sending to any more
-    start_trying_again = db.Column(db.DateTime)             # When to start trying again. Should grow exponentially with each failure.
-    gone_forever = db.Column(db.Boolean, default=False)     # True once this instance is considered offline forever - never start trying again
-    ip_address = db.Column(db.String(50))
-
-    posts = db.relationship('Post', backref='instance', lazy='dynamic')
-    post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')
-    communities = db.relationship('Community', backref='instance', lazy='dynamic')
-
-    def online(self):
-        return not self.dormant and not self.gone_forever
-
-
-class InstanceBlock(db.Model):
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=utcnow)
 
 

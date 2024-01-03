@@ -1,5 +1,5 @@
 {% if current_user.is_authenticated and current_user.verified %}
-        {% if can_upvote(current_user, post) %}
+        {% if can_upvote(current_user, post.community) %}
                 <div class="upvote_button digits_{{ digits(post.up_votes) }} {{ upvoted_class }}"
                  hx-post="/post/{{ post.id }}/upvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
                         <span class="fe fe-arrow-up"></span>
@@ -7,7 +7,7 @@
                         <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
                 </div>
         {% endif %}
-        {% if can_downvote(current_user, post) %}
+        {% if can_downvote(current_user, post.community) %}
                 <div class="downvote_button digits_{{ digits(post.down_votes) }} {{ downvoted_class }}"
                  hx-post="/post/{{ post.id }}/downvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons">
                         <span class="fe fe-arrow-down"></span>

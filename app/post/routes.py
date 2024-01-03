@@ -14,17 +14,18 @@ from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE
 from app.models import Post, PostReply, \
-    PostReplyVote, PostVote, Notification, utcnow, UserBlock, DomainBlock, InstanceBlock, Report, Site
+    PostReplyVote, PostVote, Notification, utcnow, UserBlock, DomainBlock, InstanceBlock, Report, Site, Community
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
-    request_etag_matches, ip_address, user_ip_banned, instance_banned
+    request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote
 
 
 def show_post(post_id: int):
     post = Post.query.get_or_404(post_id)
+    community: Community = post.community
 
-    if post.community.banned:
+    if community.banned:
         abort(404)
 
     # If nothing has changed since their last visit, return HTTP 304
@@ -35,7 +36,7 @@ def show_post(post_id: int):
     if post.mea_culpa:
         flash(_('%(name)s has indicated they made a mistake in this post.', name=post.author.user_name), 'warning')
 
-    mods = post.community.moderators()
+    mods = community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
 
     # handle top-level comments/replies
@@ -53,7 +54,7 @@ def show_post(post_id: int):
             resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
             return resp
 
-        reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=post.community.id, body=form.body.data,
+        reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
                           notify_author=form.notify_author.data)
@@ -61,9 +62,9 @@ def show_post(post_id: int):
             notification = Notification(title=_('Reply: ') + shorten_string(form.body.data, 42), user_id=post.user_id,
                                         author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
-        post.last_active = post.community.last_active = utcnow()
+        post.last_active = community.last_active = utcnow()
         post.reply_count += 1
-        post.community.post_reply_count += 1
+        community.post_reply_count += 1
 
         db.session.add(reply)
         db.session.commit()
@@ -96,7 +97,7 @@ def show_post(post_id: int):
                 'https://www.w3.org/ns/activitystreams#Public'
             ],
             'cc': [
-                post.community.profile_id(),
+                community.profile_id(),
             ],
             'content': reply.body_html,
             'inReplyTo': post.profile_id(),
@@ -107,23 +108,23 @@ def show_post(post_id: int):
             },
             'published': ap_datetime(utcnow()),
             'distinguished': False,
-            'audience': post.community.profile_id()
+            'audience': community.profile_id()
         }
         create_json = {
             'type': 'Create',
             'actor': current_user.profile_id(),
-            'audience': post.community.profile_id(),
+            'audience': community.profile_id(),
             'to': [
                 'https://www.w3.org/ns/activitystreams#Public'
             ],
             'cc': [
-                post.community.ap_profile_id
+                community.ap_profile_id
             ],
             'object': reply_json,
             'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
         }
-        if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
-            success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
+        if not community.is_local():    # this is a remote community, send it to the instance that hosts it
+            success = post_request(community.ap_inbox_url, create_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
             if not success:
                 flash('Failed to send to remote instance', 'error')
@@ -134,17 +135,17 @@ def show_post(post_id: int):
                 "to": [
                     "https://www.w3.org/ns/activitystreams#Public"
                 ],
-                "actor": post.community.ap_profile_id,
+                "actor": community.ap_profile_id,
                 "cc": [
-                    post.community.ap_followers_url
+                    community.ap_followers_url
                 ],
                 '@context': default_context(),
                 'object': create_json
             }
 
-            for instance in post.community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
-                    send_to_remote_instance(instance[1], post.community.id, announce)
+            for instance in community.following_instances():
+                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                    send_to_remote_instance(instance.id, community.id, announce)
 
         return redirect(url_for('activitypub.post_ap', post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
@@ -158,7 +159,7 @@ def show_post(post_id: int):
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
                            POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
-                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True)
+                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True, community=community)
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])
@@ -235,8 +236,8 @@ def post_vote(post_id: int, vote_direction):
                 'object': action_json
             }
             for instance in post.community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
-                    send_to_remote_instance(instance[1], post.community.id, announce)
+                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                    send_to_remote_instance(instance.id, post.community.id, announce)
         else:
             success = post_request(post.community.ap_inbox_url, action_json, current_user.private_key,
                                                        current_user.ap_profile_id + '#main-key')
@@ -472,8 +473,8 @@ def add_reply(post_id: int, comment_id: int):
             }
 
             for instance in post.community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
-                    send_to_remote_instance(instance[1], post.community.id, announce)
+                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                    send_to_remote_instance(instance.id, post.community.id, announce)
 
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
             return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
@@ -552,6 +553,27 @@ def post_delete(post_id: int):
         g.site.last_active = community.last_active = utcnow()
         db.session.commit()
         flash(_('Post deleted.'))
+
+        if community.is_local():
+            delete_activity = {
+              '@context': default_context(),
+              'actor': current_user.profile_id(),
+              'to': [
+                'https://www.w3.org/ns/activitystreams#Public'
+              ],
+              'object': post.ap_id,
+              'type': 'Delete',
+              'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
+              'audience': community.profile_id(),
+              'cc': [
+                community.profile_id()
+              ]
+            }
+
+            for instance in post.community.following_instances():
+                if instance.inbox and not instance_banned(instance.domain):
+                    send_to_remote_instance(instance.id, post.community.id, announce)
+
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
 
 

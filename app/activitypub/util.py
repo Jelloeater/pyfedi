@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 from datetime import timedelta
 from random import randint
@@ -161,7 +160,7 @@ def banned_user_agents():
 
 
 @cache.memoize(150)
-def instance_blocked(host: str) -> bool:
+def instance_blocked(host: str) -> bool:        # see also utils.instance_banned()
     host = host.lower()
     if 'https://' in host or 'http://' in host:
         host = urlparse(host).hostname
@@ -299,19 +298,19 @@ def refresh_user_profile_task(user_id):
 
             avatar_changed = cover_changed = False
             if 'icon' in activity_json:
-                if activity_json['icon']['url'] != user.avatar.source_url:
+                if user.avatar_id and activity_json['icon']['url'] != user.avatar.source_url:
                     user.avatar.delete_from_disk()
-                    avatar = File(source_url=activity_json['icon']['url'])
-                    user.avatar = avatar
-                    db.session.add(avatar)
-                    avatar_changed = True
+                avatar = File(source_url=activity_json['icon']['url'])
+                user.avatar = avatar
+                db.session.add(avatar)
+                avatar_changed = True
             if 'image' in activity_json:
-                if activity_json['image']['url'] != user.cover.source_url:
+                if user.cover_id and activity_json['image']['url'] != user.cover.source_url:
                     user.cover.delete_from_disk()
-                    cover = File(source_url=activity_json['image']['url'])
-                    user.cover = cover
-                    db.session.add(cover)
-                    cover_changed = True
+                cover = File(source_url=activity_json['image']['url'])
+                user.cover = cover
+                db.session.add(cover)
+                cover_changed = True
             db.session.commit()
             if user.avatar_id and avatar_changed:
                 make_image_sizes(user.avatar_id, 40, 250, 'users')

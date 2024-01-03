@@ -102,6 +102,8 @@ def register(app):
             staff_role = Role(name='Staff', weight=2)
             staff_role.permissions.append(RolePermission(permission='approve registrations'))
             staff_role.permissions.append(RolePermission(permission='ban users'))
+            staff_role.permissions.append(RolePermission(permission='administer all communities'))
+            staff_role.permissions.append(RolePermission(permission='administer all users'))
             db.session.add(staff_role)
 
             admin_role = Role(name='Admin', weight=3)
@@ -111,6 +113,7 @@ def register(app):
             admin_role.permissions.append(RolePermission(permission='manage users'))
             admin_role.permissions.append(RolePermission(permission='change instance settings'))
             admin_role.permissions.append(RolePermission(permission='administer all communities'))
+            admin_role.permissions.append(RolePermission(permission='administer all users'))
             db.session.add(admin_role)
 
             # Admin user

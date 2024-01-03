@@ -67,6 +67,10 @@
   content: "\ea03";
 }
 
+.fe-external::before {
+  content: "\e95b";
+}
+
 .fe-circle::before {
   content: "\e937";
 }

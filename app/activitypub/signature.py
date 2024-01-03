@@ -80,15 +80,19 @@ def post_request(uri: str, body: dict | None, private_key: str, key_id: str, con
         method: Literal["get", "post"] = "post", timeout: int = 5,):
     if '@context' not in body:  # add a default json-ld context if necessary
         body['@context'] = default_context()
-    log = ActivityPubLog(direction='out', activity_json=json.dumps(body),
-                                    result='success', activity_id=body['id'])
+    type = body['type'] if 'type' in body else ''
+    log = ActivityPubLog(direction='out', activity_json=json.dumps(body), activity_type=type,
+                                    result='success', activity_id=body['id'], exception_message='')
     try:
         result = HttpSignature.signed_request(uri, body, private_key, key_id, content_type, method, timeout)
-        if result.status_code != 200:
+        if result.status_code != 200 and result.status_code != 202:
             log.result = 'failure'
-            log.exception_message = f'Response status code was {result.status_code}'
+            log.exception_message += f' Response status code was {result.status_code}'
             current_app.logger.error('Response code for post attempt was ' +
                                      str(result.status_code) + ' ' + result.text)
+        log.exception_message += uri
+        if result.status_code == 202:
+            log.exception_message += ' 202'
     except Exception as e:
         log.result = 'failure'
         log.exception_message='could not send:' + str(e)

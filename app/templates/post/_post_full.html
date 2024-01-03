@@ -1,6 +1,6 @@
 <div class="row position-relative">
     {% if post.type == POST_TYPE_IMAGE %}
-        <div class="col post_type_image">
+        <div class="col post_col post_type_image">
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
@@ -12,7 +12,7 @@
             <div class="voting_buttons">
                 {% include "post/_post_voting_buttons.html" %}
             </div>
-            <h1 class="mt-2">{{ post.title }}</h1>
+            <h1 class="mt-2 post_title">{{ post.title }}</h1>
             {% if post.url %}
                 <p><small><a href="{{ post.url }}" rel="nofollow ugc">{{ post.url|shorten_url }}
                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
@@ -29,7 +29,7 @@
             </div>
         </div>
     {% else %}
-        <div class="col">
+        <div class="col post_col post_type_normal">
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
@@ -41,7 +41,7 @@
             <div class="voting_buttons">
                 {% include "post/_post_voting_buttons.html" %}
             </div>
-            <h1 class="mt-2">{{ post.title }}</h1>
+            <h1 class="mt-2 post_title">{{ post.title }}</h1>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">
                     <a href="{{ post.url }}"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
@@ -72,7 +72,9 @@
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 {% endif %}
             {% endif %}
-            {{ post.body_html|safe if post.body_html else '' }}
+            <div class="post_body">
+                {{ post.body_html|safe if post.body_html else '' }}
+            </div>
         </div>
     {% endif %}
     <a href="{{ url_for('post.post_options', post_id=post.id) }}" class="post_options_link" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a>

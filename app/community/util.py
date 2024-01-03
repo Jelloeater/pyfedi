@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
 from typing import List
@@ -12,9 +12,10 @@ from app import db, cache, celery
 from app.activitypub.signature import post_request
 from app.activitypub.util import find_actor_or_create, actor_json_to_model, post_json_to_model
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
-from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site
+from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site, \
+    Instance
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
-    html_to_markdown, is_image_url, ensure_directory_exists
+    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain
 from sqlalchemy import desc, text
 import os
 from opengraph_parse import parse_page
@@ -361,15 +362,26 @@ def save_banner_file(banner_file, directory='communities') -> File:
     return file
 
 
-def send_to_remote_instance(inbox, community_id, payload):
+# NB this always signs POSTs as the community so is only suitable for Announce activities
+def send_to_remote_instance(instance_id: int, community_id: int, payload):
     if current_app.debug:
-        send_to_remote_instance_task(inbox, community_id, payload)
+        send_to_remote_instance_task(instance_id, community_id, payload)
     else:
-        send_to_remote_instance_task.delay(inbox, community_id, payload)
+        send_to_remote_instance_task.delay(instance_id, community_id, payload)
 
 
 @celery.task
-def send_to_remote_instance_task(inbox, community_id, payload):
+def send_to_remote_instance_task(instance_id: int, community_id: int, payload):
     community = Community.query.get(community_id)
     if community:
-        post_request(inbox, payload, community.private_key, community.ap_profile_id + '#main-key')
+        instance = Instance.query.get(instance_id)
+        if post_request(instance.inbox, payload, community.private_key, community.ap_profile_id + '#main-key'):
+            instance.last_successful_send = utcnow()
+            instance.failures = 0
+        else:
+            instance.failures += 1
+            instance.most_recent_attempt = utcnow()
+            instance.start_trying_again = utcnow() + timedelta(seconds=instance.failures ** 4)
+            if instance.failures > 2:
+                instance.dormant = True
+        db.session.commit()

@@ -3,7 +3,7 @@
         <div class="col-12">
             <div class="row main_row">
                 <div class="col">
-                    <h3>
+                    <h3 class="post_teaser_title">
                         <div class="voting_buttons">
                             {% include "post/_post_voting_buttons.html" %}
                         </div>
@@ -18,7 +18,7 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a>
+                        <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" class="post_teaser_title_a">{{ post.title }}</a>
                         {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image"> </span>{% endif %}
                         {% if post.type == POST_TYPE_LINK and post.domain_id %}
                             {% if post.url and 'youtube.com' in post.url %}

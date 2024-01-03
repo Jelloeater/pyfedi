@@ -224,6 +224,23 @@ nav, etc which are used site-wide */
   }
 }
 
+.post_body {
+  img {
+    max-height: 40vh;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.comment_body {
+  img {
+    max-height: 40vh;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+
 #replies {
   scroll-margin-top: 5em;
 }

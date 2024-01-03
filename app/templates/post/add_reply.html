@@ -53,15 +53,15 @@
                  <h2>{{ _('About community') }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ post.community.description|safe }}</p>
-                <p>{{ post.community.rules|safe }}</p>
+                <p>{{ post.community.description_html|safe if post.community.description_html else '' }}</p>
+                <p>{{ post.community.rules_html|safe if post.community.rules_html else '' }}</p>
                 {% if len(mods) > 0 and not post.community.private_mods %}
                     <h3>Moderators</h3>
-                    <ol>
+                    <ul class="moderator_list">
                         {% for mod in mods %}
                             <li><a href="/u/{{ mod.user_name }}">{{ mod.display_name() }}</a></li>
                         {% endfor %}
-                    </ol>
+                    </ul>
                 {% endif %}
             </div>
         </div>

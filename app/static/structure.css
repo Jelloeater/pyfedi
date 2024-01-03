@@ -68,6 +68,10 @@ nav, etc which are used site-wide */
   content: "\ea03";
 }
 
+.fe-external::before {
+  content: "\e95b";
+}
+
 .fe-circle::before {
   content: "\e937";
 }
@@ -542,6 +546,18 @@ fieldset legend {
 .comments > .comment:first-child {
   border-top: none;
   padding-top: 0;
+}
+
+.post_body img {
+  max-height: 40vh;
+  max-width: 100%;
+  height: auto;
+}
+
+.comment_body img {
+  max-height: 40vh;
+  max-width: 100%;
+  height: auto;
 }
 
 #replies {

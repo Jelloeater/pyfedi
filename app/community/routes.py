@@ -1,10 +1,10 @@
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, g, json
-from flask_login import login_user, logout_user, current_user, login_required
+from flask_login import current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
 
 from app import db, constants, cache
-from app.activitypub.signature import RsaKeys, HttpSignature, post_request
+from app.activitypub.signature import RsaKeys, post_request
 from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
     DeleteCommunityForm
@@ -17,7 +17,7 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
-    request_etag_matches, return_304, instance_banned, can_create
+    request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote
 from feedgen.feed import FeedGenerator
 from datetime import timezone
 
@@ -376,7 +376,7 @@ def add_post(actor):
                 flash(_('Your post to %(name)s has been made.', name=community.title))
             else:
                 flash('There was a problem making your post to ' + community.title)
-        else:   # local community - send post out to followers
+        else:   # local community - send (announce) post out to followers
             announce = {
                 "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
                 "type": 'Announce',
@@ -393,8 +393,8 @@ def add_post(actor):
 
             sent_to = 0
             for instance in community.following_instances():
-                if instance[1] and not current_user.has_blocked_instance(instance[0]) and not instance_banned(instance[1]):
-                    send_to_remote_instance(instance[1], community.id, announce)
+                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                    send_to_remote_instance(instance.id, community.id, announce)
                     sent_to += 1
             if sent_to:
                 flash(_('Your post to %(name)s has been made.', name=community.title))

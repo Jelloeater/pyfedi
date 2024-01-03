@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Literal, Union
 
 import markdown2
@@ -22,7 +22,7 @@ from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
 
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
-    Site, Post, PostReply
+    Site, Post, PostReply, utcnow
 
 
 # Flask's render_template function, with support for themes added
@@ -152,7 +152,7 @@ def is_image_url(url):
 # sanitise HTML using an allow list
 def allowlist_html(html: str) -> str:
     allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h3', 'h4', 'h5', 'pre',
-                    'code']
+                    'code', 'img']
     # Parse the HTML using BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
 
@@ -164,7 +164,7 @@ def allowlist_html(html: str) -> str:
         else:
             # Filter and sanitize attributes
             for attr in list(tag.attrs):
-                if attr not in ['href', 'src']:  # Add allowed attributes here
+                if attr not in ['href', 'src', 'alt']:  # Add allowed attributes here
                     del tag[attr]
 
     # Encode the HTML to prevent script execution
@@ -361,7 +361,8 @@ def user_ip_banned() -> bool:
         return current_ip_address in banned_ip_addresses()
 
 
-def instance_banned(domain: str) -> bool:
+@cache.memoize(timeout=30)
+def instance_banned(domain: str) -> bool:   # see also activitypub.util.instance_blocked()
     banned = BannedInstances.query.filter_by(domain=domain).first()
     return banned is not None
 
@@ -377,8 +378,8 @@ def banned_ip_addresses() -> List[str]:
     return [ip.ip_address for ip in ips]
 
 
-def can_downvote(user, content: Union[Post, PostReply], site=None) -> bool:
-    if user is None or content is None or user.banned:
+def can_downvote(user, community: Community, site=None) -> bool:
+    if user is None or community is None or user.banned:
         return False
 
     if site is None:
@@ -387,24 +388,21 @@ def can_downvote(user, content: Union[Post, PostReply], site=None) -> bool:
         except:
             site = Site.query.get(1)
 
-    if not site.enable_downvotes and content.community.is_local():
+    if not site.enable_downvotes and community.is_local():
         return False
 
-    if content.community.is_moderator(user) or user.is_admin():
-        return True
+    if community.local_only and not user.is_local():
+        return False
 
-    if content.community.local_only and not user.is_local():
+    if user.attitude < 0.33:
         return False
 
     return True
 
 
-def can_upvote(user, content: Union[Post, PostReply]) -> bool:
-    if user is None or content is None or user.banned:
+def can_upvote(user, community: Community) -> bool:
+    if user is None or community is None or user.banned:
         return False
-
-    if content.community.is_moderator(user) or user.is_admin():
-        return True
 
     return True
 
@@ -436,3 +434,23 @@ def can_create(user, content: Union[Community, Post, PostReply]) -> bool:
             return False
 
     return True
+
+
+def inbox_domain(inbox: str) -> str:
+    inbox = inbox.lower()
+    if 'https://' in inbox or 'http://' in inbox:
+        inbox = urlparse(inbox).hostname
+    return inbox
+
+
+def awaken_dormant_instance(instance):
+    if instance and not instance.gone_forever:
+        if instance.dormant:
+            if instance.start_trying_again < utcnow():
+                instance.dormant = False
+                db.session.commit()
+        # give up after ~5 days of trying
+        if instance.start_trying_again and utcnow() + timedelta(days=5) < instance.start_trying_again:
+            instance.gone_forever = True
+            instance.dormant = True
+            db.session.commit()
