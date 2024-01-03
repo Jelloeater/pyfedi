@@ -33,7 +33,8 @@
                             <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
                         {% endif %}
                     </h3>
-                    <span class="small">{{ render_username(post.author) }} · {{ moment(post.posted_at).fromNow() }}</span>
+                    <span class="small">{% if show_post_community %}<strong><a href="/c/{{ post.community.link() }}">c/{{ post.community.name }}</a></strong>{% endif %}
+                        by {{ render_username(post.author) }} {{ moment(post.posted_at).fromNow() }}</span>
 
                 </div>
 

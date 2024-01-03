@@ -50,7 +50,7 @@ def index():
 
     active_communities = Community.query.filter_by(banned=False).order_by(desc(Community.last_active)).limit(5).all()
 
-    return render_template('index.html', posts=posts, active_communities=active_communities,
+    return render_template('index.html', posts=posts, active_communities=active_communities, show_post_community=True,
                            POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
@@ -86,7 +86,7 @@ def new_posts():
     active_communities = Community.query.filter_by(banned=False).order_by(desc(Community.last_active)).limit(5).all()
 
     return render_template('new_posts.html', posts=posts, active_communities=active_communities,
-                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
+                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, show_post_community=True,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
@@ -122,7 +122,7 @@ def top_posts():
     active_communities = Community.query.filter_by(banned=False).order_by(desc(Community.last_active)).limit(5).all()
 
     return render_template('top_posts.html', posts=posts, active_communities=active_communities,
-                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
+                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, show_post_community=True,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",

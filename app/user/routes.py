@@ -18,6 +18,13 @@ from app.utils import get_setting, render_template, markdown_to_html, user_acces
 from sqlalchemy import desc, or_, text
 
 
+@bp.route('/people', methods=['GET', 'POST'])
+@login_required
+def show_people():
+    people = User.query.filter_by(ap_id=None, deleted=False, banned=False).all()
+    return render_template('user/people.html', people=people)
+
+
 def show_profile(user):
     if user.deleted or user.banned and current_user.is_anonymous():
         abort(404)

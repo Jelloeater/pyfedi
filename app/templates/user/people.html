@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+            <li class="breadcrumb-item active">{{ _('People') }}</li>
+          </ol>
+        </nav>
+        <h1 class="mt-2">{{ _('People') }}</h1>
+        {% if people %}
+            <table class="table table-striped">
+                <tr>
+                    <th>Name</th>
+                    <th>About</th>
+                </tr>
+                {% for person in people %}
+                    <tr>
+                        <td>{{ render_username(person) }}</td>
+                        <td>{{ person.about_html | safe if person.about_html }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>{{ _('No people to show') }}</p>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-md-4">
+
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2> </h2>
+            </div>
+            <div class="card-body">
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
