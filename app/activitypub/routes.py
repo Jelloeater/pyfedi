@@ -701,7 +701,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         user.instance.ip_address = ip_address
                         user.instance.dormant = False
                     if 'community' in vars() and community is not None:
-                        if community.is_local() and request_json['type'] not in ['Announce', 'Follow', 'Accept']:
+                        if community.is_local() and request_json['type'] not in ['Announce', 'Follow', 'Accept', 'Undo']:
                             announce_activity_to_followers(community, user, request_json)
                         # community.flush_cache()
                 if 'post' in vars() and post is not None:

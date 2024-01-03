@@ -35,6 +35,7 @@
             </nav>
             <h1 class="mt-2">{{ community.title }}</h1>
         {% endif %}
+        {% include "community/_community_nav.html" %}
         <div class="post_list">
             {% for post in posts %}
                 {% include 'post/_post_teaser.html' %}
@@ -45,12 +46,12 @@
 
         <nav aria-label="Pagination" class="mt-4">
                 {% if prev_url %}
-                    <a href="{{ prev_url }}" class="btn btn-primary">
+                    <a href="{{ prev_url }}" class="btn btn-primary" rel='nofollow'>
                         <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
                     </a>
                 {% endif %}
                 {% if next_url %}
-                    <a href="{{ next_url }}" class="btn btn-primary">
+                    <a href="{{ next_url }}" class="btn btn-primary" rel='nofollow'>
                         {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
                     </a>
                 {% endif %}

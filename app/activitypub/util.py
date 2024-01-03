@@ -20,7 +20,7 @@ from PIL import Image, ImageOps
 from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
-    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request
+    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking
 
 
 def public_key():
@@ -729,6 +729,8 @@ def downvote_post(post, user):
             db.session.add(vote)
         else:
             pass  # they have already downvoted this post
+    post.ranking = post_ranking(post.score, post.posted_at)
+    db.session.commit()
 
 
 def downvote_post_reply(comment, user):
@@ -831,6 +833,8 @@ def upvote_post(post, user):
                 effect = 0
             post.author.reputation += effect
             db.session.add(vote)
+    post.ranking = post_ranking(post.score, post.posted_at)
+    db.session.commit()
 
 
 def delete_post_or_comment(user_ap_id, community_ap_id, to_be_deleted_ap_id):
@@ -972,6 +976,7 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
         post.image = image
     if post is not None:
         db.session.add(post)
+        post.ranking = post_ranking(post.score, post.posted_at)
         community.post_count += 1
         community.last_active = utcnow()
         activity_log.result = 'success'
@@ -986,7 +991,7 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
             db.session.add(vote)
             post.up_votes += 1
             post.score += 1
-            post.ranking += 1
+            post.ranking = post_ranking(post.score, post.posted_at)
             db.session.commit()
     return post
 

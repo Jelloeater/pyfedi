@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+from math import log
+
 from sqlalchemy.sql.operators import or_
 
 from app import db, cache
@@ -12,7 +15,7 @@ from sqlalchemy import select, desc
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address
-from app.models import Community, CommunityMember, Post, Site, User
+from app.models import Community, CommunityMember, Post, Site, User, utcnow
 
 
 @bp.route('/', methods=['HEAD', 'GET', 'POST'])
@@ -40,7 +43,7 @@ def index():
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
 
-    posts = posts.order_by(desc(Post.last_active)).paginate(page=page, per_page=100, error_out=False)
+    posts = posts.order_by(desc(Post.ranking)).paginate(page=page, per_page=100, error_out=False)
 
     next_url = url_for('main.index', page=posts.next_num) if posts.has_next else None
     prev_url = url_for('main.index', page=posts.prev_num) if posts.has_prev and page != 1 else None
@@ -52,6 +55,78 @@ def index():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed", rss_feed_name=f"Posts on " + g.site.name)
+
+
+@bp.route('/new', methods=['HEAD', 'GET', 'POST'])
+def new_posts():
+    verification_warning()
+
+    # If nothing has changed since their last visit, return HTTP 304
+    current_etag = f"new_{hash(str(g.site.last_active))}"
+    if current_user.is_anonymous and request_etag_matches(current_etag):
+        return return_304(current_etag)
+
+    page = request.args.get('page', 1, type=int)
+
+    if current_user.is_anonymous:
+        posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+    else:
+        posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(
+            CommunityMember.is_banned == False)
+        posts = posts.join(User, CommunityMember.user_id == User.id).filter(User.id == current_user.id)
+        domains_ids = blocked_domains(current_user.id)
+        if domains_ids:
+            posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+
+    posts = posts.order_by(desc(Post.posted_at)).paginate(page=page, per_page=100, error_out=False)
+
+    next_url = url_for('main.new_posts', page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('main.new_posts', page=posts.prev_num) if posts.has_prev and page != 1 else None
+
+    active_communities = Community.query.filter_by(banned=False).order_by(desc(Community.last_active)).limit(5).all()
+
+    return render_template('new_posts.html', posts=posts, active_communities=active_communities,
+                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
+                           etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
+                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
+                           rss_feed_name=f"Posts on " + g.site.name)
+
+
+@bp.route('/top', methods=['HEAD', 'GET', 'POST'])
+def top_posts():
+    verification_warning()
+
+    # If nothing has changed since their last visit, return HTTP 304
+    current_etag = f"best_{hash(str(g.site.last_active))}"
+    if current_user.is_anonymous and request_etag_matches(current_etag):
+        return return_304(current_etag)
+
+    page = request.args.get('page', 1, type=int)
+
+    if current_user.is_anonymous:
+        posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+    else:
+        posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(
+            CommunityMember.is_banned == False)
+        posts = posts.join(User, CommunityMember.user_id == User.id).filter(User.id == current_user.id)
+        domains_ids = blocked_domains(current_user.id)
+        if domains_ids:
+            posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+
+    posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=1)).order_by(desc(Post.score)).paginate(page=page, per_page=100, error_out=False)
+
+    next_url = url_for('main.top_posts', page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('main.top_posts', page=posts.prev_num) if posts.has_prev and page != 1 else None
+
+    active_communities = Community.query.filter_by(banned=False).order_by(desc(Community.last_active)).limit(5).all()
+
+    return render_template('top_posts.html', posts=posts, active_communities=active_communities,
+                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
+                           etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
+                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
+                           rss_feed_name=f"Posts on " + g.site.name)
 
 
 @bp.route('/communities', methods=['GET'])
@@ -99,10 +174,12 @@ def robots():
 
 @bp.route('/test')
 def test():
-    ip = request.headers.get('X-Forwarded-For') or request.remote_addr
-    if ',' in ip:  # Remove all but first ip addresses
-        ip = ip[:ip.index(',')].strip()
-    return ip
+    return 'done'
+
+    #ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+    #if ',' in ip:  # Remove all but first ip addresses
+    #    ip = ip[:ip.index(',')].strip()
+    #return ip
 
 
 def verification_warning():

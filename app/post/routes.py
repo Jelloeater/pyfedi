@@ -18,7 +18,7 @@ from app.models import Post, PostReply, \
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
-    request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote
+    request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking
 
 
 def show_post(post_id: int):
@@ -155,11 +155,11 @@ def show_post(post_id: int):
     og_image = post.image.source_url if post.image_id else None
     description = shorten_string(markdown_to_text(post.body), 150) if post.body else None
 
-    return render_template('post/post.html', title=post.title, post=post, is_moderator=is_moderator,
+    return render_template('post/post.html', title=post.title, post=post, is_moderator=is_moderator, community=post.community,
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
                            POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
-                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True, community=community)
+                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True)
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])
@@ -247,11 +247,12 @@ def post_vote(post_id: int, vote_direction):
     current_user.last_seen = utcnow()
     current_user.ip_address = ip_address()
     if not current_user.banned:
+        post.ranking = post_ranking(post.score, post.created_at)
         db.session.commit()
         current_user.recalculate_attitude()
         db.session.commit()
     post.flush_cache()
-    return render_template('post/_post_voting_buttons.html', post=post,
+    return render_template('post/_post_voting_buttons.html', post=post, community=post.community,
                            upvoted_class=upvoted_class,
                            downvoted_class=downvoted_class)
 
@@ -327,7 +328,7 @@ def comment_vote(comment_id, vote_direction):
     comment.post.flush_cache()
     return render_template('post/_voting_buttons.html', comment=comment,
                            upvoted_class=upvoted_class,
-                           downvoted_class=downvoted_class)
+                           downvoted_class=downvoted_class, community=comment.community)
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>')

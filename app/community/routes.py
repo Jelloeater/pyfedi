@@ -19,7 +19,7 @@ from app.utils import get_setting, render_template, allowlist_html, markdown_to_
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
     request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote
 from feedgen.feed import FeedGenerator
-from datetime import timezone
+from datetime import timezone, timedelta
 
 
 @bp.route('/add_local', methods=['GET', 'POST'])
@@ -98,6 +98,7 @@ def show_community(community: Community):
         abort(404)
 
     page = request.args.get('page', 1, type=int)
+    sort = request.args.get('sort', '')
 
     mods = community.moderators()
 
@@ -113,17 +114,24 @@ def show_community(community: Community):
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
     if current_user.is_anonymous or current_user.ignore_bots:
-        posts = community.posts.filter(Post.from_bot == False).order_by(desc(Post.last_active)).paginate(page=page, per_page=100, error_out=False)
+        posts = community.posts.filter(Post.from_bot == False)
     else:
-        posts = community.posts.order_by(desc(Post.last_active)).paginate(page=page, per_page=100, error_out=False)
+        posts = community.posts
+    if sort == '' or sort == 'hot':
+        posts = posts.order_by(desc(Post.ranking))
+    elif sort == 'top':
+        posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=7)).order_by(desc(Post.score))
+    elif sort == 'new':
+        posts = posts.order_by(desc(Post.posted_at))
+    posts = posts.paginate(page=page, per_page=100, error_out=False)
 
     description = shorten_string(community.description, 150) if community.description else None
     og_image = community.image.source_url if community.image_id else None
 
     next_url = url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name,
-                       page=posts.next_num) if posts.has_next else None
+                       page=posts.next_num, sort=sort) if posts.has_next else None
     prev_url = url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name,
-                       page=posts.prev_num) if posts.has_prev and page != 1 else None
+                       page=posts.prev_num, sort=sort) if posts.has_prev and page != 1 else None
 
     return render_template('community/community.html', community=community, title=community.title,
                            is_moderator=is_moderator, is_owner=is_owner, is_admin=is_admin, mods=mod_list, posts=posts, description=description,

@@ -15,7 +15,7 @@ from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site, \
     Instance
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
-    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain
+    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking
 from sqlalchemy import desc, text
 import os
 from opengraph_parse import parse_page
@@ -103,6 +103,7 @@ def retrieve_mods_and_backfill(community_id: int):
                             post = post_json_to_model(activity['object']['object'], user, community)
                             post.ap_create_id = activity['object']['id']
                             post.ap_announce_id = activity['id']
+                            post.ranking = post_ranking(post.score, post.posted_at)
                             db.session.commit()
 
                         activities_processed += 1
@@ -267,7 +268,9 @@ def save_post(form, post: Post):
             post.score = -1
             post.ranking = -1
             db.session.add(postvote)
+        post.ranking = post_ranking(post.score, utcnow())
         db.session.add(post)
+
     g.site.last_active = utcnow()
 
 

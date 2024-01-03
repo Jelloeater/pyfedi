@@ -16,7 +16,6 @@ class Config(object):
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    #SQLALCHEMY_ECHO = True                                 # set to true to see debugging SQL in console
     RECAPTCHA3_PUBLIC_KEY = os.environ.get("RECAPTCHA3_PUBLIC_KEY")
     RECAPTCHA3_PRIVATE_KEY = os.environ.get("RECAPTCHA3_PRIVATE_KEY")
     MODE = os.environ.get('MODE') or 'development'

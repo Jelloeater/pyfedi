@@ -1,0 +1,11 @@
+<div class="btn-group mt-1 mb-2">
+    <a href="?sort=hot" class="btn {{ 'btn-primary' if request.args.get('sort', '') == '' or request.args.get('sort', '') == 'hot' else 'btn-outline-secondary' }}" rel="nofollow">
+        {{ _('Hot') }}
+    </a>
+    <a href="?sort=top" class="btn {{ 'btn-primary' if request.args.get('sort', '') == 'top' else 'btn-outline-secondary' }}" rel="nofollow">
+        {{ _('Top') }}
+    </a>
+    <a href="?sort=new" class="btn {{ 'btn-primary' if request.args.get('sort', '') == 'new' else 'btn-outline-secondary' }}" rel="nofollow">
+        {{ _('New') }}
+    </a>
+</div>
