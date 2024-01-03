@@ -88,7 +88,7 @@ def register(app):
             # Load initial domain block list
             block_list = retrieve_block_list()
             if block_list:
-                for domain in block_list.split():
+                for domain in block_list.split('\n'):
                     db.session.add(Domain(name=domain.strip(), banned=True))
 
             # Initial roles
