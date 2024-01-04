@@ -202,7 +202,9 @@ def admin_community_edit(community_id):
         community.name = form.url.data
         community.title = form.title.data
         community.description = form.description.data
+        community.description_html = markdown_to_html(form.description.data)
         community.rules = form.rules.data
+        community.rules_html = markdown_to_html(form.rules.data)
         community.nsfw = form.nsfw.data
         community.local_only = form.local_only.data
         community.restricted_to_mods = form.restricted_to_mods.data

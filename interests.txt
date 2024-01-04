@@ -1,11 +1,11 @@
 chilling
     https://kbin.social/m/AskKbin
-    https://kbin.social/m/TodayILearned
-    https://kbin.social/m/showerthoughts
+    https://lemmy.world/c/til
+    https://lemmy.world/c/unpopularopinion
+    https://lemmy.world/c/showerthoughts
     https://kbin.social/m/ELI5
     https://kbin.social/m/scifi
-    https://kbin.social/m/wholesome
-    https://kbin.social/m/oddlysatisfying
+    https://lemmy.world/c/lemmybewholesome
     https://kbin.social/m/Funny
     https://kbin.social/m/photography
     https://kbin.social/m/videos
@@ -49,8 +49,8 @@ gaming
     
 interesting stuff
     https://kbin.social/m/science
-    https://kbin.social/m/space
-    https://kbin.social/m/interestingasfuck
+    https://lemmy.world/c/space
+    https://lemmy.world/c/interestingasfuck
     https://kbin.social/m/Futurology
     https://kbin.social/m/mildlyinteresting
     https://lemmy.world/c/mildlyinteresting
@@ -136,7 +136,6 @@ lgbtq
     https://lemmy.blahaj.zone/c/ftm
     https://lemmy.blahaj.zone/c/mtf
     https://lemmy.blahaj.zone/c/lgbtq_plus
-    https://lemmy.blahaj.zone/c/ftm
     https://lemmy.one/c/nonbinary
     
 environment

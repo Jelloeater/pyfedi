@@ -49,6 +49,12 @@ nav, etc which are used site-wide */
   max-width: 350px;
   margin-left: auto;
   margin-right: auto;
+
+  .card-body {
+    img {
+      max-width: 100%;
+    }
+  }
 }
 
 #breadcrumb_nav {

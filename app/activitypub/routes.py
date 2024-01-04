@@ -707,7 +707,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     user.flush_cache()
                     if user.instance_id and user.instance_id != 1:
                         user.instance.last_seen = utcnow()
-                        user.instance.ip_address = ip_address
+                        # user.instance.ip_address = ip_address
                         user.instance.dormant = False
                     if 'community' in vars() and community is not None:
                         if community.is_local() and request_json['type'] not in ['Announce', 'Follow', 'Accept', 'Undo']:

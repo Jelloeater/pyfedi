@@ -396,6 +396,9 @@ fieldset legend {
   margin-left: auto;
   margin-right: auto;
 }
+.card .card-body img {
+  max-width: 100%;
+}
 
 #breadcrumb_nav {
   font-size: 87%;

@@ -36,7 +36,8 @@ def add_local():
         private_key, public_key = RsaKeys.generate_keypair()
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
-                              public_key=public_key,
+                              public_key=public_key, description_html=markdown_to_html(form.description.data),
+                              rules_html=markdown_to_html(form.rules.data),
                               ap_profile_id='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
                               ap_followers_url='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data + '/followers',
                               subscriptions_count=1, instance_id=1, low_quality='memes' in form.url.data)
