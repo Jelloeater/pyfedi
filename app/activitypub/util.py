@@ -856,15 +856,18 @@ def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id
                 to_delete.delete_dependencies()
                 to_delete.flush_cache()
                 db.session.delete(to_delete)
+                community.post_count -= 1
                 db.session.commit()
             elif isinstance(to_delete, PostReply):
                 to_delete.post.flush_cache()
+                to_delete.post.reply_count -= 1
                 if to_delete.has_replies():
                     to_delete.body = 'Deleted by author' if to_delete.author.id == deletor.id else 'Deleted by moderator'
                     to_delete.body_html = markdown_to_html(to_delete.body)
                 else:
                     to_delete.delete_dependencies()
                     db.session.delete(to_delete)
+
                 db.session.commit()
 
 
