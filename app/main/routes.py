@@ -15,7 +15,7 @@ from sqlalchemy import select, desc
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list
-from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain
+from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
 
 
 @bp.route('/', methods=['HEAD', 'GET', 'POST'])
@@ -133,15 +133,23 @@ def top_posts():
 def list_communities():
     verification_warning()
     search_param = request.args.get('search', '')
+    topic_id = int(request.args.get('topic_id', 0))
+    topics = Topic.query.order_by(Topic.name).all()
     if search_param == '':
-        communities = Community.query.filter_by(banned=False).all()
+        pass
     else:
-        query = search(select(Community), search_param, sort=True)  # todo: exclude banned communities from search
-        communities = db.session.scalars(query).all()
+        flash('Sorry, no search function yet. Use the topic filter for now.', 'warning')
+        communities = Community.query.filter_by(banned=False).all()
+        #query = search(select(Community), search_param, sort=True)  # todo: exclude banned communities from search
+        #communities = db.session.scalars(query).all()
 
-    return render_template('list_communities.html', communities=communities, search=search_param, title=_('Communities'),
+    communities = Community.query.filter_by(banned=False)
+    if topic_id != 0:
+        communities = communities.filter_by(topic_id=topic_id)
+
+    return render_template('list_communities.html', communities=communities.all(), search=search_param, title=_('Communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
-                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER)
+                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, topics=topics, topic_id=topic_id)
 
 
 @bp.route('/communities/local', methods=['GET'])

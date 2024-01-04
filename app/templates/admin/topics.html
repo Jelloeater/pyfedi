@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <p><a href="{{ url_for('admin.admin_topic_add') }}" class="btn btn-primary">{{ _('Add topic') }}</a></p>
+        <table class="table table-striped">
+            <tr>
+               <th>Name</th>
+               <th># Communities</th>
+               <th>Actions</th>
+            </tr>
+            {% for topic in topics %}
+                <tr>
+                    <td>{{ topic.name }}</td>
+                    <td>{{ topic.num_communities  }}</td>
+                    <td><a href="{{ url_for('admin.admin_topic_edit', topic_id=topic.id) }}">Edit</a> |
+                        <a href="{{ url_for('admin.admin_topic_delete', topic_id=topic.id) }}" class="confirm_first">Delete</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

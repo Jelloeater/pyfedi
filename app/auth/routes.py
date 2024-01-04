@@ -92,7 +92,7 @@ def register():
                 verification_token = random_token(16)
                 form.user_name.data = form.user_name.data.strip()
                 user = User(user_name=form.user_name.data, title=form.user_name.data, email=form.real_email.data,
-                            verification_token=verification_token, instance=1, ip_address=ip_address(),
+                            verification_token=verification_token, instance_id=1, ip_address=ip_address(),
                             banned=user_ip_banned() or user_cookie_banned())
                 user.set_password(form.password.data)
                 db.session.add(user)
@@ -104,9 +104,9 @@ def register():
                 if current_app.config['MODE'] == 'development':
                     current_app.logger.info('Verify account:' + url_for('auth.verify_email', token=user.verification_token, _external=True))
 
-                flash(_('Great, you are now a registered user!'))
+                flash(_('Great, you are now a registered user! Choose some communities to subscribe to. Use the topic filter to narrow things down.'))
 
-        resp = make_response(redirect(url_for('main.index')))
+        resp = make_response(redirect(url_for('main.list_communities')))
         if user_ip_banned():
             resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
         return resp

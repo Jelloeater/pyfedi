@@ -17,6 +17,7 @@
             <tr>
                <th>Name</th>
                <th>Title</th>
+               <th>Topic</th>
                <th># Posts</th>
                <th>Home</th>
                <th>Popular</th>
@@ -28,6 +29,7 @@
                     <td>{{ community.name }}</td>
                     <td><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" />
                         {{ community.display_name() }}</td>
+                    <td>{{ community.topic.name  }}</td>
                     <td>{{ community.post_count  }}</td>
                     <th>{{ '&check;'|safe if community.show_home else '&cross;'|safe }}</th>
                     <th>{{ '&check;'|safe if community.show_popular else '&cross;'|safe }}</th>

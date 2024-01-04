@@ -14,7 +14,20 @@
             <a href="/communities/subscribed" class="btn {{ 'btn-primary' if request.path == '/communities/subscribed' else 'btn-outline-secondary' }}">
                 {{ _('Subscribed') }}
             </a>
+            {% if topics %}
+                <span class="mt-1 pl-4">
+                    <form method="get">Topic:
+                        <select name="topic_id" class="form-control-sm submit_on_change">
+                            <option value="0">All</option>
+                            {% for topic in topics %}
+                                <option value="{{ topic.id }}" {{ 'selected' if topic.id == topic_id }}>{{ topic.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </span>
+        {% endif %}
         </div>
+
     </div>
     <div class="col-auto">
         <div class="btn-group">

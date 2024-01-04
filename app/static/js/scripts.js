@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupCommunityNameInput();
     setupShowMoreLinks();
     setupConfirmFirst();
+    setupSubmitOnInputChange();
     setupTimeTracking();
     setupMobileNav();
 });
@@ -88,6 +89,32 @@ function setupConfirmFirst() {
         });
     })
 }
+
+function setupSubmitOnInputChange() {
+    const inputElements = document.querySelectorAll('.submit_on_change');
+
+    inputElements.forEach(element => {
+        element.addEventListener("change", function() {
+            const form = findParentForm(element);
+            if (form) {
+                form.submit();
+            }
+        });
+    });
+}
+
+// Find the parent form of an element
+function findParentForm(element) {
+    let currentElement = element;
+    while (currentElement) {
+        if (currentElement.tagName === 'FORM') {
+            return currentElement;
+        }
+        currentElement = currentElement.parentElement;
+    }
+    return null;
+}
+
 function setupShowMoreLinks() {
     const comments = document.querySelectorAll('.comment');
 

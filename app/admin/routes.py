@@ -10,11 +10,12 @@ from app import db, celery
 from app.activitypub.routes import process_inbox_request, process_delete_request
 from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
-from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm
+from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm, \
+    EditTopicForm
 from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
-    User, Instance, File, Report
+    User, Instance, File, Report, Topic
 from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html
 from app.admin import bp
 
@@ -182,12 +183,21 @@ def admin_communities():
                            communities=communities)
 
 
+def topics_for_form():
+    topics = Topic.query.order_by(Topic.name).all()
+    result = [(0, _('None'))]
+    for topic in topics:
+        result.append((topic.id, topic.name))
+    return result
+
+
 @bp.route('/community/<int:community_id>/edit', methods=['GET', 'POST'])
 @login_required
 @permission_required('administer all communities')
 def admin_community_edit(community_id):
     form = EditCommunityForm()
     community = Community.query.get_or_404(community_id)
+    form.topic.choices = topics_for_form()
     if form.validate_on_submit():
         community.name = form.url.data
         community.title = form.title.data
@@ -202,6 +212,7 @@ def admin_community_edit(community_id):
         community.show_all = form.show_all.data
         community.low_quality = form.low_quality.data
         community.content_retention = form.content_retention.data
+        community.topic_id = form.topic.data if form.topic.data != 0 else None
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':
             if community.icon_id:
@@ -216,6 +227,7 @@ def admin_community_edit(community_id):
             file = save_banner_file(banner_file)
             if file:
                 community.image = file
+
         db.session.commit()
         flash(_('Saved'))
         return redirect(url_for('admin.admin_communities'))
@@ -235,6 +247,7 @@ def admin_community_edit(community_id):
         form.show_all.data = community.show_all
         form.low_quality.data = community.low_quality
         form.content_retention.data = community.content_retention
+        form.topic.data = community.topic_id if community.topic_id else None
     return render_template('admin/edit_community.html', title=_('Edit community'), form=form, community=community)
 
 
@@ -276,6 +289,61 @@ def unsubscribe_everyone_then_delete_task(community_id):
     sleep(5)
     community.delete_dependencies()
     db.session.delete(community)    # todo: when a remote community is deleted it will be able to be re-created by using the 'Add remote' function. Not ideal. Consider soft-delete.
+
+
+@bp.route('/topics', methods=['GET'])
+@login_required
+@permission_required('administer all communities')
+def admin_topics():
+    topics = Topic.query.order_by(Topic.name).all()
+    return render_template('admin/topics.html', title=_('Topics'), topics=topics)
+
+
+@bp.route('/topic/add', methods=['GET', 'POST'])
+@login_required
+@permission_required('administer all communities')
+def admin_topic_add():
+    form = EditTopicForm()
+    if form.validate_on_submit():
+        topic = Topic(name=form.name.data, num_communities=0)
+        db.session.add(topic)
+        db.session.commit()
+        flash(_('Saved'))
+        return redirect(url_for('admin.admin_topics'))
+
+    return render_template('admin/edit_topic.html', title=_('Add topic'), form=form)
+
+@bp.route('/topic/<int:topic_id>/edit', methods=['GET', 'POST'])
+@login_required
+@permission_required('administer all communities')
+def admin_topic_edit(topic_id):
+    form = EditTopicForm()
+    topic = Topic.query.get_or_404(topic_id)
+    if form.validate_on_submit():
+        topic.name = form.name.data
+        topic.num_communities = topic.communities.count()
+        db.session.commit()
+        flash(_('Saved'))
+        return redirect(url_for('admin.admin_topics'))
+    else:
+        form.name.data = topic.name
+    return render_template('admin/edit_topic.html', title=_('Edit topic'), form=form, topic=topic)
+
+
+@bp.route('/topic/<int:topic_id>/delete', methods=['GET'])
+@login_required
+@permission_required('administer all communities')
+def admin_topic_delete(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    topic.num_communities = topic.communities.count()
+    if topic.num_communities == 0:
+        db.session.delete(topic)
+        flash(_('Topic deleted'))
+    else:
+        flash(_('Cannot delete topic with communities assigned to it.', 'error'))
+    db.session.commit()
+
+    return redirect(url_for('admin.admin_topics'))
 
 
 @bp.route('/users', methods=['GET'])

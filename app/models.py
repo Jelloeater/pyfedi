@@ -113,6 +113,13 @@ class File(db.Model):
             os.unlink(self.thumbnail_path)
 
 
+class Topic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    num_communities = db.Column(db.Integer, default=0)
+    communities = db.relationship('Community', lazy='dynamic', backref='topic', cascade="all, delete-orphan")
+
+
 class Community(db.Model):
     query_class = FullTextSearchQuery
     id = db.Column(db.Integer, primary_key=True)
@@ -138,6 +145,7 @@ class Community(db.Model):
     public_key = db.Column(db.Text)
     private_key = db.Column(db.Text)
     content_retention = db.Column(db.Integer, default=-1)
+    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), index=True)
 
     ap_id = db.Column(db.String(255), index=True)
     ap_profile_id = db.Column(db.String(255), index=True)

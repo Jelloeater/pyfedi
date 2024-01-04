@@ -67,6 +67,7 @@ class EditCommunityForm(FlaskForm):
                (3650, _l('10 years')),
              ]
     content_retention = SelectField(_l('Retain content'), choices=options, default=1, coerce=int)
+    topic = SelectField(_l('Topic'), coerce=int, validators=[Optional()])
     submit = SubmitField(_l('Save'))
 
     def validate(self, extra_validators=None):
@@ -80,6 +81,11 @@ class EditCommunityForm(FlaskForm):
                 self.url.errors.append(_('- cannot be in Url. Use _ instead?'))
                 return False
         return True
+
+
+class EditTopicForm(FlaskForm):
+    name = StringField(_l('Name'), validators=[DataRequired()])
+    submit = SubmitField(_l('Save'))
 
 
 class EditUserForm(FlaskForm):
