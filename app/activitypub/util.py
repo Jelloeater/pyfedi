@@ -224,9 +224,13 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                 return actor_json_to_model(actor_json, address, server)
         else:
             # retrieve user details via webfinger, etc
-            # todo: try, except block around every get_request
-            webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
-                                         params={'resource': f"acct:{address}@{server}"})
+            try:
+                webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
+                                             params={'resource': f"acct:{address}@{server}"})
+            except requests.exceptions.ReadTimeout:
+                time.sleep(randint(3, 10))
+                webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
+                                             params={'resource': f"acct:{address}@{server}"})
             if webfinger_data.status_code == 200:
                 webfinger_json = webfinger_data.json()
                 webfinger_data.close()
@@ -234,7 +238,11 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                     if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
                         type = links['type'] if 'type' in links else 'application/activity+json'
                         # retrieve the activitypub profile
-                        actor_data = get_request(links['href'], headers={'Accept': type})
+                        try:
+                            actor_data = get_request(links['href'], headers={'Accept': type})
+                        except requests.exceptions.ReadTimeout:
+                            time.sleep(randint(3, 10))
+                            actor_data = get_request(links['href'], headers={'Accept': type})
                         # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
                         if actor_data.status_code == 200:
                             actor_json = actor_data.json()
@@ -287,7 +295,11 @@ def refresh_user_profile(user_id):
 def refresh_user_profile_task(user_id):
     user = User.query.get(user_id)
     if user:
-        actor_data = get_request(user.ap_profile_id, headers={'Accept': 'application/activity+json'})
+        try:
+            actor_data = get_request(user.ap_profile_id, headers={'Accept': 'application/activity+json'})
+        except requests.exceptions.ReadTimeout:
+            time.sleep(randint(3, 10))
+            actor_data = get_request(user.ap_profile_id, headers={'Accept': 'application/activity+json'})
         if actor_data.status_code == 200:
             activity_json = actor_data.json()
             actor_data.close()

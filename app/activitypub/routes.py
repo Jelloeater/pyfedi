@@ -1,9 +1,7 @@
-from datetime import timedelta
-from typing import Union
 
 from app import db, constants, cache, celery
 from app.activitypub import bp
-from flask import request, Response, current_app, abort, jsonify, json, g
+from flask import request, current_app, abort, jsonify, json, g
 
 from app.activitypub.signature import HttpSignature, post_request
 from app.community.routes import show_community
