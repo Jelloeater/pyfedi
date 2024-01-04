@@ -3,7 +3,7 @@
 
 {% block app_content %}
 <div class="row">
-    <div class="col-8 position-relative main_pane">
+    <div class="col-12 col-md-8 position-relative main_pane">
         <h1>{{ _('Create post') }}</h1>
         <form method="post" enctype="multipart/form-data">
             {{ form.csrf_token() }}
@@ -69,7 +69,7 @@
         </form>
     </div>
 
-    <div class="col-4">
+    <div class="col-12 col-md-4 side_pane">
         <div class="card mt-3">
             <div class="card-header">
                  <h2>{{ community.title }}</h2>

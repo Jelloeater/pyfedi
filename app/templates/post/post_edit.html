@@ -35,7 +35,7 @@
     });
 </script>
 <div class="row">
-    <div class="col-8 position-relative main_pane">
+    <div class="col-12 col-md-8 position-relative main_pane">
         <h1>{{ _('Edit post') }}</h1>
         <form method="post" enctype="multipart/form-data">
             {{ form.csrf_token() }}
@@ -90,7 +90,7 @@
         </form>
     </div>
 
-    <div class="col-4">
+    <div class="col-12 col-md-4 side_pane">
         <div class="card mt-3">
             <div class="card-header">
                  <h2>{{ post.community.title }}</h2>

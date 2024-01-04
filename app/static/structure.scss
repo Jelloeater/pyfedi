@@ -50,10 +50,8 @@ nav, etc which are used site-wide */
   margin-left: auto;
   margin-right: auto;
 
-  .card-body {
-    img {
-      max-width: 100%;
-    }
+  .card-body > p > img {
+    max-width: 100%;
   }
 }
 
