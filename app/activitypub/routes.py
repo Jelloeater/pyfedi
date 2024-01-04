@@ -442,7 +442,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         if user is None:
                             activity_log.exception_message = 'Blocked or unfound user'
                         elif liked is None:
-                            activity_log.exception_message = 'Unfound object'
+                            activity_log.exception_message = 'Unfound object ' + liked_ap_id
                         elif user.is_local():
                             activity_log.exception_message = 'Activity about local content which is already present'
                             activity_log.result = 'ignored'
@@ -478,7 +478,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             if user is None:
                                 activity_log.exception_message = 'Blocked or unfound user'
                             elif disliked is None:
-                                activity_log.exception_message = 'Unfound object'
+                                activity_log.exception_message = 'Unfound object ' + liked_ap_id
                             elif user.is_local():
                                 activity_log.exception_message = 'Activity about local content which is already present'
                                 activity_log.result = 'ignored'
@@ -701,7 +701,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     if user is None:
                         activity_log.exception_message = 'Blocked or unfound user'
                     elif liked is None:
-                        activity_log.exception_message = 'Unfound object'
+                        activity_log.exception_message = 'Unfound object ' + request_json['object']
                     elif user.is_local():
                         activity_log.exception_message = 'Activity about local content which is already present'
                         activity_log.result = 'ignored'
@@ -736,7 +736,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         if user is None:
                             activity_log.exception_message = 'Blocked or unfound user'
                         elif disliked is None:
-                            activity_log.exception_message = 'Unfound object'
+                            activity_log.exception_message = 'Unfound object' + target_ap_id
                         elif user.is_local():
                             activity_log.exception_message = 'Activity about local content which is already present'
                             activity_log.result = 'ignored'
