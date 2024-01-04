@@ -45,7 +45,7 @@ gaming
     https://lemmy.world/c/linux_gaming
     https://lemmy.world/c/pcgaming
     https://lemmy.world/c/diablo
-    https://beehaw.org/c/gaming
+    https://sopuli.xyz/c/steamdeck
     
 interesting stuff
     https://kbin.social/m/science
@@ -169,3 +169,10 @@ health
     https://lemmy.world/c/health
     https://lemmy.ml/c/health
     https://mander.xyz/c/medicine
+
+music
+    https://sopuli.xyz/c/hiphopheads
+    https://lemmy.world/c/classicrock
+    https://lemmy.world/c/90smusic
+    https://lemmy.world/c/alternativenation
+    https://lemmy.world/c/music

@@ -1,6 +1,6 @@
 import logging
 import requests
-from flask import Markup, current_app, request
+from flask import Markup, current_app, request, session
 from wtforms import ValidationError
 from wtforms.fields import HiddenField
 from wtforms.widgets import HiddenInput
@@ -8,8 +8,8 @@ from wtforms.widgets import HiddenInput
 logger = logging.getLogger(__name__)
 
 RECAPTCHA_TEMPLATE = '''
-<script src='https://www.google.com/recaptcha/api.js?render={public_key}&onload=executeRecaptcha{action}' async defer></script>
-<script>
+<script src='https://www.google.com/recaptcha/api.js?render={public_key}&onload=executeRecaptcha{action}' async defer nonce={nonce}></script>
+<script nonce={nonce}>
   var executeRecaptcha{action} = function() {{
     console.log("grecaptcha is ready!");
     grecaptcha.execute('{public_key}', {{action: '{action}'}}).then(function(token) {{
@@ -22,8 +22,8 @@ RECAPTCHA_TEMPLATE = '''
 '''
 
 RECAPTCHA_TEMPLATE_MANUAL = '''
-<script src='https://www.google.com/recaptcha/api.js?render={public_key}' async defer></script>
-<script>
+<script src='https://www.google.com/recaptcha/api.js?render={public_key}' async defer nonce={nonce}></script>
+<script nonce={nonce}>
   var executeRecaptcha{action} = function() {{
     console.log("executeRecaptcha{action}() is called!");
     grecaptcha.ready(function() {{
@@ -113,7 +113,7 @@ class Recaptcha3Widget(HiddenInput):
 
         return Markup(
                 (RECAPTCHA_TEMPLATE if field.execute_on_load else RECAPTCHA_TEMPLATE_MANUAL).format(
-                        public_key=public_key, action=field.action, field_name=field.name))
+                        public_key=public_key, action=field.action, field_name=field.name, nonce=session['nonce']))
 
 
 class Recaptcha3Field(HiddenField):
