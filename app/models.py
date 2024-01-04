@@ -57,9 +57,9 @@ class Instance(db.Model):
     last_successful_send = db.Column(db.DateTime)           # When we successfully sent them an Activity
     failures = db.Column(db.Integer, default=0)             # How many times we failed to send (reset to 0 after every successful send)
     most_recent_attempt = db.Column(db.DateTime)            # When the most recent failure was
-    dormant = db.Column(db.Boolean, default=False, index=True)          # True once this instance is considered offline and not worth sending to any more
+    dormant = db.Column(db.Boolean, default=False)          # True once this instance is considered offline and not worth sending to any more
     start_trying_again = db.Column(db.DateTime)             # When to start trying again. Should grow exponentially with each failure.
-    gone_forever = db.Column(db.Boolean, default=False, index=True)     # True once this instance is considered offline forever - never start trying again
+    gone_forever = db.Column(db.Boolean, default=False)     # True once this instance is considered offline forever - never start trying again
     ip_address = db.Column(db.String(50))
 
     posts = db.relationship('Post', backref='instance', lazy='dynamic')
