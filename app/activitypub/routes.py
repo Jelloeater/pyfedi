@@ -510,7 +510,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                         if post:
                             try:
-                                update_post_from_activity(post, request_json['object'])
+                                update_post_from_activity(post, request_json)
                             except KeyError:
                                 activity_log.result = 'exception'
                                 db.session.commit()
@@ -522,7 +522,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
                         if reply:
                             try:
-                                update_post_reply_from_activity(reply, request_json['object'])
+                                update_post_reply_from_activity(reply, request_json)
                             except KeyError:
                                 activity_log.result = 'exception'
                                 db.session.commit()
@@ -530,7 +530,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'PostReply not found'
-                    elif request_json['object']['type'] == 'Update':
+                    elif request_json['object']['type'] == 'Update':    # Editing a post or comment
                         if request_json['object']['object']['type'] == 'Page':
                             post = Post.query.filter_by(ap_id=request_json['object']['object']['id']).first()
                             if post:
