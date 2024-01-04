@@ -50,7 +50,7 @@ def login():
                 new_ip_ban = IpBan(ip_address=ip_address(), notes=user.user_name + ' used new IP address')
                 db.session.add(new_ip_ban)
                 db.session.commit()
-                cache.delete_memoized('banned_ip_addresses')
+                cache.delete_memoized(banned_ip_addresses)
 
             # Set a cookie so we have another way to track banned people
             response.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))

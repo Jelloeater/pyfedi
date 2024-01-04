@@ -529,7 +529,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 member = CommunityMember(user_id=user.id, community_id=community.id)
                                 db.session.add(member)
                                 db.session.commit()
-                                cache.delete_memoized('community_membership', user, community)
+                                cache.delete_memoized(community_membership, user, community)
                             # send accept message to acknowledge the follow
                             accept = {
                                 "@context": default_context(),
@@ -568,7 +568,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 community.subscriptions_count += 1
                                 db.session.commit()
                                 activity_log.result = 'success'
-                                cache.delete_memoized('community_membership', user, community)
+                                cache.delete_memoized(community_membership, user, community)
 
                 elif request_json['type'] == 'Undo':
                     if request_json['object']['type'] == 'Follow':  # Unsubscribe from a community
@@ -586,7 +586,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             if join_request:
                                 db.session.delete(join_request)
                             db.session.commit()
-                            cache.delete_memoized('community_membership', user, community)
+                            cache.delete_memoized(community_membership, user, community)
                             activity_log.result = 'success'
                     elif request_json['object']['type'] == 'Like':  # Undoing an upvote or downvote
                         activity_log.activity_type = request_json['object']['type']

@@ -257,7 +257,7 @@ def user_access(permission: str, user_id: int) -> bool:
     return has_access is not None
 
 
-@cache.memoize(timeout=86400)
+@cache.memoize(timeout=10)
 def community_membership(user: User, community: Community) -> int:
     # @cache.memoize works with User.subscribed but cache.delete_memoized does not, making it bad to use on class methods.
     # however cache.memoize and cache.delete_memoized works fine with normal functions
