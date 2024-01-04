@@ -147,7 +147,6 @@ def change_settings(actor):
         return redirect(url_for('user.change_settings', actor=actor))
     elif request.method == 'GET':
         form.newsletter.data = current_user.newsletter
-        form.bot.data = current_user.bot
         form.ignore_bots.data = current_user.ignore_bots
         form.nsfw.data = current_user.show_nsfw
         form.nsfl.data = current_user.show_nsfl
