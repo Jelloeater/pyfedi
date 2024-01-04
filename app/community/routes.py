@@ -285,7 +285,7 @@ def unsubscribe(actor):
                     db.session.commit()
 
                     flash('You are unsubscribed from ' + community.title)
-                cache.delete_memoized(community_membership, current_user, community)
+                cache.delete_memoized('community_membership', current_user, community)
 
             else:
                 # todo: community deletion

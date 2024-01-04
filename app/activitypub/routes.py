@@ -529,7 +529,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 member = CommunityMember(user_id=user.id, community_id=community.id)
                                 db.session.add(member)
                                 db.session.commit()
-                                cache.delete_memoized(community_membership, user, community)
+                                cache.delete_memoized('community_membership', user, community)
                             # send accept message to acknowledge the follow
                             accept = {
                                 "@context": default_context(),
