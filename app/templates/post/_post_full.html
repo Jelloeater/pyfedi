@@ -24,8 +24,12 @@
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}
             </small></p>
             <div class="post_image">
-                <a href="{{ post.image.view_url() }}"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
-                     width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
+                {% if post.image_id %}
+                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                         width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
+                {% else %}
+                    <a href="{{ post.url }}" rel="nofollow ugc"><img src="{{ post.url }}" style="max-width: 100%; height: auto;"  /></a>
+                {% endif %}
             </div>
         </div>
     {% else %}
