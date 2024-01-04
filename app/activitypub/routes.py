@@ -509,17 +509,52 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     elif request_json['object']['type'] == 'Page': # Editing a post
                         post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                         if post:
-                            update_post_from_activity(post, request_json['object'])
+                            try:
+                                update_post_from_activity(post, request_json['object'])
+                            except KeyError:
+                                activity_log.result = 'exception'
+                                db.session.commit()
+                                return
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'Post not found'
                     elif request_json['object']['type'] == 'Note':  # Editing a reply
                         reply = PostReply.query.filter_by(ap_id=request_json['object']['id']).first()
                         if reply:
-                            update_post_reply_from_activity(reply, request_json)
+                            try:
+                                update_post_reply_from_activity(reply, request_json['object'])
+                            except KeyError:
+                                activity_log.result = 'exception'
+                                db.session.commit()
+                                return
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'PostReply not found'
+                    elif request_json['object']['type'] == 'Update':
+                        if request_json['object']['object']['type'] == 'Page':
+                            post = Post.query.filter_by(ap_id=request_json['object']['object']['id']).first()
+                            if post:
+                                try:
+                                    update_post_from_activity(post, request_json['object'])
+                                except KeyError:
+                                    activity_log.result = 'exception'
+                                    db.session.commit()
+                                    return
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'Post not found'
+                        elif request_json['object']['object']['type'] == 'Note':
+                            reply = PostReply.query.filter_by(ap_id=request_json['object']['object']['id']).first()
+                            if reply:
+                                try:
+                                    update_post_reply_from_activity(reply, request_json['object'])
+                                except KeyError:
+                                    activity_log.result = 'exception'
+                                    db.session.commit()
+                                    return
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'PostReply not found'
                     else:
                         activity_log.exception_message = 'Invalid type for Announce'
 
