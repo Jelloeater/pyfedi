@@ -357,20 +357,25 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                 if request_json['type'] == 'Create':
                     activity_log.activity_type = 'Create'
                     user_ap_id = request_json['object']['attributedTo']
-                    community_ap_id = request_json['to'][0]
-                    if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public':  # kbin does this when posting a reply
-                        if 'to' in request_json['object'] and request_json['object']['to']:
-                            community_ap_id = request_json['object']['to'][0]
-                            if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public' and 'cc' in \
-                                    request_json['object'] and request_json['object']['cc']:
+                    try:
+                        community_ap_id = request_json['to'][0]
+                        if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public':  # kbin does this when posting a reply
+                            if 'to' in request_json['object'] and request_json['object']['to']:
+                                community_ap_id = request_json['object']['to'][0]
+                                if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public' and 'cc' in \
+                                        request_json['object'] and request_json['object']['cc']:
+                                    community_ap_id = request_json['object']['cc'][0]
+                            elif 'cc' in request_json['object'] and request_json['object']['cc']:
                                 community_ap_id = request_json['object']['cc'][0]
-                        elif 'cc' in request_json['object'] and request_json['object']['cc']:
-                            community_ap_id = request_json['object']['cc'][0]
-                        if community_ap_id.endswith('/followers'):  # mastodon
-                            if 'inReplyTo' in request_json['object']:
-                                post_being_replied_to = Post.query.filter_by(ap_id=request_json['object']['inReplyTo']).first()
-                                if post_being_replied_to:
-                                    community_ap_id = post_being_replied_to.community.ap_profile_id
+                            if community_ap_id.endswith('/followers'):  # mastodon
+                                if 'inReplyTo' in request_json['object']:
+                                    post_being_replied_to = Post.query.filter_by(ap_id=request_json['object']['inReplyTo']).first()
+                                    if post_being_replied_to:
+                                        community_ap_id = post_being_replied_to.community.ap_profile_id
+                    except:
+                        activity_log.activity_type = 'exception'
+                        db.session.commit()
+                        return
                     community = find_actor_or_create(community_ap_id)
                     user = find_actor_or_create(user_ap_id)
                     if (user and not user.is_local()) and community:
@@ -398,7 +403,12 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     if request_json['object']['type'] == 'Create':
                         activity_log.activity_type = request_json['object']['type']
                         user_ap_id = request_json['object']['object']['attributedTo']
-                        community_ap_id = request_json['object']['audience']
+                        try:
+                            community_ap_id = request_json['object']['audience'] if 'audience' in request_json['object'] else request_json['actor']
+                        except KeyError:
+                            activity_log.activity_type = 'exception'
+                            db.session.commit()
+                            return
                         community = find_actor_or_create(community_ap_id)
                         user = find_actor_or_create(user_ap_id)
                         if (user and not user.is_local()) and community:
@@ -492,14 +502,14 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     elif request_json['object']['type'] == 'Delete':
                         activity_log.activity_type = request_json['object']['type']
                         user_ap_id = request_json['object']['actor']
-                        community_ap_id = request_json['object']['audience']
+                        community_ap_id = request_json['object']['audience'] if 'audience' in request_json['object'] else request_json['actor']
                         to_be_deleted_ap_id = request_json['object']['object']
                         delete_post_or_comment(user_ap_id, community_ap_id, to_be_deleted_ap_id)
                         activity_log.result = 'success'
                     elif request_json['object']['type'] == 'Page': # Editing a post
                         post = Post.query.filter_by(ap_id=request_json['object']['id']).first()
                         if post:
-                            update_post_from_activity(post, request_json)
+                            update_post_from_activity(post, request_json['object'])
                             activity_log.result = 'success'
                         else:
                             activity_log.exception_message = 'Post not found'
