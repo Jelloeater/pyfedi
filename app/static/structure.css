@@ -396,7 +396,7 @@ fieldset legend {
   margin-left: auto;
   margin-right: auto;
 }
-.card .card-body > p > img {
+.card .card-body > p > img, .card .card-body > p > a > img {
   max-width: 100%;
 }
 
