@@ -1052,11 +1052,9 @@ def undo_downvote(activity_log, comment, post, target_ap_id, user):
 
 
 def undo_vote(activity_log, comment, post, target_ap_id, user):
-    if '/comment/' in target_ap_id:
-        comment = PostReply.query.filter_by(ap_id=target_ap_id).first()
-    if '/post/' in target_ap_id:
-        post = Post.query.filter_by(ap_id=target_ap_id).first()
-    if (user and not user.is_local()) and post:
+    voted_on = find_liked_object(target_ap_id)
+    if (user and not user.is_local()) and isinstance(voted_on, Post):
+        post = voted_on
         user.last_seen = utcnow()
         existing_vote = PostVote.query.filter_by(user_id=user.id, post_id=post.id).first()
         if existing_vote:
@@ -1068,7 +1066,8 @@ def undo_vote(activity_log, comment, post, target_ap_id, user):
             post.score -= existing_vote.effect
             db.session.delete(existing_vote)
             activity_log.result = 'success'
-    if (user and not user.is_local()) and comment:
+    if (user and not user.is_local()) and isinstance(voted_on, PostReply):
+        comment = voted_on
         existing_vote = PostReplyVote.query.filter_by(user_id=user.id, post_reply_id=comment.id).first()
         if existing_vote:
             comment.author.reputation -= existing_vote.effect

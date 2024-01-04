@@ -555,6 +555,16 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 activity_log.result = 'success'
                             else:
                                 activity_log.exception_message = 'PostReply not found'
+                    elif request_json['object']['type'] == 'Undo':
+                        if request_json['object']['object']['type'] == 'Like':
+                            activity_log.activity_type = request_json['object']['object']['type']
+                            user_ap_id = request_json['object']['actor']
+                            user = find_actor_or_create(user_ap_id)
+                            post = None
+                            comment = None
+                            target_ap_id = request_json['object']['object']['object']           # object object object!
+                            post = undo_vote(activity_log, comment, post, target_ap_id, user)
+                            activity_log.result = 'success'
                     else:
                         activity_log.exception_message = 'Invalid type for Announce'
 
@@ -641,7 +651,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         comment = None
                         target_ap_id = request_json['object']['object']
                         post = undo_vote(activity_log, comment, post, target_ap_id, user)
-
+                        activity_log.result = 'success'
                     elif request_json['object']['type'] == 'Dislike':  # Undoing a downvote - probably unused
                         activity_log.activity_type = request_json['object']['type']
                         user_ap_id = request_json['actor']
@@ -650,7 +660,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         comment = None
                         target_ap_id = request_json['object']['object']
                         post = undo_downvote(activity_log, comment, post, target_ap_id, user)
-
+                        activity_log.result = 'success'
                 elif request_json['type'] == 'Update':
                     activity_log.activity_type = 'Update'
                     if request_json['object']['type'] == 'Page':  # Editing a post
