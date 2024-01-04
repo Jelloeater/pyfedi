@@ -92,7 +92,7 @@ def register():
                 verification_token = random_token(16)
                 form.user_name.data = form.user_name.data.strip()
                 user = User(user_name=form.user_name.data, title=form.user_name.data, email=form.real_email.data,
-                            verification_token=verification_token, instance=1, ipaddress=ip_address(),
+                            verification_token=verification_token, instance=1, ip_address=ip_address(),
                             banned=user_ip_banned() or user_cookie_banned())
                 user.set_password(form.password.data)
                 db.session.add(user)
