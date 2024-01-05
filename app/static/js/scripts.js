@@ -87,6 +87,15 @@ function setupConfirmFirst() {
               event.preventDefault(); // As the user clicked "Cancel" in the dialog, prevent the default action.
             }
         });
+    });
+
+    const go_back = document.querySelectorAll('.go_back');
+    go_back.forEach(element => {
+        element.addEventListener("click", function(event) {
+            history.back();
+            event.preventDefault();
+            return false;
+        });
     })
 }
 

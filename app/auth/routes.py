@@ -104,7 +104,7 @@ def register():
                 if current_app.config['MODE'] == 'development':
                     current_app.logger.info('Verify account:' + url_for('auth.verify_email', token=user.verification_token, _external=True))
 
-                flash(_('Great, you are now a registered user! Choose some communities to subscribe to. Use the topic filter to narrow things down.'))
+                flash(_('Great, you are now a registered user! Choose some communities to join. Use the topic filter to narrow things down.'))
 
         resp = make_response(redirect(url_for('main.list_communities')))
         if user_ip_banned():

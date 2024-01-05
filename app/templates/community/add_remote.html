@@ -25,9 +25,9 @@
                                     <a href="/c/{{ new_community.link() }}">{{ new_community.title }}@{{ new_community.ap_domain }}</a>
                                 </p>
                                 <p> {% if subscribed %}
-                                        <a class="btn btn-primary mt-4" href="/community/{{ new_community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
+                                        <a class="btn btn-primary mt-4" href="/community/{{ new_community.link() }}/unsubscribe">{{ _('Leave') }}</a>
                                     {% else %}
-                                        <a class="btn btn-primary mt-4" href="/community/{{ new_community.link() }}/subscribe">{{ _('Subscribe') }}</a>
+                                        <a class="btn btn-primary mt-4" href="/community/{{ new_community.link() }}/subscribe">{{ _('Join') }}</a>
                                     {% endif %}
                                 </p>
                             </div>

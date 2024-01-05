@@ -385,10 +385,11 @@ def admin_user_edit(user_id):
         profile_file = request.files['profile_file']
         if profile_file and profile_file.filename != '':
             # remove old avatar
-            file = File.query.get(user.avatar_id)
-            file.delete_from_disk()
-            user.avatar_id = None
-            db.session.delete(file)
+            if user.avatar_id:
+                file = File.query.get(user.avatar_id)
+                file.delete_from_disk()
+                user.avatar_id = None
+                db.session.delete(file)
 
             # add new avatar
             file = save_icon_file(profile_file, 'users')
@@ -397,10 +398,11 @@ def admin_user_edit(user_id):
         banner_file = request.files['banner_file']
         if banner_file and banner_file.filename != '':
             # remove old cover
-            file = File.query.get(user.cover_id)
-            file.delete_from_disk()
-            user.cover_id = None
-            db.session.delete(file)
+            if user.cover_id:
+                file = File.query.get(user.cover_id)
+                file.delete_from_disk()
+                user.cover_id = None
+                db.session.delete(file)
 
             # add new cover
             file = save_banner_file(banner_file, 'users')

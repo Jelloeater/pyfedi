@@ -86,10 +86,11 @@ def edit_profile(actor):
         profile_file = request.files['profile_file']
         if profile_file and profile_file.filename != '':
             # remove old avatar
-            file = File.query.get(current_user.avatar_id)
-            file.delete_from_disk()
-            current_user.avatar_id = None
-            db.session.delete(file)
+            if current_user.avatar_id:
+                file = File.query.get(current_user.avatar_id)
+                file.delete_from_disk()
+                current_user.avatar_id = None
+                db.session.delete(file)
 
             # add new avatar
             file = save_icon_file(profile_file, 'users')
@@ -98,10 +99,11 @@ def edit_profile(actor):
         banner_file = request.files['banner_file']
         if banner_file and banner_file.filename != '':
             # remove old cover
-            file = File.query.get(current_user.cover_id)
-            file.delete_from_disk()
-            current_user.cover_id = None
-            db.session.delete(file)
+            if current_user.cover_id:
+                file = File.query.get(current_user.cover_id)
+                file.delete_from_disk()
+                current_user.cover_id = None
+                db.session.delete(file)
 
             # add new cover
             file = save_banner_file(banner_file, 'users')

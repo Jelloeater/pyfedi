@@ -75,8 +75,21 @@
                  <h2>{{ community.title }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ community.description|safe }}</p>
-                <p>{{ community.rules|safe }}</p>
+                <p>{{ community.description_html|safe if community.description_html else '' }}</p>
+                <p>{{ community.rules_html|safe if community.rules_html else '' }}</p>
+                {% if len(mods) > 0 and not community.private_mods %}
+                    <h3>Moderators</h3>
+                    <ul class="moderator_list">
+                        {% for mod in mods %}
+                            <li>{{ render_username(mod) }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if rss_feed %}
+                <p class="mt-4">
+                    <a class="no-underline" href="{{ rss_feed }}" rel="nofollow"><span class="fe fe-rss"></span> RSS feed</a>
+                </p>
+                {% endif %}
             </div>
         </div>
     </div>

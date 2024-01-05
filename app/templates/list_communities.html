@@ -12,7 +12,7 @@
                 {{ _('Local') }}
             </a>
             <a href="/communities/subscribed" class="btn {{ 'btn-primary' if request.path == '/communities/subscribed' else 'btn-outline-secondary' }}">
-                {{ _('Subscribed') }}
+                {{ _('Joined') }}
             </a>
             {% if topics %}
                 <span class="mt-1 pl-4">
@@ -25,7 +25,7 @@
                         </select>
                     </form>
                 </span>
-        {% endif %}
+            {% endif %}
         </div>
 
     </div>
@@ -34,41 +34,42 @@
             <a href="{{ url_for('community.add_local') }}" class="btn btn-outline-secondary">{{ _('Create local') }}</a>
             <a href="{{ url_for('community.add_remote') }}" class="btn btn-outline-secondary">{{ _('Add remote') }}</a>
         </div>
-        <form method="get" action="/communities">
+        <!-- <form method="get" action="/communities">
             <input name='search' type="search" placeholder="Find a community" class="form-control" value="{{ search }}" />
-        </form>
+        </form> -->
     </div>
 </div>
 {% if len(communities) > 0 %}
-    <div class="table-responsive-md">
+    <div class="table-responsive-md mt-4">
         <table class="communities_table table table-striped table-hover w-100">
             <thead>
                 <tr>
+                    <th scope="col"> </th>
                     <th scope="col" colspan="2">{{ _('Community') }}</th>
                     <th scope="col">{{ _('Posts') }}</th>
                     <th scope="col">{{ _('Comments') }}</th>
                     <th scope="col">{{ _('Active') }}</th>
-                    <th scope="col">{{ _('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
                 {% for community in communities %}
                     <tr class="">
+                        <td width="70">{% if current_user.is_authenticated %}
+                                {% if community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER] %}
+                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">{{ _('Leave') }}</a>
+                                {% elif community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
+                                    <a class="btn btn-outline-secondary btn-sm" href="/community/{{ community.link() }}/unsubscribe">{{ _('Pending') }}</a>
+                                {% else %}
+                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
+                                {% endif %}
+                            {% else %}
+                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
+                            {% endif %}</td>
                         <td width="46"><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
                         <td scope="row" class="pl-0"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>
-                        <td>{% if current_user.is_authenticated %}
-                                {% if community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER] %}
-                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Unsubscribe</a>
-                                {% elif community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
-                                    <a class="btn btn-outline-secondary btn-sm" href="/community/{{ community.link() }}/unsubscribe">Pending</a>
-                                {% else %}
-                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">Subscribe</a>
-                                {% endif %}
-                            {% endif %}
-                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

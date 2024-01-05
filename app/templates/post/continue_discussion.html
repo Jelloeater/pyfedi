@@ -64,9 +64,9 @@
                 <div class="row">
                     <div class="col-6">
                         {% if current_user.is_authenticated and community_membership(current_user, post.community) %}
-                            <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/unsubscribe">{{ _('Unsubscribe') }}</a>
+                            <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/unsubscribe">{{ _('Leave') }}</a>
                         {% else %}
-                            <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/subscribe">{{ _('Subscribe') }}</a>
+                            <a class="w-100 btn btn-primary" href="/community/{{ post.community.link() }}/subscribe">{{ _('Join') }}</a>
                         {% endif %}
                     </div>
                     <div class="col-6">

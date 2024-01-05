@@ -163,8 +163,11 @@ def list_local_communities():
 @bp.route('/communities/subscribed', methods=['GET'])
 def list_subscribed_communities():
     verification_warning()
-    communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
-    return render_template('list_communities.html', communities=communities, title=_('Subscribed communities'),
+    if current_user.is_authenticated:
+        communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
+    else:
+        communities = []
+    return render_template('list_communities.html', communities=communities, title=_('Joined communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 

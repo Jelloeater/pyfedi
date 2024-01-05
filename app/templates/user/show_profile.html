@@ -72,6 +72,8 @@
                         </a>
                     {% endif %}
             </nav>
+        {% else %}
+            <p>{{ _('No posts yet.') }}</p>
         {% endif %}
 
         {% if post_replies %}
@@ -93,6 +95,8 @@
                         </a>
                     {% endif %}
             </nav>
+        {% else %}
+            <p>{{ _('No comments yet.') }}</p>
         {% endif %}
     </div>
 
@@ -121,10 +125,10 @@
                 </div>
                 <div class="card-body">
                     {% if len(subscribed) > 0 %}
-                        <h4>Subscribed to</h4>
-                        <ul>
+                        <h4>{{ _('Member of') }}</h4>
+                        <ul class="list-group list-group-flush">
                             {% for community in subscribed %}
-                                <li>
+                                <li class="list-group-item">
                                     <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />{{ community.display_name() }}</a>
                                 </li>
                             {% endfor %}
@@ -132,9 +136,9 @@
                     {% endif %}
                     {% if len(moderates) > 0 %}
                         <h4>Moderates</h4>
-                        <ul>
+                        <ul class="list-group list-group-flush">
                             {% for community in moderates %}
-                                <li>
+                                <li class="list-group-item">
                                     <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />{{ community.display_name() }}</a>
                                 </li>
                             {% endfor %}

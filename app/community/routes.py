@@ -222,9 +222,9 @@ def subscribe(actor):
                 success = post_request(community.ap_inbox_url, follow, current_user.private_key,
                                                            current_user.profile_id() + '#main-key')
                 if success:
-                    flash('Your request to subscribe has been sent to ' + community.title)
+                    flash('Your request to join has been sent to ' + community.title)
                 else:
-                    flash('There was a problem while trying to subscribe.', 'error')
+                    flash('There was a problem while trying to join.', 'error')
             else:  # for local communities, joining is instant
                 banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
                 if banned:
@@ -232,7 +232,7 @@ def subscribe(actor):
                 member = CommunityMember(user_id=current_user.id, community_id=community.id)
                 db.session.add(member)
                 db.session.commit()
-                flash('You are subscribed to ' + community.title)
+                flash('You joined ' + community.title)
         referrer = request.headers.get('Referer', None)
         if referrer is not None:
             return redirect(referrer)
@@ -278,14 +278,14 @@ def unsubscribe(actor):
                     activity.result = 'success'
                     db.session.commit()
                     if not success:
-                        flash('There was a problem while trying to subscribe', 'error')
+                        flash('There was a problem while trying to join', 'error')
 
                 if proceed:
                     db.session.query(CommunityMember).filter_by(user_id=current_user.id, community_id=community.id).delete()
                     db.session.query(CommunityJoinRequest).filter_by(user_id=current_user.id, community_id=community.id).delete()
                     db.session.commit()
 
-                    flash('You are unsubscribed from ' + community.title)
+                    flash('You are left ' + community.title)
                 cache.delete_memoized(community_membership, current_user, community)
 
             else:
