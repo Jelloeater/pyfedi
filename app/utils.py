@@ -467,6 +467,8 @@ def epoch_seconds(date):
 def post_ranking(score, date: datetime):
     if date is None:
         date = datetime.utcnow()
+    if score is None:
+        score = 1
     order = math.log(max(abs(score), 1), 10)
     sign = 1 if score > 0 else -1 if score < 0 else 0
     seconds = epoch_seconds(date) - 1685766018

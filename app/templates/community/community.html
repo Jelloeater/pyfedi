@@ -63,6 +63,9 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-6">
+                        <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create a post') }}</a>
+                    </div>
+                    <div class="col-6">
                         {% if current_user.is_authenticated and community_membership(current_user, community) == SUBSCRIPTION_MEMBER %}
                             <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/unsubscribe">{{ _('Leave') }}</a>
                         {% elif current_user.is_authenticated and community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
@@ -70,9 +73,6 @@
                         {% else %}
                             <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
                         {% endif %}
-                    </div>
-                    <div class="col-6">
-                        <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create a post') }}</a>
                     </div>
                 </div>
                 <form method="get">
