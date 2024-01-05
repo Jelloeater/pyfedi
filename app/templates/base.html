@@ -96,8 +96,15 @@
                                 <li class="nav-item"><a class="nav-link" href="/admin/">{{ _('Admin') }}</a></li>
                             {% endif %}
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/notifications"><span class="fe fe-bell"></span>
-                                {{ current_user.unread_notifications if current_user.unread_notifications else '' }}</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/notifications">
+                                    {% if current_user.unread_notifications %}
+                                    <span class="fe fe-bell red"></span> <span class="red">{{ current_user.unread_notifications }}</span>
+                                    {% else %}
+                                        <span class="fe fe-bell"></span>
+                                    {% endif %}
+                                </a>
+                            </li>
                         {% endif %}
                     </ul>
             </div>

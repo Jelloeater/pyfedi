@@ -286,6 +286,7 @@ def report_profile(actor):
                 if admin.id not in already_notified:
                     notify = Notification(title='Reported user', url=user.ap_id, user_id=admin.id, author_id=current_user.id)
                     db.session.add(notify)
+                    admin.unread_notifications += 1
             user.reports += 1
             db.session.commit()
 
@@ -426,12 +427,12 @@ def ban_purge_profile(actor):
 @bp.route('/notifications', methods=['GET', 'POST'])
 @login_required
 def notifications():
-    """Remove notifications older than 30 days"""
+    """Remove notifications older than 90 days"""
     db.session.query(Notification).filter(
-        Notification.created_at < utcnow() - timedelta(days=30)).delete()
+        Notification.created_at < utcnow() - timedelta(days=90)).delete()
     db.session.commit()
 
-    # Update unread notifications count
+    # Update unread notifications count, just to be sure
     current_user.unread_notifications = Notification.query.filter_by(user_id=current_user.id, read=False).count()
     db.session.commit()
 

@@ -4,7 +4,7 @@ import os
 from datetime import timedelta
 from random import randint
 from typing import Union, Tuple
-from flask import current_app, request, g
+from flask import current_app, request, g, url_for
 from sqlalchemy import text
 from app import db, cache, constants, celery
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
@@ -20,7 +20,8 @@ from PIL import Image, ImageOps
 from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
-    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking
+    is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking, \
+    shorten_string
 
 
 def public_key():
@@ -466,6 +467,7 @@ def post_json_to_model(post_json, user, community) -> Post:
                     notify = Notification(title='Suspicious content', url=post.ap_id, user_id=community_member.user_id, author_id=user.id)
                     db.session.add(notify)
                     already_notified.add(community_member.user_id)
+
             if domain.notify_admins:
                 for admin in Site.admins():
                     if admin.id not in already_notified:
@@ -911,12 +913,36 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
         if post_id is not None:
             post = Post.query.get(post_id)
             if post.comments_enabled:
+                anchor = None
+                if not parent_comment_id:
+                    notification_target = post
+                else:
+                    notification_target = PostReply.query.get(parent_comment_id)
+
+                if notification_target.author.has_blocked_user(post_reply.user_id):
+                    activity_log.exception_message = 'Replier blocked, reply discarded'
+                    activity_log.result = 'ignored'
+                    return None
+
                 db.session.add(post_reply)
                 post.reply_count += 1
                 community.post_reply_count += 1
                 community.last_active = post.last_active = utcnow()
                 activity_log.result = 'success'
                 db.session.commit()
+
+                # send notification to the post/comment being replied to
+                if notification_target.notify_author and post_reply.user_id != notification_target.user_id and notification_target.author.ap_id is None:
+                    if isinstance(notification_target, PostReply):
+                        anchor = f"comment_{post_reply.id}"
+                    notification = Notification(title='Reply from ' + post_reply.author.display_name(),
+                                                user_id=notification_target.user_id,
+                                                author_id=post_reply.user_id,
+                                                url=url_for('activitypub.post_ap', post_id=post.id, _anchor=anchor))
+                    db.session.add(notification)
+                    notification_target.author.unread_notifications += 1
+                db.session.commit()
+
                 if user.reputation > 100:
                     vote = PostReplyVote(user_id=1, author_id=post_reply.user_id,
                                          post_reply_id=post_reply.id,

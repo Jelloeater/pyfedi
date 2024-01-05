@@ -198,6 +198,10 @@
   content: "\e967";
 }
 
+.fe-bell {
+  position: relative;
+  top: 1px;
+}
 .fe-bell::before {
   content: "\e91e";
 }

@@ -433,10 +433,11 @@ def community_report(community_id: int):
         # todo: find all instance admin(s). for now just load User.id == 1
         admins = [User.query.get_or_404(1)]
         for admin in admins:
-            notification = Notification(user_id=admin.id, title=_('A post has been reported'),
+            notification = Notification(user_id=admin.id, title=_('A community has been reported'),
                                             url=community.local_url(),
                                             author_id=current_user.id)
             db.session.add(notification)
+            admin.unread_notifications += 1
         db.session.commit()
 
         # todo: federate report to originating instance

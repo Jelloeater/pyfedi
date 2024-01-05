@@ -54,14 +54,19 @@ def show_post(post_id: int):
             resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
             return resp
 
+        if post.author.has_blocked_user(current_user.id):
+            flash(_('You cannot reply to %(name)s', name=post.author.display_name()))
+            return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
                           notify_author=form.notify_author.data)
-        if post.notify_author and current_user.id != post.user_id:    # todo: check if replier is blocked
-            notification = Notification(title=_('Reply: ') + shorten_string(form.body.data, 42), user_id=post.user_id,
+        if post.notify_author and current_user.id != post.user_id:
+            notification = Notification(title=_('Reply from %(name)s ', name=current_user.display_name()), user_id=post.user_id,
                                         author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
+            post.author.unread_notifications += 1
         post.last_active = community.last_active = utcnow()
         post.reply_count += 1
         community.post_reply_count += 1
@@ -363,6 +368,11 @@ def add_reply(post_id: int, comment_id: int):
     in_reply_to = PostReply.query.get_or_404(comment_id)
     mods = post.community.moderators()
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
+
+    if in_reply_to.author.has_blocked_user(current_user.id):
+        flash(_('You cannot reply to %(name)s', name=in_reply_to.author.display_name()))
+        return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
     form = NewReplyForm()
     if form.validate_on_submit():
         current_user.last_seen = utcnow()
@@ -374,22 +384,21 @@ def add_reply(post_id: int, comment_id: int):
                           notify_author=form.notify_author.data)
         db.session.add(reply)
         if in_reply_to.notify_author and current_user.id != in_reply_to.user_id and in_reply_to.author.ap_id is None:    # todo: check if replier is blocked
-            notification = Notification(title=_('Reply: ') + shorten_string(form.body.data, 42), user_id=in_reply_to.user_id,
+            notification = Notification(title=_('Reply from %(name)s', name=current_user.display_name()), user_id=in_reply_to.user_id,
                                         author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
+            in_reply_to.author.unread_notifications += 1
         db.session.commit()
         reply.ap_id = reply.profile_id()
         db.session.commit()
         if current_user.reputation > 100:
-            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
-                                       effect=1.0)
+            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id, effect=1.0)
             reply.up_votes += 1
             reply.score += 1
             reply.ranking += 1
             db.session.add(reply_vote)
         elif current_user.reputation < -100:
-            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
-                                       effect=-1.0)
+            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id, effect=-1.0)
             reply.score -= 1
             reply.ranking -= 1
             db.session.add(reply_vote)
