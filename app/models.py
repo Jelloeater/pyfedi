@@ -203,7 +203,7 @@ class Community(db.Model):
                         return self.icon.source_url.replace('app/', '/')
                     else:
                         return self.icon.source_url
-        return ''
+        return '/static/images/1px.gif'
 
     @cache.memoize(timeout=500)
     def header_image(self) -> str:

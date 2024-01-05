@@ -457,6 +457,10 @@ nav.navbar {
   vertical-align: text-top;
 }
 
+.list-group-item .community_icon {
+  vertical-align: middle;
+}
+
 .community_icon_big {
   width: 20vw;
   height: 20vw;
