@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <h1>{{ _('Donate') }}</h1>
+        <p>PieFed is free and open-source software while operating without any advertising, monetization, or reliance on
+            venture capital. Your contributions are vital in supporting the PieFed development effort,
+            allowing us to expand and enhance PieFed with new features.</p>
+
+        <div class="btn-group btn-group-lg" role="group" aria-label="Donation options">
+          <a type="button" class="btn btn-outline-primary" href="https://liberapay.com/PieFed/donate">Donate using Liberapay</a>
+          <a type="button" class="btn btn-outline-primary" href="https://www.patreon.com/PieFed">Donate using Patreon</a>
+        </div>
+
+        <p>Liberapay is preferred as it has lower fees.</p>
+    </div>
+
+    <div class="col-12 col-md-4 side_pane">
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('About %(site_name)s', site_name=g.site.name) }}</h2>
+            </div>
+            <div class="card-body">
+                <p><strong>{{ g.site.description|safe }}</strong></p>
+                <p>{{ g.site.sidebar|safe }}</p>
+                <p class="mt-4">
+                    <a class="no-underline" href="{{ rss_feed }}" rel="nofollow"><span class="fe fe-rss"></span> RSS feed</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

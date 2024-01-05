@@ -171,6 +171,16 @@ def list_subscribed_communities():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 
+@bp.route('/donate')
+def donate():
+    return render_template('donate.html')
+
+
+@bp.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+
 @bp.route('/login')
 def login():
     return redirect(url_for('auth.login'))
