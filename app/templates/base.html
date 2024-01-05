@@ -86,10 +86,12 @@
                             <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/login">{{ _('Log in') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/register">{{ _('Register') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="https://liberapay.com/PieFed/donate">{{ _('Donate') }}</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/u/{{ current_user.user_name }}">{{ _('Account') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="https://liberapay.com/PieFed/donate">{{ _('Donate') }}</a></li>
                             {% if user_access('change instance settings', current_user.id) %}
                                 <li class="nav-item"><a class="nav-link" href="/admin/">{{ _('Admin') }}</a></li>
                             {% endif %}
@@ -119,6 +121,8 @@
         </div>
         <footer class="footer mt-auto">
             <p id="timeSpent" class="text-center mt-4" title="This is how long you have spent using PieFed during this month. We hope this use of your time aligns with your priorities and values."></p>
+            <p class="text-center mt-4"><a href="https://liberapay.com/PieFed/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>
+            <p class="text-center"><a href="https://patreon.com/PieFed">Donate with Patreon</a></p>
         </footer>
     {% endblock %}
 

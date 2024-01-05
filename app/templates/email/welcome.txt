@@ -2,13 +2,15 @@ Hello {{ first_name }} and welcome!
 
 I'm Rimu, the founder of PieFed and I'd like to personally thank you for signing up.
 
-I'd also like to give you the tools and information you need to get the most out of it. Let's get you up and running:
+As PieFed is still in an early development phase, your thoughts and ideas mean the world to me. You might stumble upon a
+    few hiccups or notice some missing bits here and there — that's totally expected. Just hit reply to this email and
+    let me know what's up. Screenshots, if you've got 'em, will make a world of difference!
 
-    1. Project background: https://join.piefed.social/
-    2. Project source code: https://codeberg.org/rimu/pyfedi/
-    3. Issue tracker: https://codeberg.org/rimu/pyfedi/issues
+If you are technically-minded, reporting issues on the Codeberg issue tracker at https://codeberg.org/rimu/pyfedi/issues
+ would be awesome. And hey, if Python's your jam and you're keen to pitch in, check out the project site https://join.piefed.social/
+  or delve into the code repository https://codeberg.org/rimu/pyfedi/ for more info.
 
-I hope this helps. For more information please see the FAQ at https://piefed.social/faq.php or ask me anything by replying to this email.
+PieFed is entirely self-funded so donations are much appreciated https://liberapay.com/PieFed/donate.
 
 Warm regards,
 
