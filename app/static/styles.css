@@ -600,6 +600,20 @@ nav.navbar {
   .main_pane, .card {
     background-color: #eee;
   }
+
+  .btn-outline-secondary {
+    border-color: #eee;
+    color: #eee;
+  }
+
+  .main_pane .btn-outline-secondary {
+    border-color: #777;
+    color: #777;
+  }
+
+  footer a {
+    color: #eee;
+  }
 }
 
 /*# sourceMappingURL=styles.css.map */

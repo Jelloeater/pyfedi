@@ -264,6 +264,7 @@ nav.navbar {
 }
 
 @media (prefers-color-scheme: dark) {
+
   body {
     background-color: $dark-grey;
   }
@@ -276,4 +277,21 @@ nav.navbar {
     background-color: #eee;
   }
 
+  .btn-outline-secondary {
+    border-color: #eee;
+    color: #eee;
+  }
+
+  .main_pane {
+    .btn-outline-secondary {
+      border-color: $dark-grey;
+      color: $dark-grey;
+    }
+  }
+
+  footer {
+    a {
+      color: #eee;
+    }
+  }
 }
