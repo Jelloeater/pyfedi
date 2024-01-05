@@ -217,7 +217,11 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
         if actor.startswith('https://'):
-            actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
+            try:
+                actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
+            except requests.exceptions.ReadTimeout:
+                time.sleep(randint(3, 10))
+                actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
             if actor_data.status_code == 200:
                 actor_json = actor_data.json()
                 actor_data.close()
