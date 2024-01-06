@@ -37,6 +37,7 @@ def index():
     if current_user.is_anonymous:
         flash(_('Create an account to tailor this feed to your interests.'))
         posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+        posts = posts.join(Community, Community.id == Post.community_id).filter(Community.show_home == True)
     else:
         posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(CommunityMember.is_banned == False)
         posts = posts.join(User, CommunityMember.user_id == User.id).filter(User.id == current_user.id)
