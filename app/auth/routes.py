@@ -79,8 +79,6 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
-    if current_app.config['MODE'] == 'development':
-        del form.recaptcha
     if form.validate_on_submit():
         if form.email.data == '': # ignore any registration where the email field is filled out. spam prevention
             if form.real_email.data.lower().startswith('postmaster@') or form.real_email.data.lower().startswith('abuse@') or \

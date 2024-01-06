@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% from 'bootstrap/form.html' import render_form %}
 
+{% block scripts %}
+    <script src='https://www.google.com/recaptcha/api.js' async defer nonce="{{ session['nonce'] }}"></script>
+{% endblock %}
+
 {% block app_content %}
 
         <div class="row">

@@ -1,9 +1,8 @@
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm, RecaptchaField
 from wtforms import StringField, PasswordField, SubmitField, HiddenField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length
 from flask_babel import _, lazy_gettext as _l
 from app.models import User, Community
-from app.auth.recaptcha3 import Recaptcha3Field
 
 
 class LoginForm(FlaskForm):
@@ -20,7 +19,7 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField(
         _l('Repeat password'), validators=[DataRequired(),
                                            EqualTo('password')])
-    recaptcha = Recaptcha3Field(action="TestAction", execute_on_load=True)
+    recaptcha = RecaptchaField()
 
     submit = SubmitField(_l('Register'))
 
