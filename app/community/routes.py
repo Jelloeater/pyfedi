@@ -25,6 +25,7 @@ from datetime import timezone, timedelta
 @bp.route('/add_local', methods=['GET', 'POST'])
 @login_required
 def add_local():
+    flash('PieFed is still being tested so hosting communities on piefed.social is not advised except for testing purposes.', 'warning')
     form = AddLocalCommunity()
     if g.site.enable_nsfw is False:
         form.nsfw.render_kw = {'disabled': True}

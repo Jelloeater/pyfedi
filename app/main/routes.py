@@ -14,7 +14,7 @@ from flask_babel import _, get_locale
 from sqlalchemy import select, desc
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
-    ap_datetime, ip_address, retrieve_block_list
+    ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
 
 
@@ -35,6 +35,7 @@ def index():
     page = request.args.get('page', 1, type=int)
 
     if current_user.is_anonymous:
+        flash(_('Create an account to tailor this feed to your interests.'))
         posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
     else:
         posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(CommunityMember.is_banned == False)
@@ -54,7 +55,8 @@ def index():
                            POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
-                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed", rss_feed_name=f"Posts on " + g.site.name)
+                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed", rss_feed_name=f"Posts on " + g.site.name,
+                           title=f"{g.site.name} - {g.site.description}", description=shorten_string(markdown_to_text(g.site.sidebar), 150))
 
 
 @bp.route('/new', methods=['HEAD', 'GET', 'POST'])

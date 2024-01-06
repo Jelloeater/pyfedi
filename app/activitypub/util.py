@@ -21,7 +21,7 @@ from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
     is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking, \
-    shorten_string
+    shorten_string, reply_already_exists, reply_is_just_link_to_gif_reaction
 
 
 def public_key():
@@ -921,6 +921,17 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
 
                 if notification_target.author.has_blocked_user(post_reply.user_id):
                     activity_log.exception_message = 'Replier blocked, reply discarded'
+                    activity_log.result = 'ignored'
+                    return None
+
+                if reply_already_exists(user_id=user.id, post_id=post.id, parent_id=post_reply.parent_id, body=post_reply.body):
+                    activity_log.exception_message = 'Duplicate reply'
+                    activity_log.result = 'ignored'
+                    return None
+
+                if reply_is_just_link_to_gif_reaction(post_reply.body):
+                    user.reputation -= 1
+                    activity_log.exception_message = 'gif comment ignored'
                     activity_log.result = 'ignored'
                     return None
 

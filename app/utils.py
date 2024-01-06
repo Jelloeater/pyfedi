@@ -436,6 +436,30 @@ def can_create(user, content: Union[Community, Post, PostReply]) -> bool:
     return True
 
 
+def reply_already_exists(user_id, post_id, parent_id, body) -> bool:
+    if parent_id is None:
+        num_matching_replies = db.session.execute(text(
+            'SELECT COUNT(id) as c FROM "post_reply" WHERE user_id = :user_id AND post_id = :post_id AND parent_id is null AND body = :body'),
+            {'user_id': user_id, 'post_id': post_id, 'body': body}).scalar()
+    else:
+        num_matching_replies = db.session.execute(text(
+            'SELECT COUNT(id) as c FROM "post_reply" WHERE user_id = :user_id AND post_id = :post_id AND parent_id = :parent_id AND body = :body'),
+            {'user_id': user_id, 'post_id': post_id, 'parent_id': parent_id, 'body': body}).scalar()
+    return num_matching_replies != 0
+
+
+def reply_is_just_link_to_gif_reaction(body) -> bool:
+    tmp_body = body.strip()
+    if tmp_body.startswith('https://media.tenor.com/') or \
+            tmp_body.startswith('https://media1.giphy.com/') or \
+            tmp_body.startswith('https://media2.giphy.com/') or \
+            tmp_body.startswith('https://media3.giphy.com/') or \
+            tmp_body.startswith('https://media4.giphy.com/'):
+        return True
+    else:
+        return False
+
+
 def inbox_domain(inbox: str) -> str:
     inbox = inbox.lower()
     if 'https://' in inbox or 'http://' in inbox:

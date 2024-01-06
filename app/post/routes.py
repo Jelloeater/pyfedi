@@ -18,7 +18,8 @@ from app.models import Post, PostReply, \
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
-    request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking
+    request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking, \
+    reply_already_exists, reply_is_just_link_to_gif_reaction
 
 
 def show_post(post_id: int):
@@ -56,6 +57,16 @@ def show_post(post_id: int):
 
         if post.author.has_blocked_user(current_user.id):
             flash(_('You cannot reply to %(name)s', name=post.author.display_name()))
+            return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
+        # avoid duplicate replies
+        if reply_already_exists(user_id=current_user.id, post_id=post.id, parent_id=None, body=form.body.data):
+            return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
+        # disallow low-effort gif reaction posts
+        if reply_is_just_link_to_gif_reaction(form.body.data):
+            current_user.reputation -= 1
+            flash(_('This type of comment is not accepted, sorry.'), 'error')
             return redirect(url_for('activitypub.post_ap', post_id=post_id))
 
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=community.id, body=form.body.data,
@@ -375,6 +386,20 @@ def add_reply(post_id: int, comment_id: int):
 
     form = NewReplyForm()
     if form.validate_on_submit():
+        if reply_already_exists(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, body=form.body.data):
+            if in_reply_to.depth <= constants.THREAD_CUTOFF_DEPTH:
+                return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{in_reply_to.id}'))
+            else:
+                return redirect(url_for('post.continue_discussion', post_id=post_id, comment_id=in_reply_to.parent_id))
+
+        if reply_is_just_link_to_gif_reaction(form.body.data):
+            current_user.reputation -= 1
+            flash(_('This type of comment is not accepted, sorry.'), 'error')
+            if in_reply_to.depth <= constants.THREAD_CUTOFF_DEPTH:
+                return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{in_reply_to.id}'))
+            else:
+                return redirect(url_for('post.continue_discussion', post_id=post_id, comment_id=in_reply_to.parent_id))
+
         current_user.last_seen = utcnow()
         current_user.ip_address = ip_address()
         reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, depth=in_reply_to.depth + 1,
@@ -487,7 +512,7 @@ def add_reply(post_id: int, comment_id: int):
                     send_to_remote_instance(instance.id, post.community.id, announce)
 
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
-            return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{reply.parent_id}'))
+            return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{reply.id}'))
         else:
             return redirect(url_for('post.continue_discussion', post_id=post_id, comment_id=reply.parent_id))
     else:

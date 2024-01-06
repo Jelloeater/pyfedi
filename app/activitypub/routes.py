@@ -300,6 +300,7 @@ def shared_inbox():
         if 'id' in request_json:
             if activity_already_ingested(request_json['id']):   # Lemmy has an extremely short POST timeout and tends to retry unnecessarily. Ignore their retries.
                 activity_log.result = 'ignored'
+                activity_log.exception_message = 'Unnecessary retry attempt'
                 db.session.add(activity_log)
                 db.session.commit()
                 return ''
@@ -458,7 +459,6 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 activity_log.exception_message = 'Could not detect type of like'
                             if activity_log.result == 'success':
                                 ...
-                                # todo: recalculate 'hotness' of liked post/reply
                                 # todo: if vote was on content in local community, federate the vote out to followers
                         else:
                             activity_log.exception_message = 'Cannot upvote this'
@@ -723,7 +723,6 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             activity_log.exception_message = 'Could not detect type of like'
                         if activity_log.result == 'success':
                             ...
-                            # todo: recalculate 'hotness' of liked post/reply
                             # todo: if vote was on content in local community, federate the vote out to followers
                     else:
                         activity_log.exception_message = 'Cannot upvote this'
@@ -754,7 +753,6 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 elif isinstance(disliked, PostReply):
                                     downvote_post_reply(disliked, user)
                                 activity_log.result = 'success'
-                                # todo: recalculate 'hotness' of liked post/reply
                                 # todo: if vote was on content in the local community, federate the vote out to followers
                             else:
                                 activity_log.exception_message = 'Could not detect type of like'
