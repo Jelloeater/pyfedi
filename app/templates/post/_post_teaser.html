@@ -12,6 +12,11 @@
                                 {% if post.type == POST_TYPE_LINK %}
                                     <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
                                          alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                {% elif post.type == POST_TYPE_IMAGE %}
+                                    {% if post.image_id %}
+                                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
+                                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                    {% endif %}
                                 {% else %}
                                     <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
                                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
@@ -43,6 +48,14 @@
                 <div class="col-6">
                     <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}"><span class="fe fe-reply"></span></a>
                     <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
+                    {% if post.type == POST_TYPE_IMAGE %}
+                        &nbsp;
+                        {% if post.image_id %}
+                            <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image"><span class="fe fe-magnify"></span></a>
+                        {% else %}
+                            <a href="{{ post.url }}" rel="nofollow ugc" class="preview_image" target="_blank"><span class="fe fe-magnify"></span></a>
+                        {% endif %}
+                    {% endif %}
                 </div>
                 <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a></div>
             </div>

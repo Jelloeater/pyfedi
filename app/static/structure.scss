@@ -437,3 +437,10 @@ fieldset {
 .profile_action_buttons {
   float: right;
 }
+
+.preview_image_shown {
+  z-index: 1;
+  position: relative;
+  max-width: 92vw;
+  height: auto;
+}

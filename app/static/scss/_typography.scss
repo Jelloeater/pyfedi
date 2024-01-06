@@ -206,6 +206,21 @@
   content: "\e91e";
 }
 
+.fe-magnify {
+  position: relative;
+  top: 1px;
+}
+
+.fe-magnify::before {
+  content: "\ea08";
+}
+
+.imageVisible {
+  .fe-magnify::before {
+    content: "\ea09";
+  }
+}
+
 .fe-rss::before {
   content: "\e9be";
 }

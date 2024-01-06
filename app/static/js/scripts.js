@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupCommunityNameInput();
     setupShowMoreLinks();
     setupConfirmFirst();
+    setupImageExpander();
     setupSubmitOnInputChange();
     setupTimeTracking();
     setupMobileNav();
@@ -50,6 +51,38 @@ function setupAutoResize(element) {
         outerWrapper.style.height = (elem.scrollHeight + 61) + 'px';
     });
 
+}
+
+function setupImageExpander() {
+    // Get all elements with the class "preview_image"
+    var imageLinks = document.querySelectorAll('.preview_image');
+
+    // Loop through each element and attach a click event listener
+    imageLinks.forEach(function(link) {
+      link.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default behavior of the anchor link
+
+        // Check if the image is already visible
+        var image = this.nextElementSibling; // Assumes the image is always the next sibling
+        var isImageVisible = image && image.style.display !== 'none';
+
+        // Toggle the visibility of the image
+        if (isImageVisible) {
+          image.remove(); // Remove the image from the DOM
+        } else {
+          image = document.createElement('img');
+          image.src = this.href; // Set the image source to the href of the anchor link
+          image.alt = 'Image'; // Set the alt attribute for accessibility
+          image.className = 'preview_image_shown';
+
+          // Insert the image after the anchor link
+          this.parentNode.insertBefore(image, this.nextSibling);
+        }
+
+        // Toggle a class on the anchor to indicate whether the image is being shown or not
+        this.classList.toggle('imageVisible', !isImageVisible);
+      });
+    });
 }
 
 function collapseReply(comment_id) {
