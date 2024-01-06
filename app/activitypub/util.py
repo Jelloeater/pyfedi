@@ -7,9 +7,8 @@ from typing import Union, Tuple
 from flask import current_app, request, g, url_for
 from sqlalchemy import text
 from app import db, cache, constants, celery
-from app.community.util import notify_about_post
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
-    PostVote, PostReplyVote, ActivityPubLog, Notification, Site
+    PostVote, PostReplyVote, ActivityPubLog, Notification, Site, CommunityMember
 import time
 import base64
 import requests
@@ -1054,6 +1053,17 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
             post.ranking = post_ranking(post.score, post.posted_at)
             db.session.commit()
     return post
+
+
+def notify_about_post(post: Post):
+    people_to_notify = CommunityMember.query.filter_by(community_id=post.community_id, notify_new_posts=True, is_banned=False)
+    for person in people_to_notify:
+        if person.user_id != post.user_id:
+            new_notification = Notification(title=shorten_string(post.title, 25), url=f"/post/{post.id}", user_id=person.user_id, author_id=post.user_id)
+            db.session.add(new_notification)
+            user = User.query.get(person.user_id)  # todo: make this more efficient by doing a join with CommunityMember at the start of the function
+            user.unread_notifications += 1
+            db.session.commit()
 
 
 def update_post_reply_from_activity(reply: PostReply, request_json: dict):
