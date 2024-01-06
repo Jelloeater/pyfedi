@@ -7,6 +7,7 @@ from typing import Union, Tuple
 from flask import current_app, request, g, url_for
 from sqlalchemy import text
 from app import db, cache, constants, celery
+from app.community.util import notify_about_post
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
     PostVote, PostReplyVote, ActivityPubLog, Notification, Site
 import time
@@ -1040,6 +1041,9 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
 
         if post.image_id:
             make_image_sizes(post.image_id, 266, None, 'posts')
+
+        notify_about_post(post)
+
         if user.reputation > 100:
             vote = PostVote(user_id=1, author_id=post.user_id,
                             post_id=post.id,

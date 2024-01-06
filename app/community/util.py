@@ -13,9 +13,9 @@ from app.activitypub.signature import post_request
 from app.activitypub.util import find_actor_or_create, actor_json_to_model, post_json_to_model
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site, \
-    Instance
+    Instance, Notification, User
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
-    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking
+    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string
 from sqlalchemy import desc, text
 import os
 from opengraph_parse import parse_page
@@ -388,3 +388,14 @@ def send_to_remote_instance_task(instance_id: int, community_id: int, payload):
             if instance.failures > 2:
                 instance.dormant = True
         db.session.commit()
+
+
+def notify_about_post(post: Post):
+    people_to_notify = CommunityMember.query.filter_by(community_id=post.community_id, notify_new_posts=True, is_banned=False)
+    for person in people_to_notify:
+        if person.user_id != post.user_id:
+            new_notification = Notification(title=shorten_string(post.title, 25), url=f"/post/{post.id}", user_id=person.user_id, author_id=post.user_id)
+            db.session.add(new_notification)
+            user = User.query.get(person.user_id)  # todo: make this more efficient by doing a join with CommunityMember at the start of the function
+            user.unread_notifications += 1
+            db.session.commit()

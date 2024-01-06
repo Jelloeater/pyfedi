@@ -15,7 +15,11 @@
                 </nav>
             </div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ community.icon_image() }}" />
-            <h1 class="mt-2">{{ community.title }}</h1>
+            <h1 class="mt-2">{{ community.title }}
+                {% if current_user.is_authenticated %}
+                    {% include 'community/_notification_toggle.html' %}
+                {% endif %}
+            </h1>
         {% elif community.icon_id %}
             <div class="row">
                 <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
@@ -29,7 +33,11 @@
                     <img class="community_icon_big rounded-circle" src="{{ community.icon_image() }}" />
                 </div>
                 <div class="col-10">
-                    <h1 class="mt-3">{{ community.title }}</h1>
+                    <h1 class="mt-3">{{ community.title }}
+                        {% if current_user.is_authenticated %}
+                            {% include 'community/_notification_toggle.html' %}
+                        {% endif %}
+                    </h1>
                 </div>
             </div>
         {% else %}
@@ -40,7 +48,11 @@
                 <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
               </ol>
             </nav>
-            <h1 class="mt-2">{{ community.title }}</h1>
+            <h1 class="mt-2">{{ community.title }}
+                {% if current_user.is_authenticated %}
+                    {% include 'community/_notification_toggle.html' %}
+                {% endif %}
+            </h1>
         {% endif %}
         {% include "community/_community_nav.html" %}
         <div class="post_list">

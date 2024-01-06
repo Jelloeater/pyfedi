@@ -9,7 +9,8 @@ from app.activitypub.util import default_context
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
     DeleteCommunityForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
-    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file, send_to_remote_instance
+    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file, send_to_remote_instance, \
+    notify_about_post
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
@@ -223,13 +224,13 @@ def subscribe(actor):
                 success = post_request(community.ap_inbox_url, follow, current_user.private_key,
                                                            current_user.profile_id() + '#main-key')
                 if success:
-                    flash('Your request to join has been sent to ' + community.title)
+                    flash(_('You have joined %(name)s', name=community.title))
                 else:
-                    flash('There was a problem while trying to join.', 'error')
+                    flash(_('There was a problem while trying to join.'), 'error')
             else:  # for local communities, joining is instant
                 banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
                 if banned:
-                    flash('You cannot join this community')
+                    flash(_('You cannot join this community'))
                 else:
                     member = CommunityMember(user_id=current_user.id, community_id=community.id)
                     db.session.add(member)
@@ -339,6 +340,8 @@ def add_post(actor):
         db.session.commit()
         post.ap_id = f"https://{current_app.config['SERVER_NAME']}/post/{post.id}"
         db.session.commit()
+
+        notify_about_post(post)
 
         page = {
             'type': 'Page',
@@ -486,3 +489,22 @@ def community_block_instance(community_id: int):
         db.session.commit()
     flash(_('Content from %(name)s will be hidden.', name=community.instance.domain))
     return redirect(community.local_url())
+
+
+@bp.route('/<int:community_id>/notification', methods=['GET', 'POST'])
+@login_required
+def community_notification(community_id: int):
+    community = Community.query.get_or_404(community_id)
+    member_info = CommunityMember.query.filter(CommunityMember.community_id == community.id,
+                                               CommunityMember.user_id == current_user.id).first()
+    # existing community members get their notification flag toggled
+    if member_info and not member_info.is_banned:
+        member_info.notify_new_posts = not member_info.notify_new_posts
+        db.session.commit()
+    else:   # people who are not yet members become members, with notify on.
+        if not community.user_is_banned(current_user):
+            new_member = CommunityMember(community_id=community.id, user_id=current_user.id, notify_new_posts=True)
+            db.session.add(new_member)
+            db.session.commit()
+
+    return render_template('community/_notification_toggle.html', community=community)

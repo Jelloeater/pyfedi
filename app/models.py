@@ -253,6 +253,11 @@ class Community(db.Model):
         else:
             return any(moderator.user_id == user.id and moderator.is_owner for moderator in self.moderators())
 
+    def user_is_banned(self, user):
+        membership = CommunityMember.query.filter(CommunityMember.community_id == self.id, CommunityMember.user_id == user.id).first()
+        return membership.is_banned if membership else False
+
+
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
 
@@ -264,6 +269,14 @@ class Community(db.Model):
             return self.ap_profile_id
         else:
             return f"https://{current_app.config['SERVER_NAME']}/c/{self.ap_id}"
+
+    def notify_new_posts(self, user_id: int) -> bool:
+        member_info = CommunityMember.query.filter(CommunityMember.community_id == self.id,
+                                                   CommunityMember.is_banned == False,
+                                                   CommunityMember.user_id == user_id).first()
+        if not member_info:
+            return False
+        return member_info.notify_new_posts
 
     # instances that have users which are members of this community. (excluding the current instance)
     def following_instances(self, include_dormant=False) -> List[Instance]:
@@ -782,6 +795,7 @@ class CommunityMember(db.Model):
     is_moderator = db.Column(db.Boolean, default=False)
     is_owner = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
+    notify_new_posts = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
 
 
