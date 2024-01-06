@@ -121,12 +121,12 @@ def reset_password_request():
     if form.validate_on_submit():
         if form.email.data.lower().startswith('postmaster@') or form.email.data.lower().startswith('abuse@') or \
                 form.email.data.lower().startswith('noc@'):
-            flash(_('Sorry, you cannot use that email address'), 'error')
+            flash(_('Sorry, you cannot use that email address.'), 'error')
         else:
             user = User.query.filter_by(email=form.email.data).first()
             if user:
                 send_password_reset_email(user)
-                flash(_('Check your email for the instructions to reset your password'))
+                flash(_('Check your email for a link to reset your password.'))
                 return redirect(url_for('auth.login'))
             else:
                 flash(_('No account with that email address exists'), 'warning')
@@ -145,7 +145,7 @@ def reset_password(token):
     if form.validate_on_submit():
         user.set_password(form.password.data)
         db.session.commit()
-        flash(_('Your password has been reset.'))
+        flash(_('Your password has been reset. Please use it to log in with user name of %(name)s.', name=user.user_name))
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', form=form)
 

@@ -16,8 +16,15 @@
             </div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ community.icon_image() }}" />
             <h1 class="mt-2">{{ community.title }}</h1>
-        {% elif community.icon_image() != '' %}
+        {% elif community.icon_id %}
             <div class="row">
+                <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                    <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
+                    <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
+                  </ol>
+                </nav>
                 <div class="col-2">
                     <img class="community_icon_big rounded-circle" src="{{ community.icon_image() }}" />
                 </div>
