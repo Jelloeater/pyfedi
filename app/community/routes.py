@@ -230,11 +230,13 @@ def subscribe(actor):
                 banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
                 if banned:
                     flash('You cannot join this community')
-                member = CommunityMember(user_id=current_user.id, community_id=community.id)
-                db.session.add(member)
-                db.session.commit()
-                flash('You joined ' + community.title)
+                else:
+                    member = CommunityMember(user_id=current_user.id, community_id=community.id)
+                    db.session.add(member)
+                    db.session.commit()
+                    flash('You joined ' + community.title)
         referrer = request.headers.get('Referer', None)
+        cache.delete_memoized(community_membership, current_user, community)
         if referrer is not None:
             return redirect(referrer)
         else:

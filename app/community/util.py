@@ -53,7 +53,7 @@ def search_for_community(address: str):
                         community_json = community_data.json()
                         community_data.close()
                         if community_json['type'] == 'Group':
-                            community = actor_json_to_model(community_json, address, server)
+                            community = actor_json_to_model(community_json, name, server)
                             if current_app.debug:
                                 retrieve_mods_and_backfill(community.id)
                             else:

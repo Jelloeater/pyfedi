@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'bootstrap/form.html' import render_form %}
+{% from 'bootstrap/form.html' import render_field %}
 
 {% block app_content %}
     <div class="row">
@@ -12,8 +12,16 @@
               </ol>
             </nav>
             <h1 class="mt-2">{{ _('Change settings') }}</h1>
-            <form method='post'>
-                {{ render_form(form) }}
+            <form method='post' enctype="multipart/form-data">
+                {{ form.csrf_token() }}
+                {{ render_field(form.newsletter) }}
+                {{ render_field(form.ignore_bots) }}
+                {{ render_field(form.nsfw) }}
+                {{ render_field(form.nsfl) }}
+                {{ render_field(form.searchable) }}
+                {{ render_field(form.indexable) }}
+                {{ render_field(form.import_file) }}
+                {{ render_field(form.submit) }}
             </form>
         </div>
     </div>

@@ -1,21 +1,23 @@
 from datetime import datetime, timedelta
 from time import sleep
 
-from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
+from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, json
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db, cache, celery
 from app.activitypub.signature import post_request
-from app.activitypub.util import default_context
-from app.community.util import save_icon_file, save_banner_file
+from app.activitypub.util import default_context, find_actor_or_create
+from app.community.util import save_icon_file, save_banner_file, retrieve_mods_and_backfill
+from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_PENDING
 from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow, File, Site, \
-    Instance, Report, UserBlock
+    Instance, Report, UserBlock, CommunityBan, CommunityJoinRequest, CommunityBlock
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportUserForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
-    is_image_url
+    is_image_url, ensure_directory_exists, gibberish, file_get_contents, community_membership
 from sqlalchemy import desc, or_, text
+import os
 
 
 @bp.route('/people', methods=['GET', 'POST'])
@@ -142,7 +144,24 @@ def change_settings(actor):
         current_user.show_nsfl = form.nsfl.data
         current_user.searchable = form.searchable.data
         current_user.indexable = form.indexable.data
-        current_user.ap_manually_approves_followers = form.manually_approves_followers.data
+        import_file = request.files['import_file']
+        if import_file and import_file.filename != '':
+            file_ext = os.path.splitext(import_file.filename)[1]
+            if file_ext.lower() != '.json':
+                abort(400)
+            new_filename = gibberish(15) + '.json'
+
+            directory = f'app/static/media/'
+
+            # save the file
+            final_place = os.path.join(directory, new_filename + file_ext)
+            import_file.save(final_place)
+
+            # import settings in background task
+            import_settings(final_place)
+
+            flash(_('Your subscriptions and blocks are being imported. If you have many it could take a few minutes.'))
+
         db.session.commit()
 
         flash(_('Your changes have been saved.'), 'success')
@@ -154,7 +173,6 @@ def change_settings(actor):
         form.nsfl.data = current_user.show_nsfl
         form.searchable.data = current_user.searchable
         form.indexable.data = current_user.indexable
-        form.manually_approves_followers.data = current_user.ap_manually_approves_followers
 
     return render_template('user/edit_settings.html', title=_('Edit profile'), form=form, user=current_user)
 
@@ -475,3 +493,75 @@ def notifications_all_read():
     db.session.commit()
     flash(_('All notifications marked as read.'))
     return redirect(url_for('user.notifications'))
+
+
+def import_settings(filename):
+    if current_app.debug:
+        import_settings_task(current_user.id, filename)
+    else:
+        import_settings_task.delay(current_user.id, filename)
+
+
+@celery.task
+def import_settings_task(user_id, filename):
+    user = User.query.get(user_id)
+    contents = file_get_contents(filename)
+    contents_json = json.loads(contents)
+
+    # Follow communities
+    for community_ap_id in contents_json['followed_communities'] if 'followed_communities' in contents_json else []:
+        community = find_actor_or_create(community_ap_id)
+        if community:
+            if community.posts.count() == 0:
+                if current_app.debug:
+                    retrieve_mods_and_backfill(community.id)
+                else:
+                    retrieve_mods_and_backfill.delay(community.id)
+            if community_membership(user, community) != SUBSCRIPTION_MEMBER and community_membership(
+                    user, community) != SUBSCRIPTION_PENDING:
+                if not community.is_local():
+                    # send ActivityPub message to remote community, asking to follow. Accept message will be sent to our shared inbox
+                    join_request = CommunityJoinRequest(user_id=user.id, community_id=community.id)
+                    db.session.add(join_request)
+                    db.session.commit()
+                    follow = {
+                        "actor": f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}",
+                        "to": [community.ap_profile_id],
+                        "object": community.ap_profile_id,
+                        "type": "Follow",
+                        "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{join_request.id}"
+                    }
+                    success = post_request(community.ap_inbox_url, follow, user.private_key,
+                                           user.profile_id() + '#main-key')
+                    if not success:
+                        sleep(5)    # give them a rest
+                else:  # for local communities, joining is instant
+                    banned = CommunityBan.query.filter_by(user_id=user.id, community_id=community.id).first()
+                    if not banned:
+                        member = CommunityMember(user_id=user.id, community_id=community.id)
+                        db.session.add(member)
+                        db.session.commit()
+                cache.delete_memoized(community_membership, current_user, community)
+
+    for community_ap_id in contents_json['blocked_communities'] if 'blocked_communities' in contents_json else []:
+        community = find_actor_or_create(community_ap_id)
+        if community:
+            existing_block = CommunityBlock.query.filter_by(user_id=user.id, community_id=community.id).first()
+            if not existing_block:
+                block = CommunityBlock(user_id=user.id, community_id=community.id)
+                db.session.add(block)
+
+    for user_ap_id in contents_json['blocked_users'] if 'blocked_users' in contents_json else []:
+        blocked_user = find_actor_or_create(user_ap_id)
+        if blocked_user:
+            existing_block = UserBlock.query.filter_by(blocker_id=user.id, blocked_id=blocked_user.id).first()
+            if not existing_block:
+                user_block = UserBlock(blocker_id=user.id, blocked_id=blocked_user.id)
+                db.session.add(user_block)
+                if not blocked_user.is_local():
+                    ...  # todo: federate block
+
+    for instance_domain in contents_json['blocked_instances']:
+        ...
+
+    db.session.commit()

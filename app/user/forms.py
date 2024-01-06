@@ -33,6 +33,7 @@ class SettingsForm(FlaskForm):
     searchable = BooleanField(_l('Show profile in user list'))
     indexable = BooleanField(_l('Allow search engines to index this profile'))
     manually_approves_followers = BooleanField(_l('Manually approve followers'))
+    import_file = FileField(_('Import community subscriptions and user blocks from Lemmy'))
     submit = SubmitField(_l('Save settings'))
 
 

@@ -291,6 +291,7 @@ def unsubscribe_everyone_then_delete_task(community_id):
     sleep(5)
     community.delete_dependencies()
     db.session.delete(community)    # todo: when a remote community is deleted it will be able to be re-created by using the 'Add remote' function. Not ideal. Consider soft-delete.
+    db.session.commit()
 
 
 @bp.route('/topics', methods=['GET'])

@@ -391,7 +391,7 @@ def actor_json_to_model(activity_json, address, server):
                               private_mods=activity_json['privateMods'] if 'privateMods' in activity_json else False,
                               created_at=activity_json['published'] if 'published' in activity_json else utcnow(),
                               last_active=activity_json['updated'] if 'updated' in activity_json else utcnow(),
-                              ap_id=f"{address[1:]}",
+                              ap_id=f"{address[1:]}@{server}" if address.startswith('!') else f"{address}@{server}",
                               ap_public_url=activity_json['id'],
                               ap_profile_id=activity_json['id'],
                               ap_followers_url=activity_json['followers'],
