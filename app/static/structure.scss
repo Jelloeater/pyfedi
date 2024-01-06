@@ -443,4 +443,18 @@ fieldset {
   position: relative;
   max-width: 92vw;
   height: auto;
+  cursor: pointer;
+
+  @include breakpoint(tablet) {
+    max-width: 760px;
+  }
+  @include breakpoint(laptop) {
+    max-width: 800px;
+  }
+  @include breakpoint(desktop) {
+    max-width: 850px;
+  }
+  @include breakpoint(bigbig) {
+    max-width: 1180px;
+  }
 }

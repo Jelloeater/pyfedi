@@ -75,6 +75,12 @@ function setupImageExpander() {
           image.alt = 'Image'; // Set the alt attribute for accessibility
           image.className = 'preview_image_shown';
 
+          // Add click event listener to the inserted image
+          image.addEventListener('click', function() {
+            // Replace location.href with the URL of the clicked image
+            window.location.href = image.src;
+          });
+
           // Insert the image after the anchor link
           this.parentNode.insertBefore(image, this.nextSibling);
         }
