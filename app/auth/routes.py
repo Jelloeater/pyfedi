@@ -57,7 +57,6 @@ def login():
             return response
         login_user(user, remember=True)
         current_user.last_seen = utcnow()
-        current_user.verification_token = ''
         current_user.ip_address = ip_address()
         db.session.commit()
         next_page = request.args.get('next')

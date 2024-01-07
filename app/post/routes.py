@@ -29,7 +29,7 @@ def show_post(post_id: int):
     if community.banned:
         abort(404)
 
-    sort = request.args.get('sort', 'top')
+    sort = request.args.get('sort', 'hot')
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{post.id}{sort}_{hash(post.last_active)}"
@@ -612,7 +612,7 @@ def post_delete(post_id: int):
 
             for instance in post.community.following_instances():
                 if instance.inbox and not instance_banned(instance.domain):
-                    send_to_remote_instance(instance.id, post.community.id, announce)
+                    send_to_remote_instance(instance.id, post.community.id, delete_activity)
 
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
 
