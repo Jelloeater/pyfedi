@@ -5,12 +5,11 @@ from sqlalchemy import or_, desc
 
 from app import db, constants, cache
 from app.activitypub.signature import RsaKeys, post_request
-from app.activitypub.util import default_context
+from app.activitypub.util import default_context, notify_about_post
 from app.community.forms import SearchRemoteCommunity, AddLocalCommunity, CreatePostForm, ReportCommunityForm, \
     DeleteCommunityForm
 from app.community.util import search_for_community, community_url_exists, actor_to_community, \
-    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file, send_to_remote_instance, \
-    notify_about_post
+    opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file, send_to_remote_instance
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \

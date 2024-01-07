@@ -389,13 +389,3 @@ def send_to_remote_instance_task(instance_id: int, community_id: int, payload):
                 instance.dormant = True
         db.session.commit()
 
-
-def notify_about_post(post: Post):
-    people_to_notify = CommunityMember.query.filter_by(community_id=post.community_id, notify_new_posts=True, is_banned=False)
-    for person in people_to_notify:
-        if person.user_id != post.user_id:
-            new_notification = Notification(title=shorten_string(post.title, 25), url=f"/post/{post.id}", user_id=person.user_id, author_id=post.user_id)
-            db.session.add(new_notification)
-            user = User.query.get(person.user_id)  # todo: make this more efficient by doing a join with CommunityMember at the start of the function
-            user.unread_notifications += 1
-            db.session.commit()

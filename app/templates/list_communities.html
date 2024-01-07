@@ -45,10 +45,26 @@
             <thead>
                 <tr>
                     <th scope="col"> </th>
-                    <th scope="col" colspan="2">{{ _('Community') }}</th>
-                    <th scope="col">{{ _('Posts') }}</th>
-                    <th scope="col">{{ _('Comments') }}</th>
-                    <th scope="col">{{ _('Active') }}</th>
+                    <th scope="col" colspan="2">
+                        <a href="?sort_by=title{{ ' desc' if sort_by.text == 'community.title' }}" title="{{ _('Sort by name') }}" class="no-underline" rel="nofollow">{{ _('Community') }}
+                            <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.title' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.title desc' }}"></span>
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="?sort_by=post_count{{ ' desc' if sort_by.text == 'community.post_count' }}" title="{{ _('Sort by post count') }}" class="no-underline" rel="nofollow">{{ _('Posts') }}
+                            <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.post_count' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.post_count desc' }}"></span>
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="?sort_by=post_reply_count{{ ' desc' if sort_by.text == 'community.post_reply_count' }}" title="{{ _('Sort by reply count') }}" class="no-underline" rel="nofollow">{{ _('Comments') }}
+                            <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.post_reply_count' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.post_reply_count desc' }}"></span>
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="?sort_by=last_active{{ ' desc' if sort_by.text == 'community.last_active' }}" title="{{ _('Sort by recent activity') }}" class="no-underline" rel="nofollow">{{ _('Active') }}
+                            <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.last_active' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.last_active desc' }}"></span>
+                        </a>
+                    </th>
                 </tr>
             </thead>
             <tbody>

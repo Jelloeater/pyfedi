@@ -11,7 +11,7 @@ from flask import g, session, flash, request, current_app, url_for, redirect, ma
 from flask_moment import moment
 from flask_login import current_user
 from flask_babel import _, get_locale
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text
@@ -137,6 +137,7 @@ def list_communities():
     verification_warning()
     search_param = request.args.get('search', '')
     topic_id = int(request.args.get('topic_id', 0))
+    sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.title')
     topics = Topic.query.order_by(Topic.name).all()
     if search_param == '':
         pass
@@ -150,9 +151,9 @@ def list_communities():
     if topic_id != 0:
         communities = communities.filter_by(topic_id=topic_id)
 
-    return render_template('list_communities.html', communities=communities.all(), search=search_param, title=_('Communities'),
+    return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), search=search_param, title=_('Communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
-                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, topics=topics, topic_id=topic_id)
+                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, topics=topics, topic_id=topic_id, sort_by=sort_by)
 
 
 @bp.route('/communities/local', methods=['GET'])
