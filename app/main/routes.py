@@ -137,7 +137,7 @@ def list_communities():
     verification_warning()
     search_param = request.args.get('search', '')
     topic_id = int(request.args.get('topic_id', 0))
-    sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.title')
+    sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.post_reply_count desc')
     topics = Topic.query.order_by(Topic.name).all()
     if search_param == '':
         pass
