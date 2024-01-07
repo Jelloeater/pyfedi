@@ -174,7 +174,7 @@ def list_subscribed_communities():
     else:
         communities = []
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Joined communities'),
-                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, sort_by=sort_by)
 
 
 @bp.route('/donate')
