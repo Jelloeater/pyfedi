@@ -1,3 +1,6 @@
+<div class="mobile_create_post d-md-none mt-1">
+    <a class="btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create post') }}</a>
+</div>
 <div class="btn-group mt-1 mb-2">
     <a href="?sort=hot" class="btn {{ 'btn-primary' if request.args.get('sort', '') == '' or request.args.get('sort', '') == 'hot' else 'btn-outline-secondary' }}" rel="nofollow">
         {{ _('Hot') }}

@@ -380,9 +380,9 @@ def add_post(actor):
             '@context': default_context()
         }
         if post.type == POST_TYPE_LINK:
-            page.attachment = [{'href': post.url, 'type': 'Link'}]
+            page['attachment'] = [{'href': post.url, 'type': 'Link'}]
         if post.image_id:
-            page.image = [{'type': 'Image', 'url': post.image.source_url}]
+            page['image'] = [{'type': 'Image', 'url': post.image.source_url}]
         if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
             success = post_request(community.ap_inbox_url, create, current_user.private_key,
                                    current_user.ap_profile_id + '#main-key')
