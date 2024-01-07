@@ -29,8 +29,10 @@ def show_post(post_id: int):
     if community.banned:
         abort(404)
 
+    sort = request.args.get('sort', 'top')
+
     # If nothing has changed since their last visit, return HTTP 304
-    current_etag = f"{post.id}_{hash(post.last_active)}"
+    current_etag = f"{post.id}{sort}_{hash(post.last_active)}"
     if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
 
@@ -165,7 +167,7 @@ def show_post(post_id: int):
 
         return redirect(url_for('activitypub.post_ap', post_id=post_id))  # redirect to current page to avoid refresh resubmitting the form
     else:
-        replies = post_replies(post.id, 'top')
+        replies = post_replies(post.id, sort)
         form.notify_author.data = True
 
     og_image = post.image.source_url if post.image_id else None
