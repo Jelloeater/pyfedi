@@ -382,7 +382,8 @@ def add_post(actor):
         if post.type == POST_TYPE_LINK:
             page['attachment'] = [{'href': post.url, 'type': 'Link'}]
         if post.image_id:
-            page['image'] = [{'type': 'Image', 'url': post.image.source_url}]
+            page['image'] = [{'type': 'Image', 'url': post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")}]
+            page['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
         if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
             success = post_request(community.ap_inbox_url, create, current_user.private_key,
                                    current_user.ap_profile_id + '#main-key')
