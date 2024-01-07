@@ -173,8 +173,12 @@ def activity_replay(activity_id):
 def admin_communities():
 
     page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
 
-    communities = Community.query.filter_by(banned=False).order_by(Community.title).paginate(page=page, per_page=1000, error_out=False)
+    communities = Community.query.filter_by(banned=False)
+    if search:
+        communities = communities.filter(Community.title.ilike(f"%{search}%"))
+    communities = communities.order_by(Community.title).paginate(page=page, per_page=1000, error_out=False)
 
     next_url = url_for('admin.admin_communities', page=communities.next_num) if communities.has_next else None
     prev_url = url_for('admin.admin_communities', page=communities.prev_num) if communities.has_prev and page != 1 else None
