@@ -355,7 +355,7 @@ def add_post(actor):
             'content': post.body_html,
             'mediaType': 'text/html',
             'source': {
-                'content': post.body,
+                'content': post.body if post.body else '',
                 'mediaType': 'text/markdown'
             },
             'attachment': [],
