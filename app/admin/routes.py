@@ -379,6 +379,8 @@ def admin_users():
         users = users.filter_by(ap_id=None)
     if local_remote == 'remote':
         users = users.filter(User.ap_id != None)
+    if search:
+        users = users.filter(User.email.ilike(f"%{search}%"))
     users = users.order_by(User.user_name).paginate(page=page, per_page=1000, error_out=False)
 
     next_url = url_for('admin.admin_users', page=users.next_num) if users.has_next else None
