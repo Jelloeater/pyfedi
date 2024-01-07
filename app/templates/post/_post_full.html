@@ -31,6 +31,9 @@
                     <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.url }}" style="max-width: 100%; height: auto;"  /></a>
                 {% endif %}
             </div>
+            <div class="post_body mt-2">
+                {{ post.body_html|safe if post.body_html else '' }}
+            </div>
         </div>
     {% else %}
         <div class="col post_col post_type_normal">

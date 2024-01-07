@@ -38,12 +38,14 @@
                   {% endif %}
               </div>
               <div class="tab-pane fade" id="link-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-                  {{ render_field(form.link_url) }}
                   {{ render_field(form.link_title) }}
+                  {{ render_field(form.link_url) }}
+                  {{ render_field(form.link_body) }}
               </div>
               <div class="tab-pane fade" id="image-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
                   {{ render_field(form.image_title) }}
                   {{ render_field(form.image_file) }}
+                  {{ render_field(form.image_body) }}
               </div>
               <div class="tab-pane fade" id="poll-tab-pane" role="tabpanel" aria-labelledby="disabled-tab" tabindex="0">
                   Poll

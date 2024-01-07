@@ -565,10 +565,12 @@ def post_edit(post_id: int):
             elif post.type == constants.POST_TYPE_LINK:
                 form.type.data = 'link'
                 form.link_title.data = post.title
+                form.link_body.data = post.body
                 form.link_url.data = post.url
             elif post.type == constants.POST_TYPE_IMAGE:
                 form.type.data = 'image'
                 form.image_title.data = post.title
+                form.image_body.data = post.body
             form.notify_author.data = post.notify_author
             return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
                                    images_disabled=images_disabled, markdown_editor=True)

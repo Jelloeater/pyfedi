@@ -169,6 +169,8 @@ def save_post(form, post: Post):
         post.type = POST_TYPE_ARTICLE
     elif form.type.data == 'link':
         post.title = form.link_title.data
+        post.body = form.link_body.data
+        post.body_html = markdown_to_html(post.body)
         url_changed = post.id is None or form.link_url.data != post.url
         post.url = form.link_url.data
         post.type = POST_TYPE_LINK
@@ -204,6 +206,8 @@ def save_post(form, post: Post):
 
     elif form.type.data == 'image':
         post.title = form.image_title.data
+        post.body = form.image_body.data
+        post.body_html = markdown_to_html(post.body)
         post.type = POST_TYPE_IMAGE
         uploaded_file = request.files['image_file']
         if uploaded_file and uploaded_file.filename != '':

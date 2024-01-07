@@ -352,7 +352,7 @@ def add_post(actor):
             ],
             'name': post.title,
             'cc': [],
-            'content': post.body_html,
+            'content': post.body_html if post.body_html else '',
             'mediaType': 'text/html',
             'source': {
                 'content': post.body if post.body else '',
