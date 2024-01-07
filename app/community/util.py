@@ -247,7 +247,8 @@ def save_post(form, post: Post):
 
             file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=form.image_title.data,
                         width=img_width, height=img_height, thumbnail_width=thumbnail_width,
-                        thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
+                        thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail,
+                        source_url=final_place.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/"))
             post.image = file
             db.session.add(file)
 
