@@ -85,6 +85,7 @@ class EditCommunityForm(FlaskForm):
 
 class EditTopicForm(FlaskForm):
     name = StringField(_l('Name'), validators=[DataRequired()])
+    add_community = SelectField(_l('Community to add'), coerce=int, validators=[Optional()])
     submit = SubmitField(_l('Save'))
 
 

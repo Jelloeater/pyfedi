@@ -183,7 +183,7 @@ def save_post(form, post: Post):
             valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
             unused, file_extension = os.path.splitext(form.link_url.data)  # do not use _ here instead of 'unused'
             # this url is a link to an image - generate a thumbnail of it
-            if file_extension in valid_extensions:
+            if file_extension.lower() in valid_extensions:
                 file = url_to_thumbnail_file(form.link_url.data)
                 if file:
                     post.image = file
@@ -213,8 +213,7 @@ def save_post(form, post: Post):
 
             # check if this is an allowed type of file
             file_ext = os.path.splitext(uploaded_file.filename)[1]
-            if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
-                    uploaded_file.stream):
+            if file_ext.lower() not in allowed_extensions or file_ext.lower() != validate_image(uploaded_file.stream):
                 abort(400)
             new_filename = gibberish(15)
 
@@ -282,8 +281,7 @@ def remove_old_file(file_id):
 def save_icon_file(icon_file, directory='communities') -> File:
     # check if this is an allowed type of file
     file_ext = os.path.splitext(icon_file.filename)[1]
-    if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
-            icon_file.stream):
+    if file_ext.lower() not in allowed_extensions or file_ext.lower() != validate_image(icon_file.stream):
         abort(400)
     new_filename = gibberish(15)
 
@@ -325,7 +323,7 @@ def save_icon_file(icon_file, directory='communities') -> File:
 def save_banner_file(banner_file, directory='communities') -> File:
     # check if this is an allowed type of file
     file_ext = os.path.splitext(banner_file.filename)[1]
-    if file_ext.lower() not in allowed_extensions or file_ext != validate_image(
+    if file_ext.lower() not in allowed_extensions or file_ext.lower() != validate_image(
             banner_file.stream):
         abort(400)
     new_filename = gibberish(15)

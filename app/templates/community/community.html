@@ -114,8 +114,13 @@
                         {% endfor %}
                     </ul>
                 {% endif %}
-                <p class="mt-4">
-                    <a class="no-underline" href="{{ rss_feed }}" rel="nofollow"><span class="fe fe-rss"></span> RSS feed</a>
+                {% if not community.is_local() %}
+                    <p>
+                       <a href="{{ community.profile_id() }}">View community on original server</a>
+                    </p>
+                {% endif %}
+                <p>
+                    <a class="no-underline" href="{{ rss_feed }}" rel="nofollow"><span class="fe fe-rss"></span> </a><a href="{{ rss_feed }}" rel="nofollow">RSS feed</a>
                 </p>
             </div>
         </div>

@@ -22,9 +22,9 @@
                 {{ render_field(form.matrix_user_id) }}
                 <small class="field_hint">e.g. @something:matrix.org. Include leading @ and use : before server</small>
                 {{ render_field(form.profile_file) }}
-                <small class="field_hint">Provide a square image that looks good when small.</small>
+                <small class="field_hint">Provide a square image that looks good when small. <strong>Bug: file extension must be lower case</strong>, for some reason</small>
                 {{ render_field(form.banner_file) }}
-                <small class="field_hint">Provide a wide image - letterbox orientation.</small>
+                <small class="field_hint">Provide a wide image - letterbox orientation. <strong>Bug: file extension must be lower case</strong></small>
                 <hr />
                 {{ render_field(form.bot) }}
                 {{ render_field(form.submit) }}

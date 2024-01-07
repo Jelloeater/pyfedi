@@ -112,6 +112,7 @@ def edit_profile(actor):
             if file:
                 current_user.cover = file
         current_user.flush_cache()
+
         db.session.commit()
 
         flash(_('Your changes have been saved.'), 'success')

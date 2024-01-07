@@ -195,6 +195,14 @@ def topics_for_form():
     return result
 
 
+def communities_for_form():
+    communities = Community.query.order_by(Community.title).all()
+    result = [(0, _('None'))]
+    for community in communities:
+        result.append((community.id, community.title))
+    return result
+
+
 @bp.route('/community/<int:community_id>/edit', methods=['GET', 'POST'])
 @login_required
 @permission_required('administer all communities')
@@ -326,9 +334,13 @@ def admin_topic_add():
 def admin_topic_edit(topic_id):
     form = EditTopicForm()
     topic = Topic.query.get_or_404(topic_id)
+    form.add_community.choices = communities_for_form()
     if form.validate_on_submit():
         topic.name = form.name.data
-        topic.num_communities = topic.communities.count()
+        topic.num_communities = topic.communities.count() + 1
+        if form.add_community.data:
+            community = Community.query.get(form.add_community.data)
+            community.topic_id = topic.id
         db.session.commit()
         flash(_('Saved'))
         return redirect(url_for('admin.admin_topics'))
