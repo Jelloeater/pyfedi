@@ -21,7 +21,7 @@ from io import BytesIO
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
     is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking, \
-    shorten_string, reply_already_exists, reply_is_just_link_to_gif_reaction
+    shorten_string, reply_already_exists, reply_is_just_link_to_gif_reaction, confidence
 
 
 def public_key():
@@ -782,6 +782,7 @@ def downvote_post_reply(comment, user):
             db.session.add(vote)
         else:
             pass  # they have already downvoted this reply
+    comment.ranking = confidence(comment.up_votes, comment.down_votes)
 
 
 def upvote_post_reply(comment, user):
@@ -818,6 +819,7 @@ def upvote_post_reply(comment, user):
             db.session.add(vote)
         else:
             pass  # they have already upvoted this reply
+    comment.ranking = confidence(comment.up_votes, comment.down_votes)
 
 
 def upvote_post(post, user):
@@ -961,7 +963,7 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
                     db.session.add(vote)
                     post_reply.up_votes += 1
                     post_reply.score += 1
-                    post_reply.ranking += 1
+                    post_reply.ranking = confidence(post_reply.up_votes, post_reply.down_votes)
                     db.session.commit()
             else:
                 activity_log.exception_message = 'Comments disabled, reply discarded'

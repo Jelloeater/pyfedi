@@ -712,7 +712,7 @@ class PostReply(db.Model):
     from_bot = db.Column(db.Boolean, default=False)
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
-    ranking = db.Column(db.Integer, default=0, index=True)  # used for 'hot' sorting
+    ranking = db.Column(db.Float, default=0.0, index=True)  # used for 'hot' sorting
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
     reports = db.Column(db.Integer, default=0)  # how many times this post has been reported. Set to -1 to ignore reports

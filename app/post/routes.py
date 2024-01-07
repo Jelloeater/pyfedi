@@ -19,7 +19,7 @@ from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
     request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking, \
-    reply_already_exists, reply_is_just_link_to_gif_reaction
+    reply_already_exists, reply_is_just_link_to_gif_reaction, confidence
 
 
 def show_post(post_id: int):
@@ -337,6 +337,7 @@ def comment_vote(comment_id, vote_direction):
 
     current_user.last_seen = utcnow()
     current_user.ip_address = ip_address()
+    comment.ranking = confidence(comment.up_votes, comment.down_votes)
     db.session.commit()
     current_user.recalculate_attitude()
     db.session.commit()

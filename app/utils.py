@@ -451,6 +451,7 @@ def reply_already_exists(user_id, post_id, parent_id, body) -> bool:
 def reply_is_just_link_to_gif_reaction(body) -> bool:
     tmp_body = body.strip()
     if tmp_body.startswith('https://media.tenor.com/') or \
+            tmp_body.startswith('https://i.giphy.com/') or \
             tmp_body.startswith('https://media1.giphy.com/') or \
             tmp_body.startswith('https://media2.giphy.com/') or \
             tmp_body.startswith('https://media3.giphy.com/') or \
@@ -480,8 +481,8 @@ def awaken_dormant_instance(instance):
             db.session.commit()
 
 
+# All the following post/comment ranking math is explained at https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
 epoch = datetime(1970, 1, 1)
-
 
 def epoch_seconds(date):
     td = date - epoch
@@ -497,3 +498,27 @@ def post_ranking(score, date: datetime):
     sign = 1 if score > 0 else -1 if score < 0 else 0
     seconds = epoch_seconds(date) - 1685766018
     return round(sign * order + seconds / 45000, 7)
+
+
+# used for ranking comments
+def _confidence(ups, downs):
+    n = ups + downs
+
+    if n == 0:
+        return 0.0
+
+    z = 1.281551565545
+    p = float(ups) / n
+
+    left = p + 1 / (2 * n) * z * z
+    right = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    under = 1 + 1 / n * z * z
+
+    return (left - right) / under
+
+
+def confidence(ups, downs) -> float:
+    if ups + downs == 0:
+        return 0.0
+    else:
+        return _confidence(ups, downs)
