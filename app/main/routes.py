@@ -143,7 +143,7 @@ def list_communities():
         pass
     else:
         flash('Sorry, no search function yet. Use the topic filter for now.', 'warning')
-        communities = Community.query.filter_by(banned=False).all()
+        communities = Community.query.filter_by(banned=False)
         #query = search(select(Community), search_param, sort=True)  # todo: exclude banned communities from search
         #communities = db.session.scalars(query).all()
 
@@ -159,19 +159,21 @@ def list_communities():
 @bp.route('/communities/local', methods=['GET'])
 def list_local_communities():
     verification_warning()
-    communities = Community.query.filter_by(ap_id=None, banned=False).all()
-    return render_template('list_communities.html', communities=communities, title=_('Local communities'),
+    sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.post_reply_count desc')
+    communities = Community.query.filter_by(ap_id=None, banned=False)
+    return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Local communities'), sort_by=sort_by,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 
 @bp.route('/communities/subscribed', methods=['GET'])
 def list_subscribed_communities():
     verification_warning()
+    sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.post_reply_count desc')
     if current_user.is_authenticated:
-        communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).all()
+        communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id)
     else:
         communities = []
-    return render_template('list_communities.html', communities=communities, title=_('Joined communities'),
+    return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Joined communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
 
 
