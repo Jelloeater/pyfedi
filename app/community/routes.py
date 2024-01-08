@@ -382,8 +382,14 @@ def add_post(actor):
         if post.type == POST_TYPE_LINK:
             page['attachment'] = [{'href': post.url, 'type': 'Link'}]
         if post.image_id:
+            if post.image.file_path:
+                image_url = post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
+            elif post.image.thumbnail_path:
+                image_url = post.image.thumbnail_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
+            else:
+                image_url = post.image.source_url
             # NB image is a dict while attachment is a list of dicts (usually just one dict in the list)
-            page['image'] = {'type': 'Image', 'url': post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")}
+            page['image'] = {'type': 'Image', 'url': image_url}
             page['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
         if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
             success = post_request(community.ap_inbox_url, create, current_user.private_key,
