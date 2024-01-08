@@ -587,7 +587,7 @@ def post_edit(post_id: int):
 def post_delete(post_id: int):
     post = Post.query.get_or_404(post_id)
     community = post.community
-    if post.user_id == current_user.id or community.is_moderator():
+    if post.user_id == current_user.id or community.is_moderator() or current_user.is_admin():
         post.delete_dependencies()
         post.flush_cache()
         db.session.delete(post)

@@ -9,7 +9,7 @@
                     <div class="card-title">{{ _('Options for "%(post_title)s"', post_title=post.title) }}</div>
                     <ul class="option_list">
                         {% if current_user.is_authenticated %}
-                            {% if post.user_id == current_user.id or post.community.is_moderator() %}
+                            {% if post.user_id == current_user.id or post.community.is_moderator() or current_user.is_admin() %}
                                 <li><a href="{{ url_for('post.post_edit', post_id=post.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-edit"></span>
                                     {{ _('Edit') }}</a></li>
                                 <li><a href="{{ url_for('post.post_delete', post_id=post.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span>
