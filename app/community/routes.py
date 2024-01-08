@@ -381,7 +381,7 @@ def add_post(actor):
         }
         if post.type == POST_TYPE_LINK:
             page['attachment'] = [{'href': post.url, 'type': 'Link'}]
-        if post.image_id:
+        elif post.image_id:
             if post.image.file_path:
                 image_url = post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
             elif post.image.thumbnail_path:
