@@ -177,7 +177,8 @@ def show_post(post_id: int):
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
                            POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
-                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True)
+                           etag=f"{post.id}_{hash(post.last_active)}", markdown_editor=True,
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])

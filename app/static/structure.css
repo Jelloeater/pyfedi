@@ -496,6 +496,11 @@ fieldset legend {
   height: auto;
 }
 
+.form-check .form-check-input {
+  position: relative;
+  top: 4px;
+}
+
 .post_reply_form label {
   display: none;
 }

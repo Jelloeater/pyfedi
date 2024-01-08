@@ -53,7 +53,7 @@ def index():
     active_communities = Community.query.filter_by(banned=False).order_by(desc(Community.last_active)).limit(5).all()
 
     return render_template('index.html', posts=posts, active_communities=active_communities, show_post_community=True,
-                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
+                           POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed", rss_feed_name=f"Posts on " + g.site.name,
@@ -93,7 +93,7 @@ def new_posts():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
-                           rss_feed_name=f"Posts on " + g.site.name)
+                           rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/top', methods=['HEAD', 'GET', 'POST'])
@@ -129,7 +129,7 @@ def top_posts():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
-                           rss_feed_name=f"Posts on " + g.site.name)
+                           rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/communities', methods=['GET'])
@@ -153,7 +153,8 @@ def list_communities():
 
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), search=search_param, title=_('Communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
-                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, topics=topics, topic_id=topic_id, sort_by=sort_by)
+                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, topics=topics, topic_id=topic_id, sort_by=sort_by,
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/communities/local', methods=['GET'])
@@ -162,7 +163,8 @@ def list_local_communities():
     sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.post_reply_count desc')
     communities = Community.query.filter_by(ap_id=None, banned=False)
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Local communities'), sort_by=sort_by,
-                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER)
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/communities/subscribed', methods=['GET'])
@@ -174,7 +176,8 @@ def list_subscribed_communities():
     else:
         communities = []
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Joined communities'),
-                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, sort_by=sort_by)
+                           SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, sort_by=sort_by,
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/donate')

@@ -3,7 +3,7 @@
     {% if user.deleted %}
         [deleted]
     {% else %}
-        {% if user.avatar_id %}
+        {% if user.avatar_id and not low_bandwidth %}
             <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">
                 <img src="{{ user.avatar_thumbnail() }}" alt="Avatar" /></a>
         {% endif %}
@@ -73,8 +73,7 @@
     {% block navbar %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-lg">
-            <a class="navbar-brand" href="/"><img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{{ g.site.name }}</a>
-
+            <a class="navbar-brand" href="/">{% if not low_bandwidth %}<img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{% endif %}{{ g.site.name }}</a>
             {% if current_user.is_authenticated %}
                 <a class="nav-link d-lg-none" href="/notifications">
                     {% if current_user.unread_notifications %}
@@ -138,7 +137,11 @@
         </div>
         <footer class="footer mt-auto">
             <p id="timeSpent" class="text-center mt-4" title="This is how long you have spent using PieFed during this month. We hope this use of your time aligns with your priorities and values."></p>
-            <p class="text-center mt-4"><a href="https://liberapay.com/PieFed/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>
+            {% if not low_bandwidth %}
+                <p class="text-center mt-4"><a href="https://liberapay.com/PieFed/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>
+            {% else %}
+                <p class="text-center mt-4"><a href="https://liberapay.com/PieFed/donate">Donate with Liberapay</a></p>
+            {% endif %}
             <p class="text-center"><a href="https://patreon.com/PieFed">Donate with Patreon</a></p>
             <p class="text-center"><a href="https://codeberg.org/rimu/pyfedi">PieFed is free and open source</a></p>
             <p class="text-center"><a href="/privacy">Privacy policy</a></p>
@@ -146,13 +149,17 @@
     {% endblock %}
 
     {% block scripts %}
+    {% if not low_bandwidth %}
         {{ str(moment.include_moment()).replace('<script>', '<script nonce="' + session['nonce'] + '">')|safe }}
         {{ str(moment.lang(g.locale)).replace('<script>', '<script nonce="' + session['nonce'] + '">')|safe }}
+    {% endif %}
     {% endblock %}
-    {{ bootstrap.load_js() }}
+    {% if not low_bandwidth %}
+        {{ bootstrap.load_js() }}
+    {% endif %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
-    {% if markdown_editor %}
+    {% if markdown_editor and not low_bandwidth %}
         <script type="text/javascript" src="{{ url_for('static', filename='js/markdown/downarea.js') }}"></script>
     {% endif %}
     {% block end_scripts %}

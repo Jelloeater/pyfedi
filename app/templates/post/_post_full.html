@@ -25,8 +25,13 @@
             </small></p>
             <div class="post_image">
                 {% if post.image_id %}
-                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
-                         width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
+                    {% if low_bandwidth %}
+                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                             width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
+                    {% else %}
+                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                             width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
+                    {% endif %}
                 {% else %}
                     <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.url }}" style="max-width: 100%; height: auto;"  /></a>
                 {% endif %}

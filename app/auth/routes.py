@@ -62,14 +62,21 @@ def login():
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('main.index')
-        return redirect(next_page)
+        response = make_response(redirect(next_page))
+        if form.low_bandwidth_mode.data:
+            response.set_cookie('low_bandwidth', '1', expires=datetime(year=2099, month=12, day=30))
+        else:
+            response.set_cookie('low_bandwidth', '0', expires=datetime(year=2099, month=12, day=30))
+        return response
     return render_template('auth/login.html', title=_('Login'), form=form)
 
 
 @bp.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('main.index'))
+    response = make_response(redirect(url_for('main.index')))
+    response.set_cookie('low_bandwidth', '0', expires=datetime(year=2099, month=12, day=30))
+    return response
 
 
 @bp.route('/register', methods=['GET', 'POST'])

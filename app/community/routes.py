@@ -139,7 +139,7 @@ def show_community(community: Community):
                            is_moderator=is_moderator, is_owner=is_owner, is_admin=is_admin, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}",
-                           next_url=next_url, prev_url=prev_url,
+                           next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed")
 
 
@@ -423,7 +423,7 @@ def add_post(actor):
         form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
-                           images_disabled=images_disabled, markdown_editor=True)
+                           images_disabled=images_disabled, markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
 @bp.route('/community/<int:community_id>/report', methods=['GET', 'POST'])

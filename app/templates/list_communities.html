@@ -45,7 +45,7 @@
             <thead>
                 <tr>
                     <th scope="col"> </th>
-                    <th scope="col" colspan="2">
+                    <th scope="col" {% if not low_bandwidth %}colspan="2"{% endif %}>
                         <a href="?sort_by=title{{ ' desc' if sort_by.text == 'community.title' }}" title="{{ _('Sort by name') }}" class="no-underline" rel="nofollow">{{ _('Community') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.title' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.title desc' }}"></span>
                         </a>
@@ -81,7 +81,11 @@
                             {% else %}
                                 <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
                             {% endif %}</td>
-                        <td width="46"><a href="/c/{{ community.link() }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" /></a></td>
+                        {% if not low_bandwidth %}
+                            <td width="46">
+                                    <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" /></a>
+                            </td>
+                        {% endif %}
                         <td scope="row" class="pl-0"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>

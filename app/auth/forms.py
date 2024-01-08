@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm, RecaptchaField
-from wtforms import StringField, PasswordField, SubmitField, HiddenField
+from wtforms import StringField, PasswordField, SubmitField, HiddenField, BooleanField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length
 from flask_babel import _, lazy_gettext as _l
 from app.models import User, Community
@@ -8,6 +8,7 @@ from app.models import User, Community
 class LoginForm(FlaskForm):
     user_name = StringField(_l('User name'), validators=[DataRequired()])
     password = PasswordField(_l('Password'), validators=[DataRequired()])
+    low_bandwidth_mode = BooleanField(_l('Low bandwidth mode'))
     submit = SubmitField(_l('Log In'))
 
 
