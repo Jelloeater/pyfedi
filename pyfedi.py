@@ -8,7 +8,7 @@ from flask import session, g, json
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
 from app.models import Site
 from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership, \
-    can_create, can_upvote, can_downvote
+    can_create, can_upvote, can_downvote, shorten_number
 
 app = create_app()
 cli.register(app)
@@ -31,6 +31,7 @@ with app.app_context():
     app.jinja_env.globals['len'] = len
     app.jinja_env.globals['digits'] = digits
     app.jinja_env.globals['str'] = str
+    app.jinja_env.globals['shorten_number'] = shorten_number
     app.jinja_env.globals['community_membership'] = community_membership
     app.jinja_env.globals['json_loads'] = json.loads
     app.jinja_env.globals['user_access'] = user_access

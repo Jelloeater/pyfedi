@@ -483,6 +483,16 @@ def awaken_dormant_instance(instance):
             db.session.commit()
 
 
+def shorten_number(number):
+    if number < 1000:
+        return str(number)
+    elif number < 1000000:
+        return f'{number / 1000:.1f}k'
+    else:
+        return f'{number / 1000000:.1f}M'
+
+
+
 # All the following post/comment ranking math is explained at https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9
 epoch = datetime(1970, 1, 1)
 
