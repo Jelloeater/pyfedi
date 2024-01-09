@@ -1,0 +1,4 @@
+<a href="{{ url_for('post.post_notification', post_id=post.id) }}" rel="nofollow"
+class="small fe {{ 'fe-bell' if post.notify_author else 'fe-no-bell' }} no-underline"
+hx-post="{{ url_for('post.post_notification', post_id=post.id) }}" hx-trigger="click throttle:1s" hx-swap="outerHTML"
+title="{{ _('Notify about replies') }}"></a>

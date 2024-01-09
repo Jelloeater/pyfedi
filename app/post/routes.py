@@ -831,3 +831,23 @@ def post_reply_delete(post_id: int, comment_id: int):
         flash(_('Comment deleted.'))
         # todo: federate delete
     return redirect(url_for('activitypub.post_ap', post_id=post.id))
+
+
+@bp.route('/post/<int:post_id>/notification', methods=['GET', 'POST'])
+@login_required
+def post_notification(post_id: int):
+    post = Post.query.get_or_404(post_id)
+    if post.user_id == current_user.id:
+        post.notify_author = not post.notify_author
+        db.session.commit()
+    return render_template('post/_post_notification_toggle.html', post=post)
+
+
+@bp.route('/post_reply/<int:post_reply_id>/notification', methods=['GET', 'POST'])
+@login_required
+def post_reply_notification(post_reply_id: int):
+    post_reply = PostReply.query.get_or_404(post_reply_id)
+    if post_reply.user_id == current_user.id:
+        post_reply.notify_author = not post_reply.notify_author
+        db.session.commit()
+    return render_template('post/_reply_notification_toggle.html', comment={'comment': post_reply})

@@ -87,11 +87,13 @@
                                 {% if comment['comment'].author.created_recently() %}
                                     <span class="fe fe-new-account small" title="New account"> </span>
                                 {% endif %}
-                                {% if comment['comment'].author.reputation < -10 %}
-                                    <span class="fe fe-warning red" title="Very low reputation. Beware."> </span>
-                                    <span class="fe fe-warning red" title="Very low reputation. Beware!"> </span>
-                                {% elif comment['comment'].author.reputation < 0 %}
-                                    <span class="fe fe-warning orangered" title="Low reputation."> </span>
+                                {% if comment['comment'].author.id != current_user.id %}
+                                    {% if comment['comment'].author.reputation < -10 %}
+                                        <span class="fe fe-warning red" title="Very low reputation. Beware."> </span>
+                                        <span class="fe fe-warning red" title="Very low reputation. Beware!"> </span>
+                                    {% elif comment['comment'].author.reputation < 0 %}
+                                        <span class="fe fe-warning orangered" title="Low reputation."> </span>
+                                    {% endif %}
                                 {% endif %}
                                 {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter" class="small">[OP]</span>{% endif %}
                                 <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
@@ -107,6 +109,9 @@
                             {% if current_user.is_authenticated and current_user.verified %}
                                 {% if post.comments_enabled %}
                                     <a href="{{ url_for('post.add_reply', post_id=post.id, comment_id=comment['comment'].id) }}" rel="nofollow"><span class="fe fe-reply"></span> reply</a>
+                                {% endif %}
+                                {% if current_user.id == comment['comment'].author.id %}
+                                    {% include "post/_reply_notification_toggle.html" %}
                                 {% endif %}
                             {% endif %}
                             <a href="{{ url_for('post.post_reply_options', post_id=post.id, comment_id=comment['comment'].id) }}" class="comment_actions_link" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a>
