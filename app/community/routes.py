@@ -226,10 +226,8 @@ def subscribe(actor):
                 }
                 success = post_request(community.ap_inbox_url, follow, current_user.private_key,
                                                            current_user.profile_id() + '#main-key')
-                if success:
-                    flash(_('You have joined %(name)s', name=community.title))
-                else:
-                    flash(_('There was a problem while trying to join.'), 'error')
+                if not success:
+                    flash(_("There was a problem while trying to communicate with remote server. If other people have already joined this community it won't matter."), 'error')
             # for local communities, joining is instant
             member = CommunityMember(user_id=current_user.id, community_id=community.id)
             db.session.add(member)
