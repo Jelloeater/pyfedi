@@ -15,14 +15,14 @@
                 </nav>
             </div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ user.avatar_image() }}" />
-            <h1 class="mt-2">{{ user.display_name() if user.is_local() else user.ap_id }}</h1>
+            <h1 class="mt-2">{{ user.display_name() if user.is_local()  else user.display_name() + ', ' + user.ap_id }}</h1>
         {% elif user.avatar_image() != '' %}
             <div class="row">
                 <div class="col-2">
                     <img class="community_icon_big rounded-circle" src="{{ user.avatar_image() }}" />
                 </div>
                 <div class="col-10">
-                    <h1 class="mt-3">{{ user.display_name() if user.is_local() else user.ap_id }}</h1>
+                    <h1 class="mt-3">{{ user.display_name() if user.is_local() else user.display_name() + ', ' + user.ap_id }}</h1>
                 </div>
             </div>
         {% else %}
@@ -30,10 +30,10 @@
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
                 <li class="breadcrumb-item"><a href="/people">{{ _('People') }}</a></li>
-                <li class="breadcrumb-item active">{{ user.user_name|shorten }}</li>
+                <li class="breadcrumb-item active">{{ user.link()|shorten }}</li>
               </ol>
             </nav>
-            <h1 class="mt-2">{{ user.display_name() if user.is_local() else user.ap_id }}</h1>
+            <h1 class="mt-2">{{ user.display_name() if user.is_local() else user.display_name() + ', ' + user.ap_id }}</h1>
         {% endif %}
         {% if current_user.is_authenticated %}
             <div class="profile_action_buttons">
@@ -157,20 +157,20 @@
                         {% if user_access('ban users', current_user.id) %}
                             {% if user.banned %}
                                 <div class="col-4">
-                                    <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/unban">{{ _('Unban') }}</a>
+                                    <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.link() }}/unban">{{ _('Unban') }}</a>
                                 </div>
                             {% else %}
                                 <div class="col-4">
-                                    <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/ban">{{ _('Ban') }}</a>
+                                    <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.link() }}/ban">{{ _('Ban') }}</a>
                                 </div>
                             {% endif %}
                         {% endif %}
                         {% if user_access('manage users', current_user.id) %}
                             <div class="col-4">
-                                <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/delete">{{ _('Delete') }}</a>
+                                <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.link() }}/delete">{{ _('Delete') }}</a>
                             </div>
                             <div class="col-4">
-                                <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.user_name }}/ban_purge">{{ _('Ban + Purge') }}</a>
+                                <a class="w-100 btn btn-primary confirm_first" href="/u/{{ user.link() }}/ban_purge">{{ _('Ban + Purge') }}</a>
                             </div>
                         {% endif %}
                     </div>

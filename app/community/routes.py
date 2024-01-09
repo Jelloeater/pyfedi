@@ -59,6 +59,7 @@ def add_local():
         db.session.add(membership)
         db.session.commit()
         flash(_('Your new community has been created.'))
+        cache.delete_memoized(community_membership, current_user, community)
         return redirect('/c/' + community.name)
 
     return render_template('community/add_local.html', title=_('Create community'), form=form)
@@ -208,6 +209,9 @@ def subscribe(actor):
 
     if community is not None:
         if community_membership(current_user, community) != SUBSCRIPTION_MEMBER and community_membership(current_user, community) != SUBSCRIPTION_PENDING:
+            banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
+            if banned:
+                flash(_('You cannot join this community'))
             if remote:
                 # send ActivityPub message to remote community, asking to follow. Accept message will be sent to our shared inbox
                 join_request = CommunityJoinRequest(user_id=current_user.id, community_id=community.id)
@@ -226,15 +230,11 @@ def subscribe(actor):
                     flash(_('You have joined %(name)s', name=community.title))
                 else:
                     flash(_('There was a problem while trying to join.'), 'error')
-            else:  # for local communities, joining is instant
-                banned = CommunityBan.query.filter_by(user_id=current_user.id, community_id=community.id).first()
-                if banned:
-                    flash(_('You cannot join this community'))
-                else:
-                    member = CommunityMember(user_id=current_user.id, community_id=community.id)
-                    db.session.add(member)
-                    db.session.commit()
-                    flash('You joined ' + community.title)
+            # for local communities, joining is instant
+            member = CommunityMember(user_id=current_user.id, community_id=community.id)
+            db.session.add(member)
+            db.session.commit()
+            flash('You joined ' + community.title)
         referrer = request.headers.get('Referer', None)
         cache.delete_memoized(community_membership, current_user, community)
         if referrer is not None:
@@ -288,7 +288,7 @@ def unsubscribe(actor):
                     db.session.query(CommunityJoinRequest).filter_by(user_id=current_user.id, community_id=community.id).delete()
                     db.session.commit()
 
-                    flash('You are left ' + community.title)
+                    flash('You have left ' + community.title)
                 cache.delete_memoized(community_membership, current_user, community)
 
             else:
@@ -390,7 +390,8 @@ def add_post(actor):
                 image_url = post.image.source_url
             # NB image is a dict while attachment is a list of dicts (usually just one dict in the list)
             page['image'] = {'type': 'Image', 'url': image_url}
-            page['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
+            if post.type == POST_TYPE_IMAGE:
+                page['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
         if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
             success = post_request(community.ap_inbox_url, create, current_user.private_key,
                                    current_user.ap_profile_id + '#main-key')

@@ -7,11 +7,11 @@
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-                <li class="breadcrumb-item"><a href="/u/{{ user.user_name }}">{{ user.display_name() }}</a></li>
+                <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
                 <li class="breadcrumb-item active">{{ _('Change settings') }}</li>
               </ol>
             </nav>
-            <h1 class="mt-2">{{ _('Delete %(username)s', username=user.user_name) }}</h1>
+            <h1 class="mt-2">{{ _('Delete %(username)s', username=user.link()) }}</h1>
             <form method='post'>
                 <p class="btn-warning">{{ _('You are about to permanently delete the account with the username "<strong>%(username)s</strong>." This means your profile will disappear, pictures will be deleted. Text-based posts will stay but look like they are from someone named "deleted."', username=user.user_name) }}</p>
                 <p>{{ _('Once you hit delete, nobody can use "%(username)s" as a username again. We are doing this so nobody pretends to be you.', username=user.user_name) }}</p>

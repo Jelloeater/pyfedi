@@ -131,6 +131,9 @@ def actor_to_community(actor) -> Community:
 
 @cache.memoize(timeout=50)
 def opengraph_parse(url):
+    if '?' in url:
+        url = url.split('?')
+        url = url[0]
     try:
         return parse_page(url)
     except Exception as ex:
@@ -147,6 +150,7 @@ def url_to_thumbnail_file(filename) -> File:
         final_place = os.path.join(directory, new_filename + file_extension)
         with open(final_place, 'wb') as f:
             f.write(response.content)
+        response.close()
         with Image.open(final_place) as img:
             img = ImageOps.exif_transpose(img)
             img.thumbnail((150, 150))

@@ -89,7 +89,7 @@
                     <h3>Moderators</h3>
                     <ul class="moderator_list">
                         {% for mod in mods %}
-                            <li><a href="/u/{{ mod.user_name }}">{{ mod.display_name() }}</a></li>
+                            <li><a href="/u/{{ mod.link() }}">{{ mod.display_name() }}</a></li>
                         {% endfor %}
                     </ul>
                 {% endif %}

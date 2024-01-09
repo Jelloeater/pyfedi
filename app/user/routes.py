@@ -28,8 +28,13 @@ def show_people():
 
 
 def show_profile(user):
-    if user.deleted or user.banned and current_user.is_anonymous():
+    if (user.deleted or user.banned) and current_user.is_anonymous:
         abort(404)
+
+    if user.banned:
+        flash(_('This user has been banned.'), 'warning')
+    if user.deleted:
+        flash(_('This user has been deleted.'), 'warning')
 
     post_page = request.args.get('post_page', 1, type=int)
     replies_page = request.args.get('replies_page', 1, type=int)
@@ -415,9 +420,9 @@ def send_deletion_requests(user_id):
 def ban_purge_profile(actor):
     if user_access('manage users', current_user.id):
         actor = actor.strip()
-        user = User.query.filter_by(user_name=actor, deleted=False).first()
+        user = User.query.filter_by(user_name=actor).first()
         if user is None:
-            user = User.query.filter_by(ap_id=actor, deleted=False).first()
+            user = User.query.filter_by(ap_id=actor).first()
             if user is None:
                 abort(404)
 
@@ -429,7 +434,6 @@ def ban_purge_profile(actor):
             db.session.commit()
 
             user.purge_content()
-            db.session.delete(user)
             db.session.commit()
 
             # todo: empty relevant caches

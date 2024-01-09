@@ -572,29 +572,12 @@ class User(UserMixin, db.Model):
         for file in files:
             file.delete_from_disk()
         self.delete_dependencies()
-        db.session.query(Report).filter(Report.reporter_id == self.id).delete()
-        db.session.query(Report).filter(Report.suspect_user_id == self.id).delete()
-        db.session.query(ActivityLog).filter(ActivityLog.user_id == self.id).delete()
-        db.session.query(PostVote).filter(PostVote.user_id == self.id).delete()
-        db.session.query(PostReplyVote).filter(PostReplyVote.user_id == self.id).delete()
-        db.session.query(PostReply).filter(PostReply.user_id == self.id).delete()
-        db.session.query(FilterKeyword).filter(FilterKeyword.user_id == self.id).delete()
-        db.session.query(Filter).filter(Filter.user_id == self.id).delete()
-        db.session.query(DomainBlock).filter(DomainBlock.user_id == self.id).delete()
-        db.session.query(CommunityJoinRequest).filter(CommunityJoinRequest.user_id == self.id).delete()
-        db.session.query(CommunityMember).filter(CommunityMember.user_id == self.id).delete()
-        db.session.query(CommunityBlock).filter(CommunityBlock.user_id == self.id).delete()
-        db.session.query(CommunityBan).filter(CommunityBan.user_id == self.id).delete()
-        db.session.query(Community).filter(Community.user_id == self.id).delete()
-        db.session.query(Post).filter(Post.user_id == self.id).delete()
-        db.session.query(UserNote).filter(UserNote.user_id == self.id).delete()
-        db.session.query(UserNote).filter(UserNote.target_id == self.id).delete()
-        db.session.query(UserFollowRequest).filter(UserFollowRequest.follow_id == self.id).delete()
-        db.session.query(UserFollowRequest).filter(UserFollowRequest.user_id == self.id).delete()
-        db.session.query(UserBlock).filter(UserBlock.blocked_id == self.id).delete()
-        db.session.query(UserBlock).filter(UserBlock.blocker_id == self.id).delete()
-        db.session.execute(text('DELETE FROM user_role WHERE user_id = :user_id'),
-                           {'user_id': self.id})
+        posts = Post.query.filter_by(user_id=self.id).all()
+        for post in posts:
+            post.delete_dependencies()
+            post.flush_cache()
+            db.session.delete(post)
+        db.session.commit()
 
 
 class ActivityLog(db.Model):
