@@ -30,7 +30,7 @@ class RegistrationForm(FlaskForm):
             raise ValidationError(_('An account with this email address already exists.'))
 
     def validate_user_name(self, user_name):
-        user = User.query.filter_by(user_name=user_name.data).first()
+        user = User.query.filter_by(user_name=user_name.data, ap_id=None).first()
         if user is not None:
             if user.deleted:
                 raise ValidationError(_('This username was used in the past and cannot be reused.'))
