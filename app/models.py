@@ -835,7 +835,7 @@ class PostVote(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
-    effect = db.Column(db.Float)
+    effect = db.Column(db.Float, index=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     post = db.relationship('Post', foreign_keys=[post_id])
 
