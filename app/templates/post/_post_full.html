@@ -5,6 +5,9 @@
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
                 <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
+                {% if post.community.topic_id %}
+                <li class="breadcrumb-item"><a href="/communities?topic_id={{ post.community.topic.id }}" rel="nofollow">{{ post.community.topic.name }}</a></li>
+                {% endif %}
                 <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}</a></li>
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
@@ -50,6 +53,9 @@
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
                 <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
+                {% if post.community.topic_id %}
+                <li class="breadcrumb-item"><a href="/communities?topic_id={{ post.community.topic.id }}" rel="nofollow">{{ post.community.topic.name }}</a></li>
+                {% endif %}
                 <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}</a></li>
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
