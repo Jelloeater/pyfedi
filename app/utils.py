@@ -9,7 +9,7 @@ import math
 from urllib.parse import urlparse
 from functools import wraps
 import flask
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 import requests
 import os
 import imghdr
@@ -159,16 +159,24 @@ def allowlist_html(html: str) -> str:
     soup = BeautifulSoup(html, 'html.parser')
 
     # Find all plain text links, convert to <a> tags
-    plain_text_links = soup.find_all(text=lambda text: re.search(r'https?://\S+', text))
-    for text_link in plain_text_links:
-        # Create a new anchor tag
-        new_anchor = soup.new_tag('a', href=text_link)
-        # Set the anchor's text to be the link itself
-        new_anchor.string = text_link
-        # Replace the plain text link with the new anchor tag
-        text_link.replace_with(new_anchor)
+    re_url = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
+    for tag in soup.find_all(text=True):
+        tags = []
+        url = False
+        for t in re_url.split(tag.string):
+            if re_url.match(t):
+                a = soup.new_tag("a", href=t)
+                a.string = t
+                tags.append(a)
+                url = True
+            else:
+                tags.append(t)
+        if url:
+            for t in tags:
+                tag.insert_before(t)
+            tag.extract()
 
-    # Find all tags in the parsed HTML
+    # Filter tags, leaving only safe ones
     for tag in soup.find_all():
         # If the tag is not in the allowed_tags list, remove it and its contents
         if tag.name not in allowed_tags:
