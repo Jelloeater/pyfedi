@@ -806,7 +806,7 @@ fieldset legend {
   float: right;
 }
 
-.comment_body blockquote {
+.post_body blockquote, .comment_body blockquote {
   border-left: 2px solid var(--bs-secondary);
   padding: 0.1em 5px;
   font-style: italic;
