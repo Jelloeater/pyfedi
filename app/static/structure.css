@@ -693,6 +693,19 @@ fieldset legend {
   background-color: #777;
   color: white;
   margin-bottom: 15px;
+  height: 30px;
+}
+.comment .show-more .fe-angles-down, .comment .show-more .fe-angles-up {
+  margin-top: 7px;
+  display: inline-block;
+}
+@media (min-width: 1280px) {
+  .comment .show-more {
+    height: 23px;
+  }
+  .comment .show-more .fe-angles-down, .comment .show-more .fe-angles-up {
+    display: inline;
+  }
 }
 .comment .comment_author img {
   width: 20px;

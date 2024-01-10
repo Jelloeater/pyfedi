@@ -362,6 +362,19 @@ nav, etc which are used site-wide */
     background-color: $dark-grey;
     color: white;
     margin-bottom: 15px;
+    height: 30px;
+
+    .fe-angles-down, .fe-angles-up {
+      margin-top: 7px;
+      display: inline-block;
+    }
+
+    @include breakpoint(laptop) {
+      height: 23px;
+      .fe-angles-down, .fe-angles-up {
+        display: inline;
+      }
+    }
   }
 
   .comment_author {

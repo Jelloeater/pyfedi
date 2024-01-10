@@ -7,7 +7,6 @@ from typing import List, Literal, Union
 import markdown2
 import math
 from urllib.parse import urlparse
-import requests
 from functools import wraps
 import flask
 from bs4 import BeautifulSoup
@@ -20,6 +19,7 @@ from sqlalchemy import text
 from wtforms.fields  import SelectField, SelectMultipleField
 from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
+import re
 
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
     Site, Post, PostReply, utcnow
@@ -158,6 +158,16 @@ def allowlist_html(html: str) -> str:
     # Parse the HTML using BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
 
+    # Find all plain text links, convert to <a> tags
+    plain_text_links = soup.find_all(text=lambda text: re.search(r'https?://\S+', text))
+    for text_link in plain_text_links:
+        # Create a new anchor tag
+        new_anchor = soup.new_tag('a', href=text_link)
+        # Set the anchor's text to be the link itself
+        new_anchor.string = text_link
+        # Replace the plain text link with the new anchor tag
+        text_link.replace_with(new_anchor)
+
     # Find all tags in the parsed HTML
     for tag in soup.find_all():
         # If the tag is not in the allowed_tags list, remove it and its contents
@@ -166,10 +176,13 @@ def allowlist_html(html: str) -> str:
         else:
             # Filter and sanitize attributes
             for attr in list(tag.attrs):
-                if attr not in ['href', 'src', 'alt']:  # Add allowed attributes here
+                if attr not in ['href', 'src', 'alt']:
                     del tag[attr]
+            # Add nofollow and target=_blank to anchors
+            if tag.name == 'a':
+                tag.attrs['rel'] = 'nofollow ugc'
+                tag.attrs['target'] = '_blank'
 
-    # Encode the HTML to prevent script execution
     return str(soup)
 
 
