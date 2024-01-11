@@ -17,7 +17,8 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
-    request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote, user_filters_posts
+    request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote, user_filters_posts, \
+    joined_communities, moderating_communities
 from feedgen.feed import FeedGenerator
 from datetime import timezone, timedelta
 
@@ -60,9 +61,12 @@ def add_local():
         db.session.commit()
         flash(_('Your new community has been created.'))
         cache.delete_memoized(community_membership, current_user, community)
+        cache.delete_memoized(joined_communities, current_user.id)
+        cache.delete_memoized(moderating_communities, current_user.id)
         return redirect('/c/' + community.name)
 
-    return render_template('community/add_local.html', title=_('Create community'), form=form)
+    return render_template('community/add_local.html', title=_('Create community'), form=form, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/add_remote', methods=['GET', 'POST'])
@@ -86,7 +90,8 @@ def add_remote():
 
     return render_template('community/add_remote.html',
                            title=_('Add remote community'), form=form, new_community=new_community,
-                           subscribed=community_membership(current_user, new_community) >= SUBSCRIPTION_MEMBER)
+                           subscribed=community_membership(current_user, new_community) >= SUBSCRIPTION_MEMBER, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 # @bp.route('/c/<actor>', methods=['GET']) - defined in activitypub/routes.py, which calls this function for user requests. A bit weird.
@@ -145,7 +150,8 @@ def show_community(community: Community):
                            etag=f"{community.id}_{hash(community.last_active)}",
                            next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
-                           content_filters=content_filters)
+                           content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 # RSS feed of the community
@@ -239,6 +245,7 @@ def subscribe(actor):
             flash('You joined ' + community.title)
         referrer = request.headers.get('Referer', None)
         cache.delete_memoized(community_membership, current_user, community)
+        cache.delete_memoized(joined_communities, current_user.id)
         if referrer is not None:
             return redirect(referrer)
         else:
@@ -292,7 +299,7 @@ def unsubscribe(actor):
 
                     flash('You have left ' + community.title)
                 cache.delete_memoized(community_membership, current_user, community)
-
+                cache.delete_memoized(joined_communities, current_user.id)
             else:
                 # todo: community deletion
                 flash('You need to make someone else the owner before unsubscribing.', 'warning')
@@ -432,7 +439,10 @@ def add_post(actor):
         form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
-                           images_disabled=images_disabled, markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
+                           images_disabled=images_disabled, markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                            moderating_communities=moderating_communities(current_user.get_id()),
+                            joined_communities = joined_communities(current_user.id)
+    )
 
 
 @bp.route('/community/<int:community_id>/report', methods=['GET', 'POST'])
@@ -484,7 +494,8 @@ def community_delete(community_id: int):
             return redirect('/communities')
 
         return render_template('community/community_delete.html', title=_('Delete community'), form=form,
-                               community=community)
+                               community=community, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
     else:
         abort(401)
 

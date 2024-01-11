@@ -19,7 +19,7 @@ from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
     request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking, \
-    reply_already_exists, reply_is_just_link_to_gif_reaction, confidence
+    reply_already_exists, reply_is_just_link_to_gif_reaction, confidence, moderating_communities, joined_communities
 
 
 def show_post(post_id: int):
@@ -362,7 +362,8 @@ def continue_discussion(post_id, comment_id):
     replies = get_comment_branch(post.id, comment.id, 'top')
 
     return render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                           is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=True)
+                           is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=True, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
@@ -522,20 +523,26 @@ def add_reply(post_id: int, comment_id: int):
     else:
         form.notify_author.data = True
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                               is_moderator=is_moderator, form=form, comment=in_reply_to, markdown_editor=True)
+                               is_moderator=is_moderator, form=form, comment=in_reply_to, markdown_editor=True,
+                               moderating_communities=moderating_communities(current_user.get_id()),
+                               joined_communities = joined_communities(current_user.id))
 
 
 @bp.route('/post/<int:post_id>/options', methods=['GET'])
 def post_options(post_id: int):
     post = Post.query.get_or_404(post_id)
-    return render_template('post/post_options.html', post=post)
+    return render_template('post/post_options.html', post=post, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/options', methods=['GET'])
 def post_reply_options(post_id: int, comment_id: int):
     post = Post.query.get_or_404(post_id)
     post_reply = PostReply.query.get_or_404(comment_id)
-    return render_template('post/post_reply_options.html', post=post, post_reply=post_reply)
+    return render_template('post/post_reply_options.html', post=post, post_reply=post_reply,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
@@ -577,7 +584,10 @@ def post_edit(post_id: int):
                 form.image_body.data = post.body
             form.notify_author.data = post.notify_author
             return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
-                                   images_disabled=images_disabled, markdown_editor=True)
+                                   images_disabled=images_disabled, markdown_editor=True,
+                                   moderating_communities=moderating_communities(current_user.get_id()),
+                                   joined_communities=joined_communities(current_user.get_id())
+                                   )
     else:
         abort(401)
 
@@ -654,7 +664,10 @@ def post_report(post_id: int):
     elif request.method == 'GET':
         form.report_remote.data = True
 
-    return render_template('post/post_report.html', title=_('Report post'), form=form, post=post)
+    return render_template('post/post_report.html', title=_('Report post'), form=form, post=post,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/post/<int:post_id>/block_user', methods=['GET', 'POST'])
@@ -709,7 +722,10 @@ def post_mea_culpa(post_id: int):
         db.session.commit()
         return redirect(url_for('activitypub.post_ap', post_id=post.id))
 
-    return render_template('post/post_mea_culpa.html', title=_('I changed my mind'), form=form, post=post)
+    return render_template('post/post_mea_culpa.html', title=_('I changed my mind'), form=form, post=post,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/report', methods=['GET', 'POST'])
@@ -749,7 +765,10 @@ def post_reply_report(post_id: int, comment_id: int):
     elif request.method == 'GET':
         form.report_remote.data = True
 
-    return render_template('post/post_reply_report.html', title=_('Report comment'), form=form, post=post, post_reply=post_reply)
+    return render_template('post/post_reply_report.html', title=_('Report comment'), form=form, post=post, post_reply=post_reply,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/block_user', methods=['GET', 'POST'])
@@ -807,7 +826,8 @@ def post_reply_edit(post_id: int, comment_id: int):
             form.body.data = post_reply.body
             form.notify_author.data = not post_reply.notify_author
             return render_template('post/post_reply_edit.html', title=_('Edit comment'), form=form, post=post, post_reply=post_reply,
-                                   comment=comment, markdown_editor=True)
+                                   comment=comment, markdown_editor=True, moderating_communities=moderating_communities(current_user.get_id()),
+                                   joined_communities=joined_communities(current_user.get_id()))
     else:
         abort(401)
 

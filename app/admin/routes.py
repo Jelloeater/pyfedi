@@ -16,7 +16,8 @@ from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
     User, Instance, File, Report, Topic
-from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html
+from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html, \
+    moderating_communities, joined_communities
 from app.admin import bp
 
 
@@ -24,7 +25,8 @@ from app.admin import bp
 @login_required
 @permission_required('change instance settings')
 def admin_home():
-    return render_template('admin/home.html', title=_('Admin'))
+    return render_template('admin/home.html', title=_('Admin'), moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/site', methods=['GET', 'POST'])
@@ -50,7 +52,10 @@ def admin_site():
         form.description.data = site.description
         form.sidebar.data = site.sidebar
         form.legal_information.data = site.legal_information
-    return render_template('admin/site.html', title=_('Site profile'), form=form)
+    return render_template('admin/site.html', title=_('Site profile'), form=form,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/misc', methods=['GET', 'POST'])
@@ -86,7 +91,10 @@ def admin_misc():
         form.reports_email_admins.data = site.reports_email_admins
         form.registration_mode.data = site.registration_mode
         form.application_question.data = site.application_question
-    return render_template('admin/misc.html', title=_('Misc settings'), form=form)
+    return render_template('admin/misc.html', title=_('Misc settings'), form=form,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/federation', methods=['GET', 'POST'])
@@ -123,7 +131,10 @@ def admin_federation():
         instances = AllowedInstances.query.all()
         form.allowlist.data = '\n'.join([instance.domain for instance in instances])
 
-    return render_template('admin/federation.html', title=_('Federation settings'), form=form)
+    return render_template('admin/federation.html', title=_('Federation settings'), form=form,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/activities', methods=['GET'])
@@ -184,7 +195,8 @@ def admin_communities():
     prev_url = url_for('admin.admin_communities', page=communities.prev_num) if communities.has_prev and page != 1 else None
 
     return render_template('admin/communities.html', title=_('Communities'), next_url=next_url, prev_url=prev_url,
-                           communities=communities)
+                           communities=communities, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 def topics_for_form():
@@ -262,7 +274,10 @@ def admin_community_edit(community_id):
         form.low_quality.data = community.low_quality
         form.content_retention.data = community.content_retention
         form.topic.data = community.topic_id if community.topic_id else None
-    return render_template('admin/edit_community.html', title=_('Edit community'), form=form, community=community)
+    return render_template('admin/edit_community.html', title=_('Edit community'), form=form, community=community,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/community/<int:community_id>/delete', methods=['GET'])
@@ -311,7 +326,10 @@ def unsubscribe_everyone_then_delete_task(community_id):
 @permission_required('administer all communities')
 def admin_topics():
     topics = Topic.query.order_by(Topic.name).all()
-    return render_template('admin/topics.html', title=_('Topics'), topics=topics)
+    return render_template('admin/topics.html', title=_('Topics'), topics=topics,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/topic/add', methods=['GET', 'POST'])
@@ -326,7 +344,10 @@ def admin_topic_add():
         flash(_('Saved'))
         return redirect(url_for('admin.admin_topics'))
 
-    return render_template('admin/edit_topic.html', title=_('Add topic'), form=form)
+    return render_template('admin/edit_topic.html', title=_('Add topic'), form=form,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 @bp.route('/topic/<int:topic_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -346,7 +367,10 @@ def admin_topic_edit(topic_id):
         return redirect(url_for('admin.admin_topics'))
     else:
         form.name.data = topic.name
-    return render_template('admin/edit_topic.html', title=_('Edit topic'), form=form, topic=topic)
+    return render_template('admin/edit_topic.html', title=_('Edit topic'), form=form, topic=topic,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/topic/<int:topic_id>/delete', methods=['GET'])
@@ -387,7 +411,10 @@ def admin_users():
     prev_url = url_for('admin.admin_users', page=users.prev_num) if users.has_prev and page != 1 else None
 
     return render_template('admin/users.html', title=_('Users'), next_url=next_url, prev_url=prev_url, users=users,
-                           local_remote=local_remote, search=search)
+                           local_remote=local_remote, search=search,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
@@ -452,7 +479,10 @@ def admin_user_edit(user_id):
         form.indexable.data = user.indexable
         form.manually_approves_followers.data = user.ap_manually_approves_followers
 
-    return render_template('admin/edit_user.html', title=_('Edit user'), form=form, user=user)
+    return render_template('admin/edit_user.html', title=_('Edit user'), form=form, user=user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/user/<int:user_id>/delete', methods=['GET'])
@@ -496,4 +526,7 @@ def admin_reports():
     prev_url = url_for('admin.admin_reports', page=reports.prev_num) if reports.has_prev and page != 1 else None
 
     return render_template('admin/reports.html', title=_('Reports'), next_url=next_url, prev_url=prev_url, reports=reports,
-                           local_remote=local_remote, search=search)
+                           local_remote=local_remote, search=search,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )

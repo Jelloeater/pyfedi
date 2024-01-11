@@ -379,6 +379,12 @@ class User(UserMixin, db.Model):
         except Exception:
             return False
 
+    def get_id(self):
+        if self.is_authenticated:
+            return self.id
+        else:
+            return None
+
     def display_name(self):
         if self.deleted is False:
             if self.title:

@@ -23,7 +23,7 @@ from app import db, cache
 import re
 
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
-    Site, Post, PostReply, utcnow, Filter
+    Site, Post, PostReply, utcnow, Filter, CommunityMember
 
 
 # Flask's render_template function, with support for themes added
@@ -549,6 +549,27 @@ def user_filters_replies(user_id):
         else:
             result['-1'].update(keywords)
     return result
+
+
+@cache.memoize(timeout=300)
+def moderating_communities(user_id):
+    if user_id is None:
+        return []
+    return Community.query.join(CommunityMember, Community.id == CommunityMember.community_id).\
+        filter(Community.banned == False).\
+        filter(or_(CommunityMember.is_moderator == True, CommunityMember.is_owner == True)).\
+        filter(CommunityMember.user_id == user_id).order_by(Community.title).all()
+
+
+@cache.memoize(timeout=300)
+def joined_communities(user_id):
+    if user_id is None:
+        return []
+    return Community.query.join(CommunityMember, Community.id == CommunityMember.community_id).\
+        filter(Community.banned == False). \
+        filter(CommunityMember.is_moderator == False, CommunityMember.is_owner == False). \
+        filter(CommunityMember.user_id == user_id).order_by(Community.title).all()
+
 
 
 # All the following post/comment ranking math is explained at https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9

@@ -16,7 +16,7 @@ from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportUserForm, FilterEditForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
     is_image_url, ensure_directory_exists, gibberish, file_get_contents, community_membership, user_filters_home, \
-    user_filters_posts, user_filters_replies
+    user_filters_posts, user_filters_replies, moderating_communities, joined_communities
 from sqlalchemy import desc, or_, text
 import os
 
@@ -25,7 +25,8 @@ import os
 @login_required
 def show_people():
     people = User.query.filter_by(ap_id=None, deleted=False, banned=False).all()
-    return render_template('user/people.html', people=people)
+    return render_template('user/people.html', people=people, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 def show_profile(user):
@@ -72,7 +73,10 @@ def show_profile(user):
                                                                                    user_name=user.user_name),
                            description=description, subscribed=subscribed, upvoted=upvoted,
                            post_next_url=post_next_url, post_prev_url=post_prev_url,
-                           replies_next_url=replies_next_url, replies_prev_url=replies_prev_url)
+                           replies_next_url=replies_next_url, replies_prev_url=replies_prev_url,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/u/<actor>/profile', methods=['GET', 'POST'])
@@ -134,7 +138,10 @@ def edit_profile(actor):
         form.matrix_user_id.data = current_user.matrix_user_id
         form.password_field.data = ''
 
-    return render_template('user/edit_profile.html', title=_('Edit profile'), form=form, user=current_user)
+    return render_template('user/edit_profile.html', title=_('Edit profile'), form=form, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/user/settings', methods=['GET', 'POST'])
@@ -181,7 +188,10 @@ def change_settings():
         form.searchable.data = current_user.searchable
         form.indexable.data = current_user.indexable
 
-    return render_template('user/edit_settings.html', title=_('Edit profile'), form=form, user=current_user)
+    return render_template('user/edit_settings.html', title=_('Edit profile'), form=form, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/u/<actor>/ban', methods=['GET'])
@@ -325,7 +335,10 @@ def report_profile(actor):
         elif request.method == 'GET':
             form.report_remote.data = True
 
-    return render_template('user/user_report.html', title=_('Report user'), form=form, user=user)
+    return render_template('user/user_report.html', title=_('Report user'), form=form, user=user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/u/<actor>/delete', methods=['GET'])
@@ -386,7 +399,10 @@ def delete_account():
     elif request.method == 'GET':
         ...
 
-    return render_template('user/delete_account.html', title=_('Delete my account'), form=form, user=current_user)
+    return render_template('user/delete_account.html', title=_('Delete my account'), form=form, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @celery.task
@@ -462,7 +478,10 @@ def notifications():
 
     notification_list = Notification.query.filter_by(user_id=current_user.id).order_by(desc(Notification.created_at)).all()
 
-    return render_template('user/notifications.html', title=_('Notifications'), notifications=notification_list, user=current_user)
+    return render_template('user/notifications.html', title=_('Notifications'), notifications=notification_list, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/notification/<int:notification_id>/goto', methods=['GET', 'POST'])
@@ -598,7 +617,10 @@ def user_settings_filters_add():
         flash(_('Your changes have been saved.'), 'success')
         return redirect(url_for('user.user_settings_filters'))
 
-    return render_template('user/edit_filters.html', title=_('Add filter'), form=form, user=current_user)
+    return render_template('user/edit_filters.html', title=_('Add filter'), form=form, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/user/settings/filters/<int:filter_id>/edit', methods=['GET', 'POST'])
@@ -635,7 +657,10 @@ def user_settings_filters_edit(filter_id):
         form.keywords.data = content_filter.keywords
         form.expire_after.data = content_filter.expire_after
 
-    return render_template('user/edit_filters.html', title=_('Edit filter'), form=form, content_filter=content_filter, user=current_user)
+    return render_template('user/edit_filters.html', title=_('Edit filter'), form=form, content_filter=content_filter, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/user/settings/filters/<int:filter_id>/delete', methods=['GET', 'POST'])

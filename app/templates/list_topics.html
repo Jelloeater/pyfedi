@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block app_content %}
+{% if len(topics) > 0 %}
+    <h1>{{ _('Choose a topic') }}</h1>
+    <div class="table-responsive-md mt-4">
+        <table class="communities_table table table-striped table-hover w-100">
+            <tbody>
+                {% for topic in topics %}
+                    <tr class="">
+                        <td><a href="/communities?topic_id={{ topic.id }}">{{ topic.name }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+<p>{{ _('There are no communities yet.') }}</p>
+{% endif %}
+{% endblock %}

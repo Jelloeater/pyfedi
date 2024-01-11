@@ -15,7 +15,8 @@ from flask_babel import _, get_locale
 from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
-    ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home
+    ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
+    joined_communities, moderating_communities
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
 
 
@@ -61,7 +62,8 @@ def index():
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed", rss_feed_name=f"Posts on " + g.site.name,
                            title=f"{g.site.name} - {g.site.description}", description=shorten_string(markdown_to_text(g.site.sidebar), 150),
-                           content_filters=content_filters)
+                           content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/new', methods=['HEAD', 'GET', 'POST'])
@@ -100,7 +102,8 @@ def new_posts():
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
                            rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
-                           content_filters=content_filters)
+                           content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/top', methods=['HEAD', 'GET', 'POST'])
@@ -139,7 +142,18 @@ def top_posts():
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
                            rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
-                           content_filters=content_filters)
+                           content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
+
+
+@bp.route('/topics', methods=['GET'])
+def list_topics():
+    verification_warning()
+    topics = Topic.query.order_by(Topic.name).all()
+
+    return render_template('list_topics.html', topics=topics, title=_('Browse by topic'),
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/communities', methods=['GET'])
@@ -153,7 +167,7 @@ def list_communities():
         pass
     else:
         flash('Sorry, no search function yet. Use the topic filter for now.', 'warning')
-        communities = Community.query.filter_by(banned=False)
+        # communities = Community.query.filter_by(banned=False)
         #query = search(select(Community), search_param, sort=True)  # todo: exclude banned communities from search
         #communities = db.session.scalars(query).all()
 
@@ -165,7 +179,8 @@ def list_communities():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
                            topics=topics, topic_id=topic_id, sort_by=sort_by,
-                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/communities/local', methods=['GET'])
@@ -176,7 +191,8 @@ def list_local_communities():
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Local communities'), sort_by=sort_by,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                             SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
-                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/communities/subscribed', methods=['GET'])
@@ -190,7 +206,8 @@ def list_subscribed_communities():
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Joined communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, sort_by=sort_by,
                            SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
-                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 @bp.route('/donate')
@@ -217,7 +234,7 @@ def robots():
 
 @bp.route('/test')
 def test():
-    return 'done'
+    return str(current_user.get_id())
 
     #ip = request.headers.get('X-Forwarded-For') or request.remote_addr
     #if ',' in ip:  # Remove all but first ip addresses

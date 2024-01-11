@@ -98,8 +98,34 @@
                             <li class="nav-item"><a class="nav-link" href="/donate">{{ _('Donate') }}</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/u/{{ current_user.user_name }}">{{ _('Account') }}</a></li>
+                            <li class="nav-item dropdown{% if active_parent == 'communities' %} active{% endif %}">
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item{% if active_child == 'list_communities' %} active{% endif %}" href="/communities">{{ _('Browse all') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'list_topics' %} active{% endif %}" href="/topics">{{ _('By topic') }}</a></li>
+                                  {% if moderating_communities %}
+                                    <li><h6 class="dropdown-header">{{ _('Moderating') }}</h6></li>
+                                    {% for community in moderating_communities %}
+                                        <li class="pl-2"><a class="dropdown-item" href="/c/{{ community.link() }}">{{ community.title }}</a></li>
+                                    {% endfor %}
+                                  {% endif %}
+                                  {% if joined_communities %}
+                                    <li><h6 class="dropdown-header">{{ _('Joined communities') }}</h6></li>
+                                    {% for community in joined_communities %}
+                                        <li class="pl-2"><a class="dropdown-item" href="/c/{{ community.link() }}">{{ community.title }}</a></li>
+                                    {% endfor %}
+                                  {% endif %}
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown{% if active_parent == 'account' %} active{% endif %}">
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/u/{{ current_user.user_name }}" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Account') }}</a>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item{% if active_child == 'view_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}">{{ _('View profile') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}/profile">{{ _('Edit profile') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'settings' %} active{% endif %}" href="/user/settings">{{ _('Settings') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'filters' %} active{% endif %}" href="/user/settings/filters">{{ _('Filters') }}</a></li>
+                                </ul>
+                            </li>
                             <li class="nav-item"><a class="nav-link" href="/donate">{{ _('Donate') }}</a></li>
                             {% if user_access('change instance settings', current_user.id) %}
                                 <li class="nav-item"><a class="nav-link" href="/admin/">{{ _('Admin') }}</a></li>
@@ -155,7 +181,7 @@
     {% endif %}
     {% endblock %}
     {% if not low_bandwidth %}
-        {{ bootstrap.load_js() }}
+        {{ str(bootstrap.load_js()).replace('<script ', '<script nonce="' + session['nonce'] + '" ')|safe }}
     {% endif %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
