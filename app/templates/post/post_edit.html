@@ -58,12 +58,38 @@
                   {{ render_field(form.discussion_body) }}
               </div>
               <div class="tab-pane fade" id="link-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-                  {{ render_field(form.link_url) }}
                   {{ render_field(form.link_title) }}
+                  {{ render_field(form.link_url) }}
+                  {{ render_field(form.link_body) }}
+                  {% if markdown_editor %}
+                    <script nonce="{{ session['nonce'] }}">
+                        window.addEventListener("load", function () {
+                            var downarea = new DownArea({
+                                elem: document.querySelector('#link_body'),
+                                resize: DownArea.RESIZE_VERTICAL,
+                                hide: ['heading', 'bold-italic'],
+                            });
+                            setupAutoResize('link_body');
+                        });
+                    </script>
+                  {% endif %}
               </div>
               <div class="tab-pane fade" id="image-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
                   {{ render_field(form.image_title) }}
                   {{ render_field(form.image_file) }}
+                  {{ render_field(form.image_body) }}
+                  {% if markdown_editor %}
+                    <script nonce="{{ session['nonce'] }}">
+                        window.addEventListener("load", function () {
+                            var downarea = new DownArea({
+                                elem: document.querySelector('#image_body'),
+                                resize: DownArea.RESIZE_VERTICAL,
+                                hide: ['heading', 'bold-italic'],
+                            });
+                            setupAutoResize('image_body');
+                        });
+                    </script>
+                  {% endif %}
               </div>
               <div class="tab-pane fade" id="poll-tab-pane" role="tabpanel" aria-labelledby="disabled-tab" tabindex="0">
                   Poll
