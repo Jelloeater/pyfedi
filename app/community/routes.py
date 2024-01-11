@@ -17,7 +17,7 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
-    request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote
+    request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote, user_filters_posts
 from feedgen.feed import FeedGenerator
 from datetime import timezone, timedelta
 
@@ -118,7 +118,9 @@ def show_community(community: Community):
 
     if current_user.is_anonymous or current_user.ignore_bots:
         posts = community.posts.filter(Post.from_bot == False)
+        content_filters = {}
     else:
+        content_filters = user_filters_posts(current_user.id)
         posts = community.posts
     if sort == '' or sort == 'hot':
         posts = posts.order_by(desc(Post.ranking))
@@ -141,7 +143,8 @@ def show_community(community: Community):
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, etag=f"{community.id}_{hash(community.last_active)}",
                            next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
-                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed")
+                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
+                           content_filters=content_filters)
 
 
 # RSS feed of the community

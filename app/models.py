@@ -665,6 +665,14 @@ class Post(db.Model):
         else:
             return f"https://{current_app.config['SERVER_NAME']}/post/{self.id}"
 
+    def blocked_by_content_filter(self, content_filters):
+        lowercase_title = self.title.lower()
+        for name, keywords in content_filters.items() if content_filters else {}:
+            for keyword in keywords:
+                if keyword in lowercase_title:
+                    return name
+        return False
+
     def flush_cache(self):
         cache.delete(f'/post/{self.id}_False')
         cache.delete(f'/post/{self.id}_True')
@@ -749,6 +757,14 @@ class PostReply(db.Model):
     def has_replies(self):
         reply = PostReply.query.filter_by(parent_id=self.id).first()
         return reply is not None
+
+    def blocked_by_content_filter(self, content_filters):
+        lowercase_body = self.body.lower()
+        for name, keywords in content_filters.items() if content_filters else {}:
+            for keyword in keywords:
+                if keyword in lowercase_body:
+                    return name
+        return False
 
 
 class Domain(db.Model):
@@ -864,17 +880,18 @@ class ActivityPubLog(db.Model):
 class Filter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50))
+    filter_home = db.Column(db.Boolean, default=True)
     filter_posts = db.Column(db.Boolean, default=True)
     filter_replies = db.Column(db.Boolean, default=False)
     hide_type = db.Column(db.Integer, default=0)    # 0 = hide with warning, 1 = hide completely
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    expire_after = db.Column(db.Date)
+    keywords = db.Column(db.String(500))
 
-
-class FilterKeyword(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    keyword = db.Column(db.String(100))
-    filter_id = db.Column(db.Integer, db.ForeignKey('filter.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    def keywords_string(self):
+        if self.keywords is None or self.keywords == '':
+            return ''
+        return ', '.join(self.keywords.split('\n'))
 
 
 class Role(db.Model):

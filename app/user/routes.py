@@ -11,11 +11,12 @@ from app.activitypub.util import default_context, find_actor_or_create
 from app.community.util import save_icon_file, save_banner_file, retrieve_mods_and_backfill
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_PENDING
 from app.models import Post, Community, CommunityMember, User, PostReply, PostVote, Notification, utcnow, File, Site, \
-    Instance, Report, UserBlock, CommunityBan, CommunityJoinRequest, CommunityBlock
+    Instance, Report, UserBlock, CommunityBan, CommunityJoinRequest, CommunityBlock, Filter
 from app.user import bp
-from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportUserForm
+from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportUserForm, FilterEditForm
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
-    is_image_url, ensure_directory_exists, gibberish, file_get_contents, community_membership
+    is_image_url, ensure_directory_exists, gibberish, file_get_contents, community_membership, user_filters_home, \
+    user_filters_posts, user_filters_replies
 from sqlalchemy import desc, or_, text
 import os
 
@@ -136,15 +137,12 @@ def edit_profile(actor):
     return render_template('user/edit_profile.html', title=_('Edit profile'), form=form, user=current_user)
 
 
-@bp.route('/u/<actor>/settings', methods=['GET', 'POST'])
+@bp.route('/user/settings', methods=['GET', 'POST'])
 @login_required
-def change_settings(actor):
-    actor = actor.strip()
-    user = User.query.filter_by(user_name=actor, deleted=False, banned=False, ap_id=None).first()
+def change_settings():
+    user = User.query.filter_by(id=current_user.id, deleted=False, banned=False, ap_id=None).first()
     if user is None:
         abort(404)
-    if current_user.id != user.id:
-        abort(401)
     form = SettingsForm()
     if form.validate_on_submit():
         current_user.newsletter = form.newsletter.data
@@ -174,7 +172,7 @@ def change_settings(actor):
         db.session.commit()
 
         flash(_('Your changes have been saved.'), 'success')
-        return redirect(url_for('user.change_settings', actor=actor))
+        return redirect(url_for('user.change_settings'))
     elif request.method == 'GET':
         form.newsletter.data = current_user.newsletter
         form.ignore_bots.data = current_user.ignore_bots
@@ -573,3 +571,83 @@ def import_settings_task(user_id, filename):
         ...
 
     db.session.commit()
+
+
+@bp.route('/user/settings/filters', methods=['GET'])
+@login_required
+def user_settings_filters():
+    filters = Filter.query.filter_by(user_id=current_user.id).order_by(Filter.title).all()
+    return render_template('user/filters.html', filters=filters, user=current_user)
+
+
+@bp.route('/user/settings/filters/add', methods=['GET', 'POST'])
+@login_required
+def user_settings_filters_add():
+    form = FilterEditForm()
+    form.filter_replies.render_kw = {'disabled': True}
+    if form.validate_on_submit():
+        content_filter = Filter(title=form.title.data, filter_home=form.filter_home.data, filter_posts=form.filter_posts.data,
+                                filter_replies=form.filter_replies.data, hide_type=form.hide_type.data, keywords=form.keywords.data,
+                                expire_after=form.expire_after.data, user_id=current_user.id)
+        db.session.add(content_filter)
+        db.session.commit()
+        cache.delete_memoized(user_filters_home, current_user.id)
+        cache.delete_memoized(user_filters_posts, current_user.id)
+        cache.delete_memoized(user_filters_replies, current_user.id)
+
+        flash(_('Your changes have been saved.'), 'success')
+        return redirect(url_for('user.user_settings_filters'))
+
+    return render_template('user/edit_filters.html', title=_('Add filter'), form=form, user=current_user)
+
+
+@bp.route('/user/settings/filters/<int:filter_id>/edit', methods=['GET', 'POST'])
+@login_required
+def user_settings_filters_edit(filter_id):
+
+    content_filter = Filter.query.get_or_404(filter_id)
+    if current_user.id != content_filter.user_id:
+        abort(401)
+    form = FilterEditForm()
+    form.filter_replies.render_kw = {'disabled': True}
+    if form.validate_on_submit():
+        content_filter.title = form.title.data
+        content_filter.filter_home = form.filter_home.data
+        content_filter.filter_posts = form.filter_posts.data
+        content_filter.filter_replies = form.filter_replies.data
+        content_filter.hide_type = form.hide_type.data
+        content_filter.keywords = form.keywords.data
+        content_filter.expire_after = form.expire_after.data
+        db.session.commit()
+        cache.delete_memoized(user_filters_home, current_user.id)
+        cache.delete_memoized(user_filters_posts, current_user.id)
+        cache.delete_memoized(user_filters_replies, current_user.id)
+
+        flash(_('Your changes have been saved.'), 'success')
+
+        return redirect(url_for('user.user_settings_filters'))
+    elif request.method == 'GET':
+        form.title.data = content_filter.title
+        form.filter_home.data = content_filter.filter_home
+        form.filter_posts.data = content_filter.filter_posts
+        form.filter_replies.data = content_filter.filter_replies
+        form.hide_type.data = content_filter.hide_type
+        form.keywords.data = content_filter.keywords
+        form.expire_after.data = content_filter.expire_after
+
+    return render_template('user/edit_filters.html', title=_('Edit filter'), form=form, content_filter=content_filter, user=current_user)
+
+
+@bp.route('/user/settings/filters/<int:filter_id>/delete', methods=['GET', 'POST'])
+@login_required
+def user_settings_filters_delete(filter_id):
+    content_filter = Filter.query.get_or_404(filter_id)
+    if current_user.id != content_filter.user_id:
+        abort(401)
+    db.session.delete(content_filter)
+    db.session.commit()
+    cache.delete_memoized(user_filters_home, current_user.id)
+    cache.delete_memoized(user_filters_posts, current_user.id)
+    cache.delete_memoized(user_filters_replies, current_user.id)
+    flash(_('Filter deleted.'))
+    return redirect(url_for('user.user_settings_filters'))

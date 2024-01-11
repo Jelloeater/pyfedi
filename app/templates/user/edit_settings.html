@@ -22,6 +22,7 @@
                 {{ render_field(form.indexable) }}
                 {{ render_field(form.import_file) }}
                 {{ render_field(form.submit) }}
+                &nbsp;&nbsp;<a href="{{ url_for('user.user_settings_filters') }}">{{ _('Manage content filters') }}</a>
             </form>
         </div>
     </div>

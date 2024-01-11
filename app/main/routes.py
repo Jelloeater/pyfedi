@@ -14,7 +14,7 @@ from flask_babel import _, get_locale
 from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
-    ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text
+    ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
 
 
@@ -38,12 +38,14 @@ def index():
         flash(_('Create an account to tailor this feed to your interests.'))
         posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
         posts = posts.join(Community, Community.id == Post.community_id).filter(Community.show_home == True)
+        content_filters = {}
     else:
         posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(CommunityMember.is_banned == False)
         posts = posts.join(User, CommunityMember.user_id == User.id).filter(User.id == current_user.id)
         domains_ids = blocked_domains(current_user.id)
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+        content_filters = user_filters_home(current_user.id)
 
     posts = posts.order_by(desc(Post.ranking)).paginate(page=page, per_page=100, error_out=False)
 
@@ -57,7 +59,8 @@ def index():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed", rss_feed_name=f"Posts on " + g.site.name,
-                           title=f"{g.site.name} - {g.site.description}", description=shorten_string(markdown_to_text(g.site.sidebar), 150))
+                           title=f"{g.site.name} - {g.site.description}", description=shorten_string(markdown_to_text(g.site.sidebar), 150),
+                           content_filters=content_filters)
 
 
 @bp.route('/new', methods=['HEAD', 'GET', 'POST'])
@@ -73,6 +76,7 @@ def new_posts():
 
     if current_user.is_anonymous:
         posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+        content_filters = {}
     else:
         posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(
             CommunityMember.is_banned == False)
@@ -80,6 +84,7 @@ def new_posts():
         domains_ids = blocked_domains(current_user.id)
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+        content_filters = user_filters_home(current_user.id)
 
     posts = posts.order_by(desc(Post.posted_at)).paginate(page=page, per_page=100, error_out=False)
 
@@ -93,7 +98,8 @@ def new_posts():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
-                           rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
+                           rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           content_filters=content_filters)
 
 
 @bp.route('/top', methods=['HEAD', 'GET', 'POST'])
@@ -109,6 +115,7 @@ def top_posts():
 
     if current_user.is_anonymous:
         posts = Post.query.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+        content_filters = {}
     else:
         posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(
             CommunityMember.is_banned == False)
@@ -116,6 +123,7 @@ def top_posts():
         domains_ids = blocked_domains(current_user.id)
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+        content_filters = user_filters_home(current_user.id)
 
     posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=1)).order_by(desc(Post.score)).paginate(page=page, per_page=100, error_out=False)
 
@@ -129,7 +137,8 @@ def top_posts():
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"home_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
-                           rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
+                           rss_feed_name=f"Posts on " + g.site.name, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           content_filters=content_filters)
 
 
 @bp.route('/communities', methods=['GET'])

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta
+from collections import defaultdict
+from datetime import datetime, timedelta, date
 from typing import List, Literal, Union
 
 import markdown2
@@ -15,14 +16,14 @@ import os
 import imghdr
 from flask import current_app, json, redirect, url_for, request, make_response, Response, g
 from flask_login import current_user
-from sqlalchemy import text
+from sqlalchemy import text, or_
 from wtforms.fields  import SelectField, SelectMultipleField
 from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
 import re
 
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
-    Site, Post, PostReply, utcnow
+    Site, Post, PostReply, utcnow, Filter
 
 
 # Flask's render_template function, with support for themes added
@@ -513,6 +514,44 @@ def shorten_number(number):
     else:
         return f'{number / 1000000:.1f}M'
 
+
+@cache.memoize(timeout=300)
+def user_filters_home(user_id):
+    filters = Filter.query.filter_by(user_id=user_id, filter_home=True).filter(or_(Filter.expire_after > date.today(), Filter.expire_after == None))
+    result = defaultdict(set)
+    for filter in filters:
+        keywords = [keyword.strip().lower() for keyword in filter.keywords.splitlines()]
+        if filter.hide_type == 0:
+            result[filter.title].update(keywords)
+        else:   # type == 1 means hide completely. These posts are excluded from output by the jinja template
+            result['-1'].update(keywords)
+    return result
+
+
+@cache.memoize(timeout=300)
+def user_filters_posts(user_id):
+    filters = Filter.query.filter_by(user_id=user_id, filter_posts=True).filter(or_(Filter.expire_after > date.today(), Filter.expire_after == None))
+    result = defaultdict(set)
+    for filter in filters:
+        keywords = [keyword.strip().lower() for keyword in filter.keywords.splitlines()]
+        if filter.hide_type == 0:
+            result[filter.title].update(keywords)
+        else:
+            result['-1'].update(keywords)
+    return result
+
+
+@cache.memoize(timeout=300)
+def user_filters_replies(user_id):
+    filters = Filter.query.filter_by(user_id=user_id, filter_replies=True).filter(or_(Filter.expire_after > date.today(), Filter.expire_after == None))
+    result = defaultdict(set)
+    for filter in filters:
+        keywords = [keyword.strip().lower() for keyword in filter.keywords.splitlines()]
+        if filter.hide_type == 0:
+            result[filter.title].update(keywords)
+        else:
+            result['-1'].update(keywords)
+    return result
 
 
 # All the following post/comment ranking math is explained at https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_field %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col main_pane">
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
+                <li class="breadcrumb-item active"><a href="/user/settings">{{ _('Settings') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Filters') }}</li>
+              </ol>
+            </nav>
+            <div class="rh_action_buttons">
+                <a class="btn btn-primary" href="{{ url_for('user.user_settings_filters_add') }}">{{ _('Add filter') }}</a>
+            </div>
+            <h1 class="mt-2">{{ _('Filters') }}</h1>
+            <p>{{ _('Filters can hide posts that contain keywords you specify, either by making them less noticeable or invisible.') }}</p>
+            {% if filters %}
+                <table class="table table-striped">
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Keywords') }}</th>
+                        <th>{{ _('Action') }}</th>
+                        <th>{{ _('Expires') }}</th>
+                        <th> </th>
+                    </tr>
+                    {% for filter in filters %}
+                        <tr>
+                            <td>{{ filter.title }}</td>
+                            <td>{{ filter.keywords_string()|shorten(30) }}</td>
+                            <td>{{ _('Invisible') if filter.hide_type == 1 else _('Semi-transparent') }}</td>
+                            <td>{{ filter.expire_after if filter.expire_after }}</td>
+                            <td>
+                                <a href="{{ url_for('user.user_settings_filters_edit', filter_id=filter.id) }}">Edit</a> |
+                                <a href="{{ url_for('user.user_settings_filters_delete', filter_id=filter.id) }}" class="confirm_first">Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>{{ _('No filters defined yet.') }}</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

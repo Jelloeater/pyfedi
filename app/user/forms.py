@@ -1,7 +1,8 @@
 from flask import session
 from flask_login import current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, EmailField, TextAreaField, FileField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, EmailField, TextAreaField, FileField, \
+    RadioField, DateField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Optional
 from flask_babel import _, lazy_gettext as _l
 
@@ -69,3 +70,17 @@ class ReportUserForm(FlaskForm):
                 if choice[0] == reason_id:
                     result.append(str(choice[1]))
         return ', '.join(result)
+
+
+class FilterEditForm(FlaskForm):
+    title = StringField(_l('Name'), validators={DataRequired(), Length(min=3, max=50)})
+    filter_home = BooleanField(_l('Home feed'), default=True)
+    filter_posts = BooleanField(_l('Posts in communities'))
+    filter_replies = BooleanField(_l('Comments on posts'))
+    hide_type_choices = [(0, _l('Make semi-transparent')), (1, _l('Hide completely'))]
+    hide_type = RadioField(_l('Action to take'), choices=hide_type_choices, default=1, coerce=int)
+    keywords = TextAreaField(_l('Keywords that trigger this filter'),
+                         render_kw={'placeholder': 'One keyword or phrase per line', 'rows': 3},
+                         validators={DataRequired(), Length(min=3, max=500)})
+    expire_after = DateField(_l('Expire after'), validators={Optional()})
+    submit = SubmitField(_l('Save'))

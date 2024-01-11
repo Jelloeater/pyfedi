@@ -1,66 +1,72 @@
-<div class="post_teaser {{ 'reported' if post.reports and current_user.is_authenticated and post.community.is_moderator() }}">
-    <div class="row">
-        <div class="col-12">
-            <div class="row main_row">
-                <div class="col">
-                    <h3 class="post_teaser_title">
-                        <div class="voting_buttons">
-                            {% include "post/_post_voting_buttons.html" %}
-                        </div>
-                        {% if post.image_id and not low_bandwidth %}
-                            <div class="thumbnail">
-                                {% if post.type == POST_TYPE_LINK %}
-                                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
-                                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
-                                {% elif post.type == POST_TYPE_IMAGE %}
-                                    {% if post.image_id %}
-                                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
-                                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
-                                    {% endif %}
-                                {% else %}
-                                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
-                                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+{% set content_blocked = post.blocked_by_content_filter(content_filters) %}
+{% if content_blocked and content_blocked == '-1' %}
+    {# do nothing - blocked by keyword filter #}
+{% else %}
+    <div class="post_teaser{{ ' reported' if post.reports and current_user.is_authenticated and post.community.is_moderator() }}{{ ' blocked' if content_blocked }}"
+        {% if content_blocked %} title="{{ _('Filtered: ') }}{{ content_blocked }}"{% endif %}>
+            <div class="row">
+                <div class="col-12">
+                    <div class="row main_row">
+                        <div class="col">
+                            <h3 class="post_teaser_title">
+                                <div class="voting_buttons">
+                                    {% include "post/_post_voting_buttons.html" %}
+                                </div>
+                                {% if post.image_id and not low_bandwidth %}
+                                    <div class="thumbnail">
+                                        {% if post.type == POST_TYPE_LINK %}
+                                            <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
+                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                        {% elif post.type == POST_TYPE_IMAGE %}
+                                            {% if post.image_id %}
+                                                <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
+                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
+                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
+                                        {% endif %}
+                                    </div>
                                 {% endif %}
-                            </div>
-                        {% endif %}
-                        <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" class="post_teaser_title_a">{{ post.title }}</a>
-                        {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image"> </span>{% endif %}
-                        {% if post.type == POST_TYPE_LINK and post.domain_id %}
-                            {% if post.url and 'youtube.com' in post.url %}
-                                <span class="fe fe-video"></span>
+                                <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" class="post_teaser_title_a">{{ post.title }}</a>
+                                {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image"> </span>{% endif %}
+                                {% if post.type == POST_TYPE_LINK and post.domain_id %}
+                                    {% if post.url and 'youtube.com' in post.url %}
+                                        <span class="fe fe-video"></span>
+                                    {% endif %}
+                                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank">
+                                        <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
+                                    </a>
+                                    <span class="domain_link">(<a href="/d/{{ post.domain_id }}">{{ post.domain.name }}</a>)</span>
+                                {% endif %}
+                                {% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
+                                    <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
+                                {% endif %}
+                            </h3>
+                            <span class="small">{% if show_post_community %}<strong><a href="/c/{{ post.community.link() }}">c/{{ post.community.name }}</a></strong>{% endif %}
+                                by {{ render_username(post.author) }} {{ moment(post.posted_at).fromNow() }}</span>
+
+                        </div>
+
+                    </div>
+                    <div class="row utilities_row">
+                        <div class="col-6">
+                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}"><span class="fe fe-reply"></span></a>
+                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
+                            {% if post.type == POST_TYPE_IMAGE %}
+                                &nbsp;
+                                {% if post.image_id %}
+                                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image"><span class="fe fe-magnify"></span></a>
+                                {% else %}
+                                    <a href="{{ post.url }}" rel="nofollow ugc" class="preview_image" target="_blank"><span class="fe fe-magnify"></span></a>
+                                {% endif %}
                             {% endif %}
-                            <a href="{{ post.url }}" rel="nofollow ugc" target="_blank">
-                                <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
-                            </a>
-                            <span class="domain_link">(<a href="/d/{{ post.domain_id }}">{{ post.domain.name }}</a>)</span>
-                        {% endif %}
-                        {% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
-                            <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
-                        {% endif %}
-                    </h3>
-                    <span class="small">{% if show_post_community %}<strong><a href="/c/{{ post.community.link() }}">c/{{ post.community.name }}</a></strong>{% endif %}
-                        by {{ render_username(post.author) }} {{ moment(post.posted_at).fromNow() }}</span>
-
+                        </div>
+                        <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a></div>
+                    </div>
                 </div>
+            </div>
 
-            </div>
-            <div class="row utilities_row">
-                <div class="col-6">
-                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}"><span class="fe fe-reply"></span></a>
-                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id, _anchor='replies') }}">{{ post.reply_count }}</a>
-                    {% if post.type == POST_TYPE_IMAGE %}
-                        &nbsp;
-                        {% if post.image_id %}
-                            <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image"><span class="fe fe-magnify"></span></a>
-                        {% else %}
-                            <a href="{{ post.url }}" rel="nofollow ugc" class="preview_image" target="_blank"><span class="fe fe-magnify"></span></a>
-                        {% endif %}
-                    {% endif %}
-                </div>
-                <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a></div>
-            </div>
+
         </div>
-    </div>
-
-
-</div>
+{% endif %}

@@ -163,6 +163,10 @@ nav, etc which are used site-wide */
 .post_list {
   .post_teaser {
 
+    border-bottom: solid 2px $light-grey;
+    padding-top: 8px;
+    padding-bottom: 8px;
+
     h3 {
       font-size: 110%;
       margin-top: 4px;
@@ -193,10 +197,18 @@ nav, etc which are used site-wide */
         }
       }
     }
+    &.blocked {
+      opacity: 0.2;
+      font-size: 80%;
 
-    border-bottom: solid 2px $light-grey;
-    padding-top: 8px;
-    padding-bottom: 8px;
+      .voting_buttons {
+        width: 46px;
+        line-height: 24px;
+        .upvote_button, .downvote_button {
+          font-size: 80%;
+        }
+      }
+    }
   }
 }
 
@@ -454,7 +466,7 @@ fieldset {
   }
 }
 
-.profile_action_buttons {
+.profile_action_buttons, .rh_action_buttons {
   float: right;
 }
 
