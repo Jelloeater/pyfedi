@@ -266,10 +266,7 @@ def shorten_url(input: str, max_length=20):
 
 # the number of digits in a number. e.g. 1000 would be 4
 def digits(input: int) -> int:
-    if input == 0:
-        return 1  # Special case: 0 has 1 digit
-    else:
-        return math.floor(math.log10(abs(input))) + 1
+    return len(shorten_number(input))
 
 
 @cache.memoize(timeout=50)
