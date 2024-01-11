@@ -5,7 +5,8 @@ from sqlalchemy.sql.operators import or_
 
 from app import db, cache
 from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile
-from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, SUBSCRIPTION_OWNER
+from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
+    SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
 from app.main import bp
 from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
 from flask_moment import moment
@@ -162,7 +163,8 @@ def list_communities():
 
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), search=search_param, title=_('Communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
-                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, topics=topics, topic_id=topic_id, sort_by=sort_by,
+                           SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
+                           topics=topics, topic_id=topic_id, sort_by=sort_by,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
@@ -173,6 +175,7 @@ def list_local_communities():
     communities = Community.query.filter_by(ap_id=None, banned=False)
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Local communities'), sort_by=sort_by,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
+                            SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 
@@ -186,6 +189,7 @@ def list_subscribed_communities():
         communities = []
     return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Joined communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, sort_by=sort_by,
+                           SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1')
 
 

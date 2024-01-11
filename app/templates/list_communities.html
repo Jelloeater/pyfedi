@@ -71,7 +71,7 @@
                 {% for community in communities %}
                     <tr class="">
                         <td width="70">{% if current_user.is_authenticated %}
-                                {% if community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER] %}
+                                {% if community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER] %}
                                     <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">{{ _('Leave') }}</a>
                                 {% elif community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
                                     <a class="btn btn-outline-secondary btn-sm" href="/community/{{ community.link() }}/unsubscribe">{{ _('Pending') }}</a>
