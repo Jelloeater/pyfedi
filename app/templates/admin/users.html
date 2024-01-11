@@ -20,6 +20,7 @@
             <tr>
                <th>Name</th>
                <th>Local/Remote</th>
+               <th>Seen</th>
                <th>Attitude</th>
                <th>Rep</th>
                <th>Banned</th>
@@ -32,6 +33,7 @@
                     <td><img src="{{ user.avatar_thumbnail() }}" class="community_icon rounded-circle" loading="lazy" />
                         {{ user.display_name() }}</td>
                     <td>{{ 'Local' if user.is_local() else 'Remote' }}</td>
+                    <td>{{ user.last_seen }}</td>
                     <td>{{ user.attitude * 100 if user.attitude != 1 }}</td>
                     <td>{{ 'R ' + str(user.reputation) if user.reputation }}</td>
                     <td>{{ '<span class="red">Banned</span>'|safe if user.banned }} </td>
