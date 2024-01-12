@@ -293,7 +293,7 @@ def community_profile(actor):
 def shared_inbox():
     if request.method == 'POST':
         # save all incoming data to aid in debugging and development. Set result to 'success' if things go well
-        activity_log = ActivityPubLog(direction='in', activity_json=request.data, result='failure')
+        activity_log = ActivityPubLog(direction='in', result='failure')
 
         try:
             request_json = request.get_json(force=True)
@@ -313,7 +313,8 @@ def shared_inbox():
                 return ''
 
             activity_log.activity_id = request_json['id']
-            activity_log.activity_json = json.dumps(request_json)
+            if g.site.log_activitypub_json:
+                activity_log.activity_json = json.dumps(request_json)
             activity_log.result = 'processing'
             db.session.add(activity_log)
             db.session.commit()
@@ -327,7 +328,8 @@ def shared_inbox():
                 return ''
         else:
             activity_log.activity_id = ''
-            activity_log.activity_json = json.dumps(request_json)
+            if g.site.log_activitypub_json:
+                activity_log.activity_json = json.dumps(request_json)
             db.session.add(activity_log)
             db.session.commit()
 

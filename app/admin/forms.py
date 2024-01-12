@@ -28,6 +28,7 @@ class SiteMiscForm(FlaskForm):
     types = [('Open', _l('Open')), ('RequireApplication', _l('Require application')), ('Closed', _l('Closed'))]
     registration_mode = SelectField(_l('Registration mode'), choices=types, default=1, coerce=str)
     application_question = TextAreaField(_l('Question to ask people applying for an account'))
+    log_activitypub_json = BooleanField(_l('Log ActivityPub JSON for debugging'))
     submit = SubmitField(_l('Save'))
 
 

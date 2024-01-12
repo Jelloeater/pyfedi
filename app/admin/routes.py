@@ -76,6 +76,7 @@ def admin_misc():
         site.reports_email_admins = form.reports_email_admins.data
         site.registration_mode = form.registration_mode.data
         site.application_question = form.application_question.data
+        site.log_activitypub_json = form.log_activitypub_json.data
         site.updated = utcnow()
         if site.id is None:
             db.session.add(site)
@@ -91,6 +92,7 @@ def admin_misc():
         form.reports_email_admins.data = site.reports_email_admins
         form.registration_mode.data = site.registration_mode
         form.application_question.data = site.application_question
+        form.log_activitypub_json.data = site.log_activitypub_json
     return render_template('admin/misc.html', title=_('Misc settings'), form=form,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())

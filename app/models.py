@@ -979,6 +979,7 @@ class Site(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
     last_active = db.Column(db.DateTime, default=utcnow)
+    log_activitypub_json = db.Column(db.Boolean, default=False)
 
     @staticmethod
     def admins() -> List[User]:
