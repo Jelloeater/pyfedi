@@ -97,16 +97,16 @@ def add_remote():
 # @bp.route('/c/<actor>', methods=['GET']) - defined in activitypub/routes.py, which calls this function for user requests. A bit weird.
 def show_community(community: Community):
 
-    # If nothing has changed since their last visit, return HTTP 304
-    current_etag = f"{community.id}_{hash(community.last_active)}"
-    if current_user.is_anonymous and request_etag_matches(current_etag):
-        return return_304(current_etag)
-
     if community.banned:
         abort(404)
 
     page = request.args.get('page', 1, type=int)
     sort = request.args.get('sort', '')
+
+    # If nothing has changed since their last visit, return HTTP 304
+    current_etag = f"{community.id}{sort}_{hash(community.last_active)}"
+    if current_user.is_anonymous and request_etag_matches(current_etag):
+        return return_304(current_etag)
 
     mods = community.moderators()
 
@@ -147,7 +147,7 @@ def show_community(community: Community):
                            is_moderator=is_moderator, is_owner=is_owner, is_admin=is_admin, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
-                           etag=f"{community.id}_{hash(community.last_active)}",
+                           etag=f"{community.id}{sort}_{hash(community.last_active)}",
                            next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),

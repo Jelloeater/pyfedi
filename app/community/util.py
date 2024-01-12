@@ -111,7 +111,7 @@ def retrieve_mods_and_backfill(community_id: int):
                             break
                     c = Community.query.get(community.id)
                     c.post_count = activities_processed
-                    c.last_active = utcnow()
+                    c.last_active = site.last_active = utcnow()
                     db.session.commit()
 
 
