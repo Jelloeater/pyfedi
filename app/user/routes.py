@@ -596,7 +596,10 @@ def import_settings_task(user_id, filename):
 @login_required
 def user_settings_filters():
     filters = Filter.query.filter_by(user_id=current_user.id).order_by(Filter.title).all()
-    return render_template('user/filters.html', filters=filters, user=current_user)
+    return render_template('user/filters.html', filters=filters, user=current_user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )
 
 
 @bp.route('/user/settings/filters/add', methods=['GET', 'POST'])
