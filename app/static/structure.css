@@ -76,6 +76,18 @@ nav, etc which are used site-wide */
   content: "\e937";
 }
 
+.fe-home::before {
+  content: "\e979";
+}
+
+.fe-popular::before {
+  content: "\e9e6";
+}
+
+.fe-all::before {
+  content: "\e986";
+}
+
 .fe-activity::before {
   content: "\e900";
 }
@@ -397,6 +409,10 @@ fieldset legend {
   .container {
     max-width: 1880px;
   }
+}
+
+.low_bandwidth .dropdown-toggle::after {
+  display: none;
 }
 
 .skip-link {

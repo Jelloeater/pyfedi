@@ -1,11 +1,11 @@
 <div class="btn-group mt-1 mb-2">
-    <a href="/" class="btn {{ 'btn-primary' if request.path == '/' else 'btn-outline-secondary' }}" rel="nofollow">
+    <a href="/{{ type }}/hot" class="btn {{ 'btn-primary' if sort == 'hot' else 'btn-outline-secondary' }}" rel="nofollow">
         {{ _('Hot') }}
     </a>
-    <a href="/top" class="btn {{ 'btn-primary' if request.path == '/top' else 'btn-outline-secondary' }}" rel="nofollow">
+    <a href="/{{ type }}/top" class="btn {{ 'btn-primary' if sort == 'top' else 'btn-outline-secondary' }}" rel="nofollow">
         {{ _('Top') }}
     </a>
-    <a href="/new" class="btn {{ 'btn-primary' if request.path == '/new' else 'btn-outline-secondary' }}" rel="nofollow">
+    <a href="/{{ type }}/new" class="btn {{ 'btn-primary' if sort == 'new' else 'btn-outline-secondary' }}" rel="nofollow">
         {{ _('New') }}
     </a>
 </div>

@@ -68,7 +68,7 @@
         {% endif %}
     {% endblock %}
   </head>
-  <body class="d-flex flex-column" style="padding-top: 78px;">
+  <body class="d-flex flex-column{{ ' low_bandwidth' if low_bandwidth }}" style="padding-top: 78px;">
     <!-- Page content -->
     {% block navbar %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
@@ -91,13 +91,31 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent" role="navigation">
                     <ul class="nav navbar-nav ml-md-4">
                         {% if current_user.is_anonymous %}
-                            <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/communities">{{ _('Communities') }}</a></li>
+                            <li class="nav-item dropdown{% if active_parent == 'home' %} active{% endif %}">
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/home"><span class="fe fe-home"></span>{{ _('Home') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/popular"><span class="fe fe-popular"></span>{{ _('Popular') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'all_posts' %} active{% endif %}" href="/all"><span class="fe fe-all"></span>{{ _('All posts') }}</a></li>
+                                </ul>
+                            <li class="nav-item dropdown{% if active_parent == 'communities' %} active{% endif %}">
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item{% if active_child == 'list_communities' %} active{% endif %}" href="/communities">{{ _('Browse all') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'list_topics' %} active{% endif %}" href="/topics">{{ _('By topic') }}</a></li>
+                                </ul>
+                            </li>
                             <li class="nav-item"><a class="nav-link" href="/auth/login">{{ _('Log in') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/auth/register">{{ _('Register') }}</a></li>
                             <li class="nav-item"><a class="nav-link" href="/donate">{{ _('Donate') }}</a></li>
                         {% else %}
-                            <li class="nav-item"><a class="nav-link" href="/">{{ _('Home') }}</a></li>
+                            <li class="nav-item dropdown{% if active_parent == 'home' %} active{% endif %}">
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
+                                <ul class="dropdown-menu">
+                                  <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/home"><span class="fe fe-home"></span>{{ _('Home') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/popular"><span class="fe fe-popular"></span>{{ _('Popular') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'all_posts' %} active{% endif %}" href="/all"><span class="fe fe-all"></span>{{ _('All posts') }}</a></li>
+                                </ul>
                             <li class="nav-item dropdown{% if active_parent == 'communities' %} active{% endif %}">
                                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
                                 <ul class="dropdown-menu">
