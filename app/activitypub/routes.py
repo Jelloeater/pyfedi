@@ -963,6 +963,7 @@ def comment_ap(comment_id):
 
 
 @bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
+@bp.route('/post/<int:post_id>/', methods=['GET', 'POST'])
 def post_ap(post_id):
     if request.method == 'GET' and is_activitypub_request():
         post = Post.query.get_or_404(post_id)
