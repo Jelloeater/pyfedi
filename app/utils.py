@@ -553,7 +553,7 @@ def user_filters_replies(user_id):
 
 @cache.memoize(timeout=300)
 def moderating_communities(user_id):
-    if user_id is None:
+    if user_id is None or user_id == 0:
         return []
     return Community.query.join(CommunityMember, Community.id == CommunityMember.community_id).\
         filter(Community.banned == False).\
@@ -563,7 +563,7 @@ def moderating_communities(user_id):
 
 @cache.memoize(timeout=300)
 def joined_communities(user_id):
-    if user_id is None:
+    if user_id is None or user_id == 0:
         return []
     return Community.query.join(CommunityMember, Community.id == CommunityMember.community_id).\
         filter(Community.banned == False). \

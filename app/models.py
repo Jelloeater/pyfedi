@@ -383,7 +383,7 @@ class User(UserMixin, db.Model):
         if self.is_authenticated:
             return self.id
         else:
-            return None
+            return 0
 
     def display_name(self):
         if self.deleted is False:

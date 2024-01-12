@@ -44,7 +44,7 @@ def show_profile(user):
     posts = Post.query.filter_by(user_id=user.id).order_by(desc(Post.posted_at)).paginate(page=post_page, per_page=50, error_out=False)
     moderates = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == user.id)\
         .filter(or_(CommunityMember.is_moderator, CommunityMember.is_owner))
-    if user.id == current_user.id or current_user.is_admin():
+    if current_user.is_authenticated and (user.id == current_user.get_id() or current_user.is_admin()):
         upvoted = Post.query.join(PostVote, PostVote.post_id == Post.id).filter(PostVote.effect > 0, PostVote.user_id == user.id).order_by(desc(PostVote.created_at)).limit(10).all()
     else:
         upvoted = []
