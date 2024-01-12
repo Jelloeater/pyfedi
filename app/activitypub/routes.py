@@ -2,7 +2,7 @@ from flask_login import current_user
 
 from app import db, constants, cache, celery
 from app.activitypub import bp
-from flask import request, current_app, abort, jsonify, json, g
+from flask import request, current_app, abort, jsonify, json, g, url_for, redirect
 
 from app.activitypub.signature import HttpSignature, post_request
 from app.community.routes import show_community
@@ -962,8 +962,12 @@ def comment_ap(comment_id):
         return continue_discussion(reply.post.id, comment_id)
 
 
+@bp.route('/post/<int:post_id>/', methods=['GET'])
+def post_ap2(post_id):
+    return redirect(url_for('activitypub.post_ap', post_id=post_id))
+
+
 @bp.route('/post/<int:post_id>', methods=['GET', 'POST'])
-@bp.route('/post/<int:post_id>/', methods=['GET', 'POST'])
 def post_ap(post_id):
     if request.method == 'GET' and is_activitypub_request():
         post = Post.query.get_or_404(post_id)
