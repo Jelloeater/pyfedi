@@ -19,7 +19,7 @@ pycryptodome==3.18.0
 arrow==1.2.3
 pyld==2.0.3
 boto3==1.28.35
-markdown2==2.4.10
+markdown2==2.4.12
 beautifulsoup4==4.12.2
 flask-caching==2.0.2
 Pillow

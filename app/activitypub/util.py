@@ -967,10 +967,6 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
                 db.session.commit()
 
                 if user.reputation > 100:
-                    vote = PostReplyVote(user_id=1, author_id=post_reply.user_id,
-                                         post_reply_id=post_reply.id,
-                                         effect=instance_weight(user.ap_domain))
-                    db.session.add(vote)
                     post_reply.up_votes += 1
                     post_reply.score += 1
                     post_reply.ranking = confidence(post_reply.up_votes, post_reply.down_votes)
@@ -1056,10 +1052,6 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
         notify_about_post(post)
 
         if user.reputation > 100:
-            vote = PostVote(user_id=1, author_id=post.user_id,
-                            post_id=post.id,
-                            effect=instance_weight(user.ap_domain))
-            db.session.add(vote)
             post.up_votes += 1
             post.score += 1
             post.ranking = post_ranking(post.score, post.posted_at)

@@ -266,16 +266,10 @@ def save_post(form, post: Post):
         raise Exception('invalid post type')
     if post.id is None:
         if current_user.reputation > 100:
-            postvote = PostVote(user_id=1, author_id=current_user.id, post=post, effect=1.0)
             post.up_votes = 1
             post.score = 1
-            post.ranking = 1
-            db.session.add(postvote)
         if current_user.reputation < -100:
-            postvote = PostVote(user_id=1, author_id=current_user.id, post=post, effect=-1.0)
             post.score = -1
-            post.ranking = -1
-            db.session.add(postvote)
         post.ranking = post_ranking(post.score, utcnow())
         db.session.add(post)
 

@@ -88,18 +88,12 @@ def show_post(post_id: int):
         db.session.commit()
         reply.ap_id = reply.profile_id()
         if current_user.reputation > 100:
-            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
-                                       effect=1.0)
             reply.up_votes += 1
             reply.score += 1
             reply.ranking += 1
-            db.session.add(reply_vote)
         elif current_user.reputation < -100:
-            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id,
-                                       effect=-1.0)
             reply.score -= 1
             reply.ranking -= 1
-            db.session.add(reply_vote)
         db.session.commit()
         form.body.data = ''
         flash('Your comment has been added.')
@@ -425,16 +419,12 @@ def add_reply(post_id: int, comment_id: int):
         reply.ap_id = reply.profile_id()
         db.session.commit()
         if current_user.reputation > 100:
-            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id, effect=1.0)
             reply.up_votes += 1
             reply.score += 1
             reply.ranking += 1
-            db.session.add(reply_vote)
         elif current_user.reputation < -100:
-            reply_vote = PostReplyVote(user_id=1, author_id=current_user.id, post_reply_id=reply.id, effect=-1.0)
             reply.score -= 1
             reply.ranking -= 1
-            db.session.add(reply_vote)
         post.reply_count = post_reply_count(post.id)
         post.last_active = post.community.last_active = utcnow()
         db.session.commit()
