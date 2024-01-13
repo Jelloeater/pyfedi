@@ -250,6 +250,24 @@ nav, etc which are used site-wide */
   }
 }
 
+
+[data-bs-theme=dark] {
+  .post_list .post_teaser {
+    border-bottom: solid 1px $super-dark-grey;
+  }
+
+  .comments > .comment {
+    border-top-color: $super-dark-grey;
+  }
+
+  .downarea-textarea {
+    .form-control {
+      background-color: $super-dark-grey;
+      color: whitesmoke;
+    }
+  }
+}
+
 .post_body {
   img {
     max-height: 40vh;

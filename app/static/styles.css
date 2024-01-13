@@ -249,6 +249,14 @@
   content: "\e91f";
 }
 
+.fe-sun::before {
+  content: "\e9d7";
+}
+
+.fe-moon::before {
+  content: "\e99a";
+}
+
 h1 .fe-bell, h1 .fe-no-bell {
   font-size: 18px;
   top: -5px;
@@ -383,12 +391,9 @@ fieldset legend {
 
 body {
   font-size: 0.95rem;
-  background-color: #fbfdfe;
-  color: #495057;
 }
 
 nav.navbar {
-  background-color: #fff !important;
   border-bottom: 1px solid rgba(0, 40, 100, 0.12);
   min-height: 60px;
 }
@@ -398,7 +403,6 @@ nav.navbar {
 }
 
 .navbar-light .navbar-nav .nav-link {
-  color: rgba(0, 0, 0, 0.8);
   outline-style: none;
 }
 
@@ -474,7 +478,6 @@ nav.navbar {
 .main_pane {
   border: solid 1px #ddd;
   border-radius: 5px;
-  background-color: white;
   padding-top: 8px;
   padding-bottom: 12px;
 }
@@ -485,6 +488,10 @@ nav.navbar {
 .main_pane .url_thumbnail img {
   width: 100%;
   height: auto;
+}
+
+[data-bs-theme=dark] .main_pane {
+  border-color: #424549;
 }
 
 .community_icon {
@@ -627,31 +634,21 @@ nav.navbar {
   color: black;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #777;
+@media (min-width: 992px) {
+  .h1, h1 {
+    font-size: 2rem;
   }
+}
 
-  nav.navbar {
-    background-color: #eee !important;
+@media (min-width: 992px) {
+  .h2, h2 {
+    font-size: 1.8rem;
   }
+}
 
-  .main_pane, .card {
-    background-color: #eee;
-  }
-
-  .btn-outline-secondary {
-    border-color: #eee;
-    color: #eee;
-  }
-
-  .main_pane .btn-outline-secondary {
-    border-color: #777;
-    color: #777;
-  }
-
-  footer a {
-    color: #eee;
+@media (min-width: 992px) {
+  .h3, h3 {
+    font-size: 1.6rem;
   }
 }
 

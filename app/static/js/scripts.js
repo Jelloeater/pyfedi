@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupSubmitOnInputChange();
     setupTimeTracking();
     setupMobileNav();
+    setupLightDark();
 });
 
 
@@ -20,6 +21,19 @@ function setupMobileNav() {
     var navbarToggler = document.getElementById('navbar-toggler');
     navbarToggler.addEventListener("click", function(event) {
         toggleClass('navbarSupportedContent', 'show_menu')
+    });
+}
+
+function setupLightDark() {
+    const elem = document.getElementById('light_mode');
+    elem.addEventListener("click", function(event) {
+        setTheme('light')
+        setStoredTheme('light')
+    });
+    const elem2 = document.getElementById('dark_mode');
+    elem2.addEventListener("click", function(event) {
+        setTheme('dark')
+        setStoredTheme('dark')
     });
 }
 

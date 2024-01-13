@@ -6,12 +6,9 @@
 
 body {
   font-size: 0.95rem;
-  background-color: #fbfdfe;
-  color: #495057;
 }
 
 nav.navbar {
-  background-color: #fff!important;
   border-bottom: 1px solid rgba(0, 40, 100, 0.12);
   min-height: 60px;
 }
@@ -22,7 +19,6 @@ nav.navbar {
   }
 }
 .navbar-light .navbar-nav .nav-link {
-  color: rgba(0,0,0,.8);
   outline-style: none;
 }
 
@@ -98,7 +94,6 @@ nav.navbar {
 .main_pane {
   border: solid 1px $light-grey;
   border-radius: 5px;
-  background-color: white;
   padding-top: 8px;
   padding-bottom: 12px;
 
@@ -111,6 +106,10 @@ nav.navbar {
       height: auto;
     }
   }
+}
+
+[data-bs-theme=dark] .main_pane {
+  border-color: $super-dark-grey;
 }
 
 .community_icon {
@@ -267,35 +266,20 @@ nav.navbar {
   color: black;
 }
 
-@media (prefers-color-scheme: dark) {
-
-  body {
-    background-color: $dark-grey;
+.h1, h1 {
+  @include breakpoint(tablet) {
+    font-size: 2rem;
   }
+}
 
-  nav.navbar {
-    background-color: #eee!important;
+.h2, h2 {
+  @include breakpoint(tablet) {
+    font-size: 1.8rem;
   }
+}
 
-  .main_pane, .card {
-    background-color: #eee;
-  }
-
-  .btn-outline-secondary {
-    border-color: #eee;
-    color: #eee;
-  }
-
-  .main_pane {
-    .btn-outline-secondary {
-      border-color: $dark-grey;
-      color: $dark-grey;
-    }
-  }
-
-  footer {
-    a {
-      color: #eee;
-    }
+.h3, h3 {
+  @include breakpoint(tablet) {
+    font-size: 1.6rem;
   }
 }

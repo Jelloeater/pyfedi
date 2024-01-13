@@ -66,12 +66,34 @@
         {% if rss_feed %}
             <link rel="alternate" type="application/rss+xml" title="{{ rss_feed_name }}" href="{{ rss_feed }}" />
         {% endif %}
+        <script nonce="{{ session['nonce']}}">
+            const getStoredTheme = () => localStorage.getItem('theme')
+            const setStoredTheme = theme => localStorage.setItem('theme', theme)
+
+            const getPreferredTheme = () => {
+              const storedTheme = getStoredTheme()
+              if (storedTheme) {
+                return storedTheme
+              }
+              return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            }
+
+            const setTheme = theme => {
+                if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                  document.documentElement.setAttribute('data-bs-theme', 'dark')
+                } else {
+                  document.documentElement.setAttribute('data-bs-theme', theme)
+                }
+            }
+
+            setTheme(getPreferredTheme());
+        </script>
     {% endblock %}
   </head>
   <body class="d-flex flex-column{{ ' low_bandwidth' if low_bandwidth }}">
     <!-- Page content -->
     {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg">
         <div class="container-lg">
             <a class="navbar-brand" href="/">{% if not low_bandwidth %}<img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{% endif %}{{ g.site.name }}</a>
             {% if current_user.is_authenticated %}
@@ -159,6 +181,8 @@
                                 </a>
                             </li>
                         {% endif %}
+                        <li class="nav-item"><a class="nav-link" id="light_mode"><span class="fe fe-sun" title="Light mode"></span></a></li>
+                        <li class="nav-item"><a class="nav-link" id="dark_mode"><span class="fe fe-moon" title="Dark mode"></span></a></li>
                     </ul>
             </div>
 

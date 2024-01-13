@@ -250,6 +250,14 @@ nav, etc which are used site-wide */
   content: "\e91f";
 }
 
+.fe-sun::before {
+  content: "\e9d7";
+}
+
+.fe-moon::before {
+  content: "\e99a";
+}
+
 h1 .fe-bell, h1 .fe-no-bell {
   font-size: 18px;
   top: -5px;
@@ -608,6 +616,17 @@ fieldset legend {
 .comments > .comment:first-child {
   border-top: none;
   padding-top: 0;
+}
+
+[data-bs-theme=dark] .post_list .post_teaser {
+  border-bottom: solid 1px #424549;
+}
+[data-bs-theme=dark] .comments > .comment {
+  border-top-color: #424549;
+}
+[data-bs-theme=dark] .downarea-textarea .form-control {
+  background-color: #424549;
+  color: whitesmoke;
 }
 
 .post_body img {

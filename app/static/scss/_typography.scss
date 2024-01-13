@@ -222,6 +222,14 @@
   content: "\e91f";
 }
 
+.fe-sun::before {
+  content: "\e9d7";
+}
+
+.fe-moon::before {
+  content: "\e99a";
+}
+
 h1 {
   .fe-bell, .fe-no-bell {
     font-size: 18px;
