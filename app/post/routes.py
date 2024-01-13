@@ -817,7 +817,7 @@ def post_reply_edit(post_id: int, comment_id: int):
             return redirect(url_for('activitypub.post_ap', post_id=post.id))
         else:
             form.body.data = post_reply.body
-            form.notify_author.data = not post_reply.notify_author
+            form.notify_author.data = post_reply.notify_author
             return render_template('post/post_reply_edit.html', title=_('Edit comment'), form=form, post=post, post_reply=post_reply,
                                    comment=comment, markdown_editor=True, moderating_communities=moderating_communities(current_user.get_id()),
                                    joined_communities=joined_communities(current_user.get_id()))

@@ -339,10 +339,16 @@ def admin_topics():
 @permission_required('administer all communities')
 def admin_topic_add():
     form = EditTopicForm()
+    form.add_community.choices = communities_for_form()
     if form.validate_on_submit():
         topic = Topic(name=form.name.data, num_communities=0)
         db.session.add(topic)
         db.session.commit()
+        if form.add_community.data:
+            community = Community.query.get(form.add_community.data)
+            community.topic_id = topic.id
+            topic.num_communities += 1
+            db.session.commit()
         flash(_('Saved'))
         return redirect(url_for('admin.admin_topics'))
 
