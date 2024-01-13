@@ -78,7 +78,7 @@
                             </div>
                             <div class="comment_author">
                                 {% if comment['comment'].author.deleted %}
-                                    <strong>[deleted]</strong>
+                                    [deleted]
                                 {% else %}
                                     {% if comment['comment'].author.avatar_id and comment['comment'].score > -10 and not low_bandwidth %}
                                     <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.ap_id }}">
