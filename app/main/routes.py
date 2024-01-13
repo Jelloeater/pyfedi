@@ -18,6 +18,8 @@ from app.utils import render_template, get_setting, gibberish, request_etag_matc
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
     joined_communities, moderating_communities
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
+from PIL import Image
+import pytesseract
 
 
 @bp.route('/', methods=['HEAD', 'GET', 'POST'])
@@ -207,7 +209,8 @@ def robots():
 
 @bp.route('/test')
 def test():
-    return str(current_user.get_id())
+    return pytesseract.image_to_string(Image.open('test.png').convert('L'))
+
 
     #ip = request.headers.get('X-Forwarded-For') or request.remote_addr
     #if ',' in ip:  # Remove all but first ip addresses

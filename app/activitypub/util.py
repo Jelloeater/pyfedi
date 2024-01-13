@@ -18,6 +18,7 @@ from app.constants import *
 from urllib.parse import urlparse
 from PIL import Image, ImageOps
 from io import BytesIO
+import pytesseract
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
     is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking, \
@@ -551,7 +552,16 @@ def make_image_sizes_async(file_id, thumbnail_width, medium_width, directory):
 
                     db.session.commit()
 
-
+                    # Alert regarding fascist meme content
+                    text = pytesseract.image_to_string(Image.open(final_place).convert('L'))
+                    if 'Anonymous' in text and ('No.' in text or ' N0' in text):   # chan posts usually contain the text 'Anonymous' and ' No.12345'
+                        post = Post.query.filter(image_id=file.id).first()
+                        notification = Notification(title='Review this',
+                                                    user_id=1,
+                                                    author_id=post.user_id,
+                                                    url=url_for('activitypub.post_ap', post_id=post.id))
+                        db.session.add(notification)
+                        db.session.commit()
 
 
 # create a summary from markdown if present, otherwise use html if available
