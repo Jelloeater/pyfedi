@@ -266,6 +266,11 @@ nav, etc which are used site-wide */
       color: whitesmoke;
     }
   }
+
+  .comment .replies {
+    border-left-color: $super-dark-grey;
+    border-top-color: $super-dark-grey;
+  }
 }
 
 .post_body {

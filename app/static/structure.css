@@ -628,6 +628,10 @@ fieldset legend {
   background-color: #424549;
   color: whitesmoke;
 }
+[data-bs-theme=dark] .comment .replies {
+  border-left-color: #424549;
+  border-top-color: #424549;
+}
 
 .post_body img {
   max-height: 40vh;
