@@ -553,8 +553,11 @@ def make_image_sizes_async(file_id, thumbnail_width, medium_width, directory):
                     db.session.commit()
 
                     # Alert regarding fascist meme content
-                    text = pytesseract.image_to_string(Image.open(final_place).convert('L'))
-                    if 'Anonymous' in text and ('No.' in text or ' N0' in text):   # chan posts usually contain the text 'Anonymous' and ' No.12345'
+                    try:
+                        image_text = pytesseract.image_to_string(Image.open(final_place).convert('L'))
+                    except FileNotFoundError as e:
+                        image_text = ''
+                    if 'Anonymous' in image_text and ('No.' in image_text or ' N0' in image_text):   # chan posts usually contain the text 'Anonymous' and ' No.12345'
                         post = Post.query.filter(image_id=file.id).first()
                         notification = Notification(title='Review this',
                                                     user_id=1,
