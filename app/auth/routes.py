@@ -6,7 +6,7 @@ from flask_babel import _
 from app import db, cache
 from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
-from app.auth.util import random_token
+from app.auth.util import random_token, normalize_utf
 from app.models import User, utcnow, IpBan
 from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
 from app.activitypub.signature import RsaKeys
@@ -95,6 +95,10 @@ def register():
             else:
                 verification_token = random_token(16)
                 form.user_name.data = form.user_name.data.strip()
+                before_normalize = form.user_name.data
+                form.user_name.data = normalize_utf(form.user_name.data)
+                if before_normalize != form.user_name.data:
+                    flash(_('Your username contained special letters so it was changed to %(name)s.', name=form.user_name.data), 'warning')
                 user = User(user_name=form.user_name.data, title=form.user_name.data, email=form.real_email.data,
                             verification_token=verification_token, instance_id=1, ip_address=ip_address(),
                             banned=user_ip_banned() or user_cookie_banned())
