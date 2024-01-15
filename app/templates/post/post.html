@@ -64,17 +64,10 @@
                     <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].score <= -10 %}low_score{% endif %}
                         {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}">
                         <div class="limit_height">
-                            <div class="voting_buttons">
+                            <div class="voting_buttons hidable">
                                 {% with comment=comment['comment'] %}
                                     {% include "post/_voting_buttons.html" %}
                                 {% endwith %}
-                            </div>
-                            <div class="hide_button">
-                                {% if comment['comment'].score <= -10 %}
-                                    <a href='#'>[+] show</a>
-                                {% else %}
-                                    <a href='#'>[-] hide</a>
-                                {% endif %}
                             </div>
                             <div class="comment_author">
                                 {% if comment['comment'].author.deleted %}
@@ -100,6 +93,13 @@
                                 {% endif %}
                                 {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter" class="small">[OP]</span>{% endif %}
                                 <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
+                                <div class="hide_button">
+                                    {% if comment['comment'].score <= -10 %}
+                                        <a href='#'><span class="fe fe-expand"></span></a>
+                                    {% else %}
+                                        <a href='#'><span class="fe fe-collapse"></span></a>
+                                    {% endif %}
+                                </div>
                                 {% if comment['comment'].reports and current_user.is_authenticated and post.community.is_moderator(current_user)%}
                                     <span class="red fe fe-report" title="{{ _('Reported. Check comment for issues.') }}"></span>
                                 {% endif %}

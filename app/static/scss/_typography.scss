@@ -230,6 +230,14 @@
   content: "\e99a";
 }
 
+.fe-collapse::before {
+  content: "\e995";
+}
+
+.fe-expand::before {
+  content: "\e98e";
+}
+
 h1 {
   .fe-bell, .fe-no-bell {
     font-size: 18px;

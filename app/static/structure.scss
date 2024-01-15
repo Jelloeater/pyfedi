@@ -425,16 +425,14 @@ nav, etc which are used site-wide */
       border-radius: 50%;
       vertical-align: bottom;
     }
-  }
 
-  .hide_button {
-    float: right;
-    display: block;
-    width: 68px;
-    padding: 5px;
+    .hide_button {
+      display: inline-block;
 
-    a {
-      text-decoration: none;
+      a {
+        text-decoration: none;
+        padding: 5px;
+      }
     }
   }
 

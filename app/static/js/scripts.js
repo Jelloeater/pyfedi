@@ -249,29 +249,29 @@ function setupPostTypeTabs() {
 
 
 function setupHideButtons() {
-    const hideEls = document.querySelectorAll('.hide_button');
-    hideEls.forEach(hideEl => {
+    const hideEls2 = document.querySelectorAll('.hide_button a');
+    hideEls2.forEach(hideEl => {
         let isHidden = false;
 
         hideEl.addEventListener('click', event => {
             event.preventDefault();
-            const parentElement = hideEl.parentElement;
+            const parentElement = hideEl.parentElement.parentElement;
             const hidables = parentElement.querySelectorAll('.hidable');
 
             hidables.forEach(hidable => {
                 hidable.style.display = isHidden ? 'block' : 'none';
             });
 
-            const moreHidables = parentElement.parentElement.querySelectorAll('.hidable');
+            const moreHidables = parentElement.parentElement.parentElement.querySelectorAll('.hidable');
             moreHidables.forEach(hidable => {
                 hidable.style.display = isHidden ? 'block' : 'none';
             });
 
             // Toggle the content of hideEl
             if (isHidden) {
-                hideEl.innerHTML = "<a href='#'>[-] hide</a>";
+                hideEl.innerHTML = "<a href='#'><span class='fe fe-collapse'></span></a>";
             } else {
-                hideEl.innerHTML = "<a href='#'>[+] show</a>";
+                hideEl.innerHTML = "<a href='#'><span class='fe fe-expand'></span></a>";
             }
 
             isHidden = !isHidden; // Toggle the state
@@ -288,11 +288,11 @@ function setupHideButtons() {
 
           if (commentDiv) {
             // Access the inner div with class "hide_button" inside the outer div
-            const hideButton = commentDiv.getElementsByClassName("hide_button")[0];
+            const hideButton = commentDiv.querySelectorAll(".hide_button a");
 
             if (hideButton) {
-              // Programmatically trigger a click event on the "hide_button" div
-              hideButton.click();
+              // Programmatically trigger a click event on the "hide_button" anchor
+              hideButton[0].click();
             } else {
               console.log(`"hide_button" not found in ${divId}`);
             }

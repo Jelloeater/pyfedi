@@ -258,6 +258,14 @@ nav, etc which are used site-wide */
   content: "\e99a";
 }
 
+.fe-collapse::before {
+  content: "\e995";
+}
+
+.fe-expand::before {
+  content: "\e98e";
+}
+
 h1 .fe-bell, h1 .fe-no-bell {
   font-size: 18px;
   top: -5px;
@@ -763,14 +771,12 @@ fieldset legend {
   border-radius: 50%;
   vertical-align: bottom;
 }
-.comment .hide_button {
-  float: right;
-  display: block;
-  width: 68px;
-  padding: 5px;
+.comment .comment_author .hide_button {
+  display: inline-block;
 }
-.comment .hide_button a {
+.comment .comment_author .hide_button a {
   text-decoration: none;
+  padding: 5px;
 }
 .comment .comment_actions {
   margin-top: -10px;
