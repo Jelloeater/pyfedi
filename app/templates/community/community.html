@@ -147,6 +147,25 @@
             </div>
         </div>
         {% endif %}
+        {% if related_communities %}
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('Related communities') }}</h2>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for community in related_communities %}
+                        <li class="list-group-item">
+                            <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />
+                                {{ community.display_name() }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p class="mt-4"><a class="btn btn-primary" href="/communities">{{ _('Explore communities') }}</a></p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 <div class="row">

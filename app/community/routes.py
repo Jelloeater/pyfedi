@@ -137,6 +137,12 @@ def show_community(community: Community):
         posts = posts.order_by(desc(Post.last_active))
     posts = posts.paginate(page=page, per_page=100, error_out=False)
 
+    if community.topic_id:
+        related_communities = Community.query.filter_by(topic_id=community.topic_id).\
+            filter(Community.id != community.id, Community.banned == False).order_by(Community.name)
+    else:
+        related_communities = []
+
     description = shorten_string(community.description, 150) if community.description else None
     og_image = community.image.source_url if community.image_id else None
 
@@ -149,7 +155,7 @@ def show_community(community: Community):
                            is_moderator=is_moderator, is_owner=is_owner, is_admin=is_admin, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
-                           etag=f"{community.id}{sort}_{hash(community.last_active)}",
+                           etag=f"{community.id}{sort}_{hash(community.last_active)}", related_communities=related_communities,
                            next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
