@@ -343,6 +343,7 @@ class User(UserMixin, db.Model):
     ip_address = db.Column(db.String(50))
     instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
     reports = db.Column(db.Integer, default=0)  # how many times this user has been reported.
+    default_sort = db.Column(db.String(25), default='hot')
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")

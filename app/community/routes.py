@@ -101,7 +101,7 @@ def show_community(community: Community):
         abort(404)
 
     page = request.args.get('page', 1, type=int)
-    sort = request.args.get('sort', '')
+    sort = request.args.get('sort', '' if current_user.is_anonymous else current_user.default_sort)
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{community.id}{sort}_{hash(community.last_active)}"
@@ -133,6 +133,8 @@ def show_community(community: Community):
         posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=7)).order_by(desc(Post.score))
     elif sort == 'new':
         posts = posts.order_by(desc(Post.posted_at))
+    elif sort == 'active':
+        posts = posts.order_by(desc(Post.last_active))
     posts = posts.paginate(page=page, per_page=100, error_out=False)
 
     description = shorten_string(community.description, 150) if community.description else None
@@ -151,7 +153,7 @@ def show_community(community: Community):
                            next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()))
+                           joined_communities=joined_communities(current_user.get_id()), sort=sort)
 
 
 # RSS feed of the community

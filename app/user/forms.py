@@ -2,7 +2,7 @@ from flask import session
 from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, EmailField, TextAreaField, FileField, \
-    RadioField, DateField
+    RadioField, DateField, SelectField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Optional
 from flask_babel import _, lazy_gettext as _l
 
@@ -35,6 +35,12 @@ class SettingsForm(FlaskForm):
     indexable = BooleanField(_l('Allow search engines to index this profile'))
     manually_approves_followers = BooleanField(_l('Manually approve followers'))
     import_file = FileField(_('Import community subscriptions and user blocks from Lemmy'))
+    sorts = [('hot', _l('Hot')),
+                      ('top', _l('Top')),
+                      ('new', _l('New')),
+                      ('active', _l('Active')),
+                      ]
+    default_sort = SelectField(_l('By default, sort posts by'), choices=sorts, validators=[DataRequired()], coerce=str)
     submit = SubmitField(_l('Save settings'))
 
 

@@ -25,7 +25,7 @@ import pytesseract
 @bp.route('/', methods=['HEAD', 'GET', 'POST'])
 @bp.route('/home', methods=['GET', 'POST'])
 @bp.route('/home/<sort>', methods=['GET', 'POST'])
-def index(sort='hot'):
+def index(sort=None):
     if 'application/ld+json' in request.headers.get('Accept', '') or 'application/activity+json' in request.headers.get(
             'Accept', ''):
         return activitypub_application()
@@ -35,21 +35,24 @@ def index(sort='hot'):
 
 @bp.route('/popular', methods=['GET'])
 @bp.route('/popular/<sort>', methods=['GET'])
-def popular(sort='hot'):
+def popular(sort=None):
     return home_page('popular', sort)
 
 
 @bp.route('/all', methods=['GET'])
 @bp.route('/all/<sort>', methods=['GET'])
-def all_posts(sort='hot'):
+def all_posts(sort=None):
     return home_page('all', sort)
 
 
-def home_page(type, sort='hot'):
+def home_page(type, sort):
     verification_warning()
 
+    if sort is None:
+        sort = current_user.default_sort if current_user.is_authenticated else 'hot'
+
     # If nothing has changed since their last visit, return HTTP 304
-    current_etag = f"{type}_{hash(str(g.site.last_active))}"
+    current_etag = f"{type}_{sort}_{hash(str(g.site.last_active))}"
     if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
 
@@ -92,6 +95,8 @@ def home_page(type, sort='hot'):
         posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=1)).order_by(desc(Post.score))
     elif sort == 'new':
         posts = posts.order_by(desc(Post.posted_at))
+    elif sort == 'active':
+        posts = posts.order_by(desc(Post.last_active))
 
     # Pagination
     posts = posts.paginate(page=page, per_page=100, error_out=False)
@@ -111,7 +116,7 @@ def home_page(type, sort='hot'):
                            POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
-                           etag=f"{type}_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
+                           etag=f"{type}_{sort}_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
                            rss_feed_name=f"Posts on " + g.site.name,
                            title=f"{g.site.name} - {g.site.description}",
