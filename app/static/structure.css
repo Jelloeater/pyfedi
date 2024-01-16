@@ -666,6 +666,56 @@ fieldset legend {
   height: auto;
 }
 
+.voting_buttons_new {
+  display: inline-block;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.voting_buttons_new .upvote_button, .voting_buttons_new .downvote_button {
+  display: inline-block;
+  padding-left: 5px;
+  padding-right: 5px;
+  position: relative;
+  cursor: pointer;
+  color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1));
+}
+.voting_buttons_new .upvote_button.digits_4, .voting_buttons_new .downvote_button.digits_4 {
+  width: 68px;
+}
+.voting_buttons_new .upvote_button.digits_5, .voting_buttons_new .downvote_button.digits_5 {
+  width: 76px;
+}
+.voting_buttons_new .upvote_button.digits_6, .voting_buttons_new .downvote_button.digits_6 {
+  width: 84px;
+}
+.voting_buttons_new .upvote_button.voted_up, .voting_buttons_new .downvote_button.voted_up {
+  color: green;
+  font-weight: bold;
+}
+.voting_buttons_new .upvote_button.voted_down, .voting_buttons_new .downvote_button.voted_down {
+  color: darkred;
+  font-weight: bold;
+}
+.voting_buttons_new .htmx-indicator {
+  position: absolute;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  top: 0;
+}
+.voting_buttons_new .htmx-request .htmx-indicator {
+  display: inline;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  right: 14px;
+  top: 5px;
+  opacity: 1 !important;
+}
+.voting_buttons_new .htmx-request.htmx-indicator {
+  display: inline;
+}
+
 .voting_buttons {
   float: right;
   display: block;
@@ -766,15 +816,13 @@ fieldset legend {
   }
 }
 .comment .comment_author img {
-  width: 20px;
-  height: 20px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
-  vertical-align: bottom;
+  vertical-align: middle;
 }
-.comment .comment_author .hide_button {
-  display: inline-block;
-}
-.comment .comment_author .hide_button a {
+.comment .comment_author a.unhide {
+  display: none;
   text-decoration: none;
   padding: 5px;
 }
@@ -784,6 +832,13 @@ fieldset legend {
 }
 .comment .comment_actions a {
   text-decoration: none;
+}
+.comment .comment_actions .hide_button {
+  display: inline-block;
+}
+.comment .comment_actions .hide_button a {
+  padding-left: 5px;
+  padding-right: 5px;
 }
 .comment .replies {
   margin-top: 15px;

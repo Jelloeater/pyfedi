@@ -256,25 +256,26 @@ function setupHideButtons() {
         hideEl.addEventListener('click', event => {
             event.preventDefault();
             const parentElement = hideEl.parentElement.parentElement;
-            const hidables = parentElement.querySelectorAll('.hidable');
+            const hidables = parentElement.parentElement.querySelectorAll('.hidable');
 
             hidables.forEach(hidable => {
-                hidable.style.display = isHidden ? 'block' : 'none';
+                hidable.style.display = 'none';
             });
 
-            const moreHidables = parentElement.parentElement.parentElement.querySelectorAll('.hidable');
-            moreHidables.forEach(hidable => {
-                hidable.style.display = isHidden ? 'block' : 'none';
+            const unhide = parentElement.parentElement.querySelectorAll('.unhide');
+            unhide[0].style.display = 'inline-block';
+        });
+    });
+
+    const showEls = document.querySelectorAll('a.unhide');
+    showEls.forEach(showEl => {
+        showEl.addEventListener('click', event => {
+            event.preventDefault();
+            showEl.style.display = 'none';
+            const hidables = showEl.parentElement.parentElement.parentElement.querySelectorAll('.hidable');
+            hidables.forEach(hidable => {
+                hidable.style.display = '';
             });
-
-            // Toggle the content of hideEl
-            if (isHidden) {
-                hideEl.innerHTML = "<a href='#'><span class='fe fe-collapse'></span></a>";
-            } else {
-                hideEl.innerHTML = "<a href='#'><span class='fe fe-expand'></span></a>";
-            }
-
-            isHidden = !isHidden; // Toggle the state
         });
     });
 

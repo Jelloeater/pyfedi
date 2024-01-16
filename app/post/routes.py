@@ -343,7 +343,7 @@ def comment_vote(comment_id, vote_direction):
     db.session.commit()
 
     comment.post.flush_cache()
-    return render_template('post/_voting_buttons.html', comment=comment,
+    return render_template('post/_comment_voting_buttons.html', comment=comment,
                            upvoted_class=upvoted_class,
                            downvoted_class=downvoted_class, community=comment.community)
 
