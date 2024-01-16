@@ -72,14 +72,14 @@
                     <tr class="">
                         <td width="70">{% if current_user.is_authenticated %}
                                 {% if community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER] %}
-                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe">{{ _('Leave') }}</a>
+                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/unsubscribe" rel="nofollow">{{ _('Leave') }}</a>
                                 {% elif community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
-                                    <a class="btn btn-outline-secondary btn-sm" href="/community/{{ community.link() }}/unsubscribe">{{ _('Pending') }}</a>
+                                    <a class="btn btn-outline-secondary btn-sm" href="/community/{{ community.link() }}/unsubscribe" rel="nofollow">{{ _('Pending') }}</a>
                                 {% else %}
-                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
+                                    <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe" rel="nofollow">{{ _('Join') }}</a>
                                 {% endif %}
                             {% else %}
-                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
+                                <a class="btn btn-primary btn-sm" href="/community/{{ community.link() }}/subscribe" rel="nofollow">{{ _('Join') }}</a>
                             {% endif %}</td>
                         {% if not low_bandwidth %}
                             <td width="46">

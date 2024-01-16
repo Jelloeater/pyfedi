@@ -95,11 +95,11 @@
                     </div>
                     <div class="col-6">
                         {% if current_user.is_authenticated and community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER] %}
-                            <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/unsubscribe">{{ _('Leave') }}</a>
+                            <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/unsubscribe" rel="nofollow">{{ _('Leave') }}</a>
                         {% elif current_user.is_authenticated and community_membership(current_user, community) == SUBSCRIPTION_PENDING %}
-                            <a class="w-100 btn btn-outline-secondary" href="/community/{{ community.link() }}/unsubscribe">{{ _('Pending') }}</a>
+                            <a class="w-100 btn btn-outline-secondary" href="/community/{{ community.link() }}/unsubscribe" rel="nofollow">{{ _('Pending') }}</a>
                         {% else %}
-                            <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/subscribe">{{ _('Join') }}</a>
+                            <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/subscribe" rel="nofollow">{{ _('Join') }}</a>
                         {% endif %}
                     </div>
                 </div>
