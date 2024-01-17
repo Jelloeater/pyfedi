@@ -309,13 +309,10 @@ nav, etc which are used site-wide */
 
 .voting_buttons_new {
   display: inline-block;
-  padding-left: 5px;
-  padding-right: 5px;
 
   .upvote_button, .downvote_button {
     display: inline-block;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding: 5px 15px;
     position: relative;
     cursor: pointer;
     color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
@@ -340,6 +337,31 @@ nav, etc which are used site-wide */
       color: darkred;
       font-weight: bold;
     }
+  }
+
+  .upvote_button {
+    top: 1px;
+    @include breakpoint(laptop) {
+      padding-right: 5px;
+    }
+    .htmx-indicator {
+      left: 13px;
+      top: 7px;
+    }
+  }
+
+  .downvote_button {
+    top: 1px;
+    .htmx-indicator {
+      left: 12px;
+    }
+    @include breakpoint(laptop) {
+      padding-left: 5px;
+      .htmx-indicator {
+        left: 2px;
+      }
+    }
+
   }
 
   .htmx-indicator{
@@ -485,7 +507,9 @@ nav, etc which are used site-wide */
     a.unhide {
       display: none;
       text-decoration: none;
-      padding: 5px;
+      padding: 5px 15px;
+      position: relative;
+      top: 3px;
     }
   }
 
@@ -494,15 +518,21 @@ nav, etc which are used site-wide */
     position: relative;
     a {
       text-decoration: none;
+      padding: 5px 0;
     }
 
     .hide_button {
       display: inline-block;
 
       a {
-        padding-left: 5px;
-        padding-right: 5px;
+        padding: 5px 15px;
       }
+    }
+
+    .notif_toggle {
+      text-decoration: none;
+      font-size: 87%;
+      padding: 5px 15px;
     }
   }
 

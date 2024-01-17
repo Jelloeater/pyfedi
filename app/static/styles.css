@@ -625,7 +625,7 @@ nav.navbar {
   display: block;
   position: absolute;
   bottom: 0;
-  right: 48px;
+  right: -16px;
   width: 41px;
   text-decoration: none;
 }

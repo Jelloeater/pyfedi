@@ -668,13 +668,10 @@ fieldset legend {
 
 .voting_buttons_new {
   display: inline-block;
-  padding-left: 5px;
-  padding-right: 5px;
 }
 .voting_buttons_new .upvote_button, .voting_buttons_new .downvote_button {
   display: inline-block;
-  padding-left: 5px;
-  padding-right: 5px;
+  padding: 5px 15px;
   position: relative;
   cursor: pointer;
   color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1));
@@ -695,6 +692,32 @@ fieldset legend {
 .voting_buttons_new .upvote_button.voted_down, .voting_buttons_new .downvote_button.voted_down {
   color: darkred;
   font-weight: bold;
+}
+.voting_buttons_new .upvote_button {
+  top: 1px;
+}
+@media (min-width: 1280px) {
+  .voting_buttons_new .upvote_button {
+    padding-right: 5px;
+  }
+}
+.voting_buttons_new .upvote_button .htmx-indicator {
+  left: 13px;
+  top: 7px;
+}
+.voting_buttons_new .downvote_button {
+  top: 1px;
+}
+.voting_buttons_new .downvote_button .htmx-indicator {
+  left: 12px;
+}
+@media (min-width: 1280px) {
+  .voting_buttons_new .downvote_button {
+    padding-left: 5px;
+  }
+  .voting_buttons_new .downvote_button .htmx-indicator {
+    left: 2px;
+  }
 }
 .voting_buttons_new .htmx-indicator {
   position: absolute;
@@ -824,7 +847,9 @@ fieldset legend {
 .comment .comment_author a.unhide {
   display: none;
   text-decoration: none;
-  padding: 5px;
+  padding: 5px 15px;
+  position: relative;
+  top: 3px;
 }
 .comment .comment_actions {
   margin-top: -10px;
@@ -832,13 +857,18 @@ fieldset legend {
 }
 .comment .comment_actions a {
   text-decoration: none;
+  padding: 5px 0;
 }
 .comment .comment_actions .hide_button {
   display: inline-block;
 }
 .comment .comment_actions .hide_button a {
-  padding-left: 5px;
-  padding-right: 5px;
+  padding: 5px 15px;
+}
+.comment .comment_actions .notif_toggle {
+  text-decoration: none;
+  font-size: 87%;
+  padding: 5px 15px;
 }
 .comment .replies {
   margin-top: 15px;
