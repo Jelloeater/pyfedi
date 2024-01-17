@@ -554,7 +554,7 @@ def make_image_sizes_async(file_id, thumbnail_width, medium_width, directory):
 
                     # Alert regarding fascist meme content
                     try:
-                        image_text = pytesseract.image_to_string(Image.open(final_place).convert('L'))
+                        image_text = pytesseract.image_to_string(Image.open(BytesIO(source_image)).convert('L'))
                     except FileNotFoundError as e:
                         image_text = ''
                     if 'Anonymous' in image_text and ('No.' in image_text or ' N0' in image_text):   # chan posts usually contain the text 'Anonymous' and ' No.12345'
@@ -1162,6 +1162,22 @@ def undo_vote(activity_log, comment, post, target_ap_id, user):
             activity_log.exception_message = 'Activity about local content which is already present'
             activity_log.result = 'ignored'
     return post
+
+
+# given an activitypub id for a post or comment, retrieve it and all it's parent objects
+def backfill_from_ap_id(ap_id: str):
+    if ap_id.startswith(f"https://{current_app.config['SERVER_NAME']}"):
+        ...
+    else:
+        try:
+            activity_data = get_request(ap_id, headers={'Accept': 'application/activity+json'})
+        except requests.exceptions.ReadTimeout:
+            time.sleep(randint(3, 10))
+            activity_data = get_request(ap_id, headers={'Accept': 'application/activity+json'})
+        if activity_data.status_code == 200:
+            actor_json = activity_data.json()
+            activity_data.close()
+            return actor_json_to_model(actor_json, address, server)
 
 
 def lemmy_site_data():
