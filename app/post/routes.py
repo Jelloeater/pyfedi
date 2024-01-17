@@ -673,25 +673,43 @@ def post_delete(post_id: int):
         db.session.commit()
         flash(_('Post deleted.'))
 
-        if community.is_local():
-            delete_activity = {
-              '@context': default_context(),
-              'actor': current_user.profile_id(),
-              'to': [
-                'https://www.w3.org/ns/activitystreams#Public'
-              ],
-              'object': post.ap_id,
-              'type': 'Delete',
-              'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
-              'audience': community.profile_id(),
-              'cc': [
-                community.profile_id()
-              ]
+        delete_json = {
+            'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
+            'type': 'Delete',
+            'actor': current_user.profile_id(),
+            'audience': post.community.profile_id(),
+            'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
+            'published': ap_datetime(utcnow()),
+            'cc': [
+                current_user.followers_url()
+            ],
+            'object': post.ap_id,
+        }
+
+        if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
+            success = post_request(post.community.ap_inbox_url, delete_json, current_user.private_key,
+                                   current_user.ap_profile_id + '#main-key')
+            if not success:
+                flash('Failed to send delete to remote server', 'error')
+        else:  # local community - send it to followers on remote instances
+            announce = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                "type": 'Announce',
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "actor": post.community.ap_profile_id,
+                "cc": [
+                    post.community.ap_followers_url
+                ],
+                '@context': default_context(),
+                'object': delete_json
             }
 
             for instance in post.community.following_instances():
-                if instance.inbox and not instance_banned(instance.domain):
-                    send_to_remote_instance(instance.id, post.community.id, delete_activity)
+                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(
+                        instance.domain):
+                    send_to_remote_instance(instance.id, post.community.id, announce)
 
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
 
@@ -987,7 +1005,44 @@ def post_reply_delete(post_id: int, comment_id: int):
         db.session.commit()
         post.flush_cache()
         flash(_('Comment deleted.'))
-        # todo: federate delete
+        # federate delete
+        delete_json = {
+            'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
+            'type': 'Delete',
+            'actor': current_user.profile_id(),
+            'audience': post.community.profile_id(),
+            'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
+            'published': ap_datetime(utcnow()),
+            'cc': [
+                current_user.followers_url()
+            ],
+            'object': post_reply.ap_id,
+        }
+
+        if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
+            success = post_request(post.community.ap_inbox_url, delete_json, current_user.private_key,
+                                   current_user.ap_profile_id + '#main-key')
+            if not success:
+                flash('Failed to send delete to remote server', 'error')
+        else:  # local community - send it to followers on remote instances
+            announce = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                "type": 'Announce',
+                "to": [
+                    "https://www.w3.org/ns/activitystreams#Public"
+                ],
+                "actor": post.community.ap_profile_id,
+                "cc": [
+                    post.community.ap_followers_url
+                ],
+                '@context': default_context(),
+                'object': delete_json
+            }
+
+            for instance in post.community.following_instances():
+                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                    send_to_remote_instance(instance.id, post.community.id, announce)
+
     return redirect(url_for('activitypub.post_ap', post_id=post.id))
 
 
