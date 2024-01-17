@@ -360,7 +360,7 @@ def continue_discussion(post_id, comment_id):
 
     return render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
                            is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=True, moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()))
+                           joined_communities=joined_communities(current_user.get_id()), community=post.community)
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
