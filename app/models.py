@@ -368,7 +368,7 @@ class User(UserMixin, db.Model):
     roles = db.relationship('Role', secondary=user_role, lazy='dynamic', cascade="all, delete")
 
     def __repr__(self):
-        return '<User {}>'.format(self.user_name)
+        return '<User {}_{}>'.format(self.user_name, self.id)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
