@@ -908,12 +908,19 @@ def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id
 def create_post_reply(activity_log: ActivityPubLog, community: Community, in_reply_to, request_json: dict, user: User, announce_id=None) -> Union[Post, None]:
     post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
     if post_id or parent_comment_id or root_id:
+        # set depth to +1 of the parent depth
+        if parent_comment_id:
+            parent_comment = PostReply.query.get(parent_comment_id)
+            depth = parent_comment.depth + 1
+        else:
+            depth = 0
         post_reply = PostReply(user_id=user.id, community_id=community.id,
                                post_id=post_id, parent_id=parent_comment_id,
                                root_id=root_id,
                                nsfw=community.nsfw,
                                nsfl=community.nsfl,
                                up_votes=1,
+                               depth=depth,
                                score=instance_weight(user.ap_domain),
                                ap_id=request_json['object']['id'],
                                ap_create_id=request_json['id'],
@@ -956,6 +963,7 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
                 community.post_reply_count += 1
                 community.last_active = post.last_active = utcnow()
                 activity_log.result = 'success'
+                post_reply.ranking = confidence(post_reply.up_votes, post_reply.down_votes)
                 db.session.commit()
 
                 # send notification to the post/comment being replied to
