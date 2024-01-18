@@ -4,7 +4,7 @@ from flask_babel import get_locale
 
 from app import create_app, db, cli
 import os, click
-from flask import session, g, json
+from flask import session, g, json, request
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
 from app.models import Site
 from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership, \
@@ -51,8 +51,9 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    response.headers['Content-Security-Policy'] = f"script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'nonce-{session['nonce']}'"
-    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
+    if 'auth/register' not in request.path:
+        response.headers['Content-Security-Policy'] = f"script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'nonce-{session['nonce']}'"
+        response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
     return response
