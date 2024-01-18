@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import os
 from datetime import timedelta
 from random import randint
@@ -432,7 +433,7 @@ def actor_json_to_model(activity_json, address, server):
 
 def post_json_to_model(post_json, user, community) -> Post:
     post = Post(user_id=user.id, community_id=community.id,
-                title=post_json['name'].replace('&amp;', '&'),
+                title=html.unescape(post_json['name']),
                 comments_enabled=post_json['commentsEnabled'],
                 sticky=post_json['stickied'] if 'stickied' in post_json else False,
                 nsfw=post_json['sensitive'],
@@ -987,7 +988,7 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
 
 def create_post(activity_log: ActivityPubLog, community: Community, request_json: dict, user: User, announce_id=None) -> Union[Post, None]:
     post = Post(user_id=user.id, community_id=community.id,
-                title=request_json['object']['name'].replace('&amp;', '&'),
+                title=html.unescape(request_json['object']['name']),
                 comments_enabled=request_json['object']['commentsEnabled'],
                 sticky=request_json['object']['stickied'] if 'stickied' in request_json['object'] else False,
                 nsfw=request_json['object']['sensitive'],
