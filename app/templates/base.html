@@ -97,7 +97,7 @@
         <div class="container-lg">
             <a class="navbar-brand" href="/">{% if not low_bandwidth %}<img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{% endif %}{{ g.site.name }}</a>
             {% if current_user.is_authenticated %}
-                <a class="nav-link d-lg-none" href="/notifications">
+                <a class="nav-link d-lg-none" href="/notifications" aria-label="{{ _('Notifications') }}">
                     {% if current_user.unread_notifications %}
                     <span class="fe fe-bell red"></span> <span class="red">{{ current_user.unread_notifications }}</span>
                     {% else %}
@@ -172,7 +172,7 @@
                             {% endif %}
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
                             <li class="nav-item d-none d-md-inline-block">
-                                <a class="nav-link" href="/notifications">
+                                <a class="nav-link" href="/notifications" aria-label="{{ _('Notifications') }}">
                                     {% if current_user.unread_notifications %}
                                     <span class="fe fe-bell red"></span> <span class="red">{{ current_user.unread_notifications }}</span>
                                     {% else %}
@@ -181,8 +181,8 @@
                                 </a>
                             </li>
                         {% endif %}
-                        <li class="nav-item"><a class="nav-link" id="light_mode"><span class="fe fe-sun" title="Light mode"></span></a></li>
-                        <li class="nav-item"><a class="nav-link" id="dark_mode"><span class="fe fe-moon" title="Dark mode"></span></a></li>
+                        <li class="nav-item"><a class="nav-link" id="light_mode" aria-label="{{ _('Light mode') }}"><span class="fe fe-sun" title="{{ _('Light mode') }}"></span></a></li>
+                        <li class="nav-item"><a class="nav-link" id="dark_mode" aria-label="{{ _('Dark mode') }}"><span class="fe fe-moon" title="{{ _('Dark mode') }}"></span></a></li>
                     </ul>
             </div>
 
