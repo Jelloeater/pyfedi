@@ -876,7 +876,7 @@ class PostReplyVote(db.Model):
 class ActivityPubLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     direction = db.Column(db.String(3))         # 'in' or 'out'
-    activity_id = db.Column(db.String(100), index=True)
+    activity_id = db.Column(db.String(256), index=True)
     activity_type = db.Column(db.String(50))    # e.g. 'Follow', 'Accept', 'Like', etc
     activity_json = db.Column(db.Text)          # the full json of the activity
     result = db.Column(db.String(10))           # 'success' or 'failure'

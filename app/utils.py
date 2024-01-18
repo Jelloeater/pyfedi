@@ -609,6 +609,10 @@ def _confidence(ups, downs):
 
 
 def confidence(ups, downs) -> float:
+    if ups is None:
+        ups = 0
+    if downs is None:
+        downs = 0
     if ups + downs == 0:
         return 0.0
     else:
