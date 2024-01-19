@@ -78,7 +78,7 @@ def add_remote():
     form = SearchRemoteCommunity()
     new_community = None
     if form.validate_on_submit():
-        address = form.address.data.strip()
+        address = form.address.data.strip().lower()
         if address.startswith('!') and '@' in address:
             new_community = search_for_community(address)
         elif address.startswith('@') and '@' in address[1:]:
