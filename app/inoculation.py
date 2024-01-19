@@ -120,19 +120,19 @@ inoculation = [
         'description': '',
         'links': [
             {
-                'title': 'https://utopia.ut.edu/FakeNews/factcheck',
+                'title': 'How to fact check',
                 'href': 'https://utopia.ut.edu/FakeNews/factcheck'
             },
             {
-                'title': 'https://toolbox.google.com/factcheck/explorer',
+                'title': 'Google Fact Check Tools',
                 'href': 'https://toolbox.google.com/factcheck/explorer'
             },
             {
-                'title': 'https://www.factcheck.org/',
+                'title': 'Fact checking current news',
                 'href': 'https://www.factcheck.org/'
             },
             {
-                'title': 'https://newslit.org/educators/resources/is-it-legit/',
+                'title': 'Five steps for vetting a news source',
                 'href': 'https://newslit.org/educators/resources/is-it-legit/'
             },
             {
