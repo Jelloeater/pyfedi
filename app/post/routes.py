@@ -1,4 +1,5 @@
 from datetime import datetime
+from random import randint
 
 from flask import redirect, url_for, flash, current_app, abort, request, g, make_response
 from flask_login import login_user, logout_user, current_user, login_required
@@ -9,6 +10,7 @@ from app import db, constants
 from app.activitypub.signature import HttpSignature, post_request
 from app.activitypub.util import default_context
 from app.community.util import save_post, send_to_remote_instance
+from app.inoculation import inoculation
 from app.post.forms import NewReplyForm, ReportPostForm, MeaCulpaForm
 from app.community.forms import CreatePostForm
 from app.post.util import post_replies, get_comment_branch, post_reply_count
@@ -174,7 +176,8 @@ def show_post(post_id: int):
                            etag=f"{post.id}{sort}_{hash(post.last_active)}", markdown_editor=True,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id())
+                           joined_communities=joined_communities(current_user.get_id()),
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)]
                            )
 
 
@@ -360,7 +363,8 @@ def continue_discussion(post_id, comment_id):
 
     return render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
                            is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=True, moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()), community=post.community)
+                           joined_communities=joined_communities(current_user.get_id()), community=post.community,
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)])
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
@@ -518,7 +522,8 @@ def add_reply(post_id: int, comment_id: int):
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
                                is_moderator=is_moderator, form=form, comment=in_reply_to, markdown_editor=True,
                                moderating_communities=moderating_communities(current_user.get_id()),
-                               joined_communities = joined_communities(current_user.id))
+                               joined_communities = joined_communities(current_user.id),
+                               inoculation=inoculation[randint(0, len(inoculation) - 1)])
 
 
 @bp.route('/post/<int:post_id>/options', methods=['GET'])
@@ -654,7 +659,8 @@ def post_edit(post_id: int):
             return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
                                    images_disabled=images_disabled, markdown_editor=True,
                                    moderating_communities=moderating_communities(current_user.get_id()),
-                                   joined_communities=joined_communities(current_user.get_id())
+                                   joined_communities=joined_communities(current_user.get_id()),
+                                   inoculation=inoculation[randint(0, len(inoculation) - 1)]
                                    )
     else:
         abort(401)
@@ -983,7 +989,8 @@ def post_reply_edit(post_id: int, comment_id: int):
             form.notify_author.data = post_reply.notify_author
             return render_template('post/post_reply_edit.html', title=_('Edit comment'), form=form, post=post, post_reply=post_reply,
                                    comment=comment, markdown_editor=True, moderating_communities=moderating_communities(current_user.get_id()),
-                                   joined_communities=joined_communities(current_user.get_id()))
+                                   joined_communities=joined_communities(current_user.get_id()),
+                                   inoculation=inoculation[randint(0, len(inoculation) - 1)])
     else:
         abort(401)
 

@@ -621,3 +621,7 @@ fieldset {
     font-style: italic;
   }
 }
+
+.list-group-item:first-child {
+  padding-top: 0;
+}

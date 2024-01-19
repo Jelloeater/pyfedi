@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from math import log
+from random import randint
 
 from sqlalchemy.sql.operators import or_
 
@@ -7,6 +8,7 @@ from app import db, cache
 from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
     SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
+from app.inoculation import inoculation
 from app.main import bp
 from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
 from flask_moment import moment
@@ -123,7 +125,8 @@ def home_page(type, sort):
                            description=shorten_string(markdown_to_text(g.site.sidebar), 150),
                            content_filters=content_filters, type=type, sort=sort,
                            moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()))
+                           joined_communities=joined_communities(current_user.get_id()),
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)])
 
 
 @bp.route('/topics', methods=['GET'])

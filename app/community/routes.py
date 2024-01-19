@@ -1,3 +1,5 @@
+from random import randint
+
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, g, json
 from flask_login import current_user, login_required
 from flask_babel import _
@@ -12,6 +14,7 @@ from app.community.util import search_for_community, community_url_exists, actor
     opengraph_parse, url_to_thumbnail_file, save_post, save_icon_file, save_banner_file, send_to_remote_instance
 from app.constants import SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER, POST_TYPE_LINK, POST_TYPE_ARTICLE, POST_TYPE_IMAGE, \
     SUBSCRIPTION_PENDING, SUBSCRIPTION_MODERATOR
+from app.inoculation import inoculation
 from app.models import User, Community, CommunityMember, CommunityJoinRequest, CommunityBan, Post, \
     File, PostVote, utcnow, Report, Notification, InstanceBlock, ActivityPubLog
 from app.community import bp
@@ -159,7 +162,8 @@ def show_community(community: Community):
                            next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()), sort=sort)
+                           joined_communities=joined_communities(current_user.get_id()), sort=sort,
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)])
 
 
 # RSS feed of the community
@@ -448,8 +452,9 @@ def add_post(actor):
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
                            images_disabled=images_disabled, markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
-                            moderating_communities=moderating_communities(current_user.get_id()),
-                            joined_communities = joined_communities(current_user.id)
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities = joined_communities(current_user.id,
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)])
     )
 
 

@@ -953,4 +953,8 @@ fieldset legend {
   font-style: italic;
 }
 
+.list-group-item:first-child {
+  padding-top: 0;
+}
+
 /*# sourceMappingURL=structure.css.map */

@@ -1,0 +1,20 @@
+{% if inoculation %}
+<div class="card mt-3">
+    <div class="card-header">
+         <h2 title="These links aim to encourage mindful and informed discussions rooted in awareness, critical thinking, and the well-being of the community.">{{ _('Rational Discourse Toolkit') }}</h2>
+    </div>
+    <div class="card-body">
+        <h4>{{ inoculation['title'] }}</h4>
+        {% if inoculation['description'] %}<p>{{ inoculation['description'] }}</p>{% endif %}
+        {% if inoculation['links'] %}
+        <ul class="list-group list-group-flush">
+            {% for link in inoculation['links'] %}
+                <li class="list-group-item">
+                    <a href="{{ link['href'] }}">{{ link['title'] }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
