@@ -388,8 +388,8 @@ function setupKeyboardShortcuts() {
                     didSomething = true;
                 }
             } else if (event.key === 'Enter') {
-                if(document.activeElement.classList.contains('downvote_button') || document.activeElement.classList.contains('upvote_button')) {
-                    document.activeElement.click();
+                if(currentPost) {
+                    currentPost.querySelector('.post_teaser_title_a').click();
                     didSomething = true;
                 }
             }
