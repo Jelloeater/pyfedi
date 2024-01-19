@@ -16,7 +16,7 @@
                                     <div class="thumbnail">
                                         {% if post.type == POST_TYPE_LINK %}
                                             <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" class="post_link" /></a>
+                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
                                         {% elif post.type == POST_TYPE_IMAGE %}
                                             {% if post.image_id %}
                                                 <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
@@ -34,7 +34,7 @@
                                     {% if post.url and 'youtube.com' in post.url %}
                                         <span class="fe fe-video"></span>
                                     {% endif %}
-                                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank">
+                                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" class="post_link">
                                         <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
                                     </a>
                                     <span class="domain_link">(<a href="/d/{{ post.domain_id }}">{{ post.domain.name }}</a>)</span>
