@@ -70,7 +70,7 @@
             </h1>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">
-                    <a href="{{ post.url }}" target="_blank"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                    <a href="{{ post.url }}" target="_blank" rel="nofollow ugc" class="post_link"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 </div>
             {% endif %}
@@ -81,7 +81,7 @@
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}</small>
             </p>
             {% if post.type == POST_TYPE_LINK %}
-                <p><small><a href="{{ post.url }}" rel="nofollow ugc" target="_blank">{{ post.url|shorten_url }}
+                <p><small><a href="{{ post.url }}" rel="nofollow ugc" target="_blank" class="post_link">{{ post.url|shorten_url }}
                 <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  /></a>
                 </small></p>
                 {% if 'youtube.com' in post.url %}
@@ -89,12 +89,12 @@
                 {% endif %}
             {% elif post.type == POST_TYPE_IMAGE %}
                 <div class="post_image">
-                    <a href="{{ post.image.view_url() }}" target="_blank"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                    <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
                             width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
                 </div>
             {% else %}
                 {% if post.image_id and not (post.url and 'youtube.com' in post.url) %}
-                        <a href="{{ post.image.view_url() }}" target="_blank"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                        <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 {% endif %}
             {% endif %}

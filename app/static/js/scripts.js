@@ -366,29 +366,45 @@ var currentPost;
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(event) {
         if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            var didSomething = false;
             if (event.key === 'a') {
                 if(currentPost) {
                     currentPost.querySelector('.upvote_button').click();
+                    didSomething = true;
                 }
             } else if (event.key === 'z') {
                 if(currentPost) {
                     currentPost.querySelector('.downvote_button').click();
+                    didSomething = true;
+                }
+            } else if (event.key === 'x') {
+                if(currentPost) {
+                    currentPost.querySelector('.preview_image').click();
+                    didSomething = true;
+                }
+            } else if (event.key === 'l') {
+                if(currentPost) {
+                    currentPost.querySelector('.post_link').click();
+                    didSomething = true;
                 }
             } else if (event.key === 'Enter') {
                 if(document.activeElement.classList.contains('downvote_button') || document.activeElement.classList.contains('upvote_button')) {
                     document.activeElement.click();
+                    didSomething = true;
                 }
             }
-            event.preventDefault();
+            if(didSomething) {
+                event.preventDefault();
+            }
         }
     });
 
-    const postTeasers = document.querySelectorAll('.post_teaser, .comments .comment');
-    postTeasers.forEach(postTeaser => {
-        postTeaser.addEventListener('mouseover', event => {
+    const votableElements = document.querySelectorAll('.post_teaser, .comments .comment, .post_type_image, .post_type_normal');
+    votableElements.forEach(votable => {
+        votable.addEventListener('mouseover', event => {
             currentPost = event.currentTarget;
         });
-        postTeaser.addEventListener('mouseout', event => {
+        votable.addEventListener('mouseout', event => {
             currentPost = null;
         });
     });
