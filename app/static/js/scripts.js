@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupTimeTracking();
     setupMobileNav();
     setupLightDark();
+    setupKeyboardShortcuts();
 });
 
 
@@ -358,6 +359,39 @@ function setupTimeTracking() {
           }
        });
     }
+}
+
+var currentPost;
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(event) {
+        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            if (event.key === 'a') {
+                if(currentPost) {
+                    currentPost.querySelector('.upvote_button').click();
+                }
+            } else if (event.key === 'z') {
+                if(currentPost) {
+                    currentPost.querySelector('.downvote_button').click();
+                }
+            } else if (event.key === 'Enter') {
+                if(document.activeElement.classList.contains('downvote_button') || document.activeElement.classList.contains('upvote_button')) {
+                    document.activeElement.click();
+                }
+            }
+            event.preventDefault();
+        }
+    });
+
+    const postTeasers = document.querySelectorAll('.post_teaser, .comments .comment');
+    postTeasers.forEach(postTeaser => {
+        postTeaser.addEventListener('mouseover', event => {
+            currentPost = event.currentTarget;
+        });
+        postTeaser.addEventListener('mouseout', event => {
+            currentPost = null;
+        });
+    });
 }
 
 function formatTime(seconds) {
