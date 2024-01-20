@@ -201,5 +201,9 @@
         {% include "_inoculation_links.html" %}
     </div>
 </div>
-
+<script nonce="{{ session['nonce'] }}">
+    window.addEventListener("load", function () {
+        currentPost = document.querySelector('.post_col');  // set the current post, so A and Z voting keys work when viewing a post page
+    });
+</script>
 {% endblock %}

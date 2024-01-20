@@ -642,6 +642,17 @@ nav.navbar {
   color: black;
 }
 
+.current_post {
+  background-color: aliceblue;
+}
+.current_post .replies {
+  background-color: var(--bs-body-bg);
+}
+
+[data-bs-theme=dark] .current_post {
+  background-color: #424549;
+}
+
 @media (min-width: 992px) {
   .h1, h1 {
     font-size: 2rem;

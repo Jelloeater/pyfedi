@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <h1>{{ _('Keyboard shortcuts') }}</h1>
+        <p>{{ _('Most shortcuts are the same as what reddit has.') }}</p>
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <h3>{{ _('Navigation') }}</h3>
+                <table class="table table-striped">
+                    <tr>
+                        <td>Show shortcut help</td>
+                        <td>Shift + ?</td>
+                    </tr>
+                    <tr>
+                        <td>Next post</td>
+                        <td>J</td>
+                    </tr>
+                    <tr>
+                        <td>Previous post</td>
+                        <td>K</td>
+                    </tr>
+                    <tr>
+                        <td>Open post</td>
+                        <td>Enter</td>
+                    </tr>
+                    <tr>
+                        <td>Open/close preview</td>
+                        <td>X</td>
+                    </tr>
+                    <tr>
+                        <td>Go to post link</td>
+                        <td>L</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-12 col-md-6">
+                <h3>{{ _('Action') }}</h3>
+                <table class="table table-striped">
+                    <tr>
+                        <td>{{ _('Upvote') }}</td>
+                        <td>A</td>
+                    </tr>
+                    <tr>
+                        <td>{{ _('Downvote') }}</td>
+                        <td>Z</td>
+                    </tr>
+                </table>
+            </div>
+            <p>{{ _('When viewing a list of posts actions like voting or going to a post depend on which is the current post. The current post is determined by hovering with the mouse or the J and K keys.') }}</p>
+        </div>
+
+    </div>
+
+    <div class="col-12 col-md-4 side_pane">
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('About %(site_name)s', site_name=g.site.name) }}</h2>
+            </div>
+            <div class="card-body">
+                <p><strong>{{ g.site.description|safe }}</strong></p>
+                <p>{{ g.site.sidebar|safe }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

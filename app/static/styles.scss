@@ -266,6 +266,17 @@ nav.navbar {
   color: black;
 }
 
+.current_post {
+  background-color: aliceblue;
+  .replies {
+    background-color: var(--bs-body-bg);
+  }
+}
+
+[data-bs-theme=dark] .current_post {
+  background-color: $super-dark-grey;
+}
+
 .h1, h1 {
   @include breakpoint(tablet) {
     font-size: 2rem;

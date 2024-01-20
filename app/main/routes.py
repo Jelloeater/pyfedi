@@ -215,6 +215,11 @@ def robots():
     return resp
 
 
+@bp.route('/keyboard_shortcuts')
+def keyboard_shortcuts():
+    return render_template('keyboard_shortcuts.html')
+
+
 @bp.route('/test')
 def test():
     return pytesseract.image_to_string(Image.open('test.png').convert('L'))

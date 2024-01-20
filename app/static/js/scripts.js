@@ -361,13 +361,17 @@ function setupTimeTracking() {
     }
 }
 
-var currentPost;
+var currentPost;                        // keep track of which is the current post. Set by mouse movements (see const votableElements) and by J and K key presses
+var showCurrentPost = false;    // when true, the currently selected post will be visibly different from the others. Set to true by J and K key presses
 
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(event) {
         if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
             var didSomething = false;
-            if (event.key === 'a') {
+            if(event.shiftKey && event.key === '?') {
+                location.href = '/keyboard_shortcuts';
+                didSomething = true;
+            } else if (event.key === 'a') {
                 if(currentPost) {
                     currentPost.querySelector('.upvote_button').click();
                     didSomething = true;
@@ -392,6 +396,48 @@ function setupKeyboardShortcuts() {
                     currentPost.querySelector('.post_teaser_title_a').click();
                     didSomething = true;
                 }
+            } else if (event.key === 'j') {
+                showCurrentPost = true;
+                if(currentPost) {
+                    if(currentPost.nextElementSibling) {
+                        var elementToRemoveClass = document.querySelector('.post_teaser.current_post');
+                        if(elementToRemoveClass)
+                            elementToRemoveClass.classList.remove('current_post');
+                        currentPost = currentPost.nextElementSibling;
+                        currentPost.classList.add('current_post');
+                    }
+                    didSomething = true;
+                }
+                else {
+                    currentPost = document.querySelector('.post_teaser');
+                    currentPost.classList.add('current_post');
+                }
+                // Check if the current post is out of the viewport
+                var rect = currentPost.getBoundingClientRect();
+                if (rect.bottom > window.innerHeight || rect.top < 0) {
+                    currentPost.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } else if (event.key === 'k') {
+                showCurrentPost = true;
+                if(currentPost) {
+                    if(currentPost.previousElementSibling) {
+                        var elementToRemoveClass = document.querySelector('.post_teaser.current_post');
+                        if(elementToRemoveClass)
+                            elementToRemoveClass.classList.remove('current_post');
+                        currentPost = currentPost.previousElementSibling;
+                        currentPost.classList.add('current_post');
+                    }
+                    didSomething = true;
+                }
+                else {
+                    currentPost = document.querySelector('.post_teaser');
+                    currentPost.classList.add('current_post');
+                }
+                // Check if the current post is out of the viewport
+                var rect = currentPost.getBoundingClientRect();
+                if (rect.bottom > window.innerHeight || rect.top < 0) {
+                    currentPost.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
             }
             if(didSomething) {
                 event.preventDefault();
@@ -399,13 +445,22 @@ function setupKeyboardShortcuts() {
         }
     });
 
-    const votableElements = document.querySelectorAll('.post_teaser, .comments .comment, .post_type_image, .post_type_normal');
+    const votableElements = document.querySelectorAll('.post_teaser, .post_type_image, .post_type_normal');
     votableElements.forEach(votable => {
         votable.addEventListener('mouseover', event => {
             currentPost = event.currentTarget;
+            if(showCurrentPost) {
+                var elementToRemoveClass = document.querySelector('.post_teaser.current_post');
+                elementToRemoveClass.classList.remove('current_post');
+                currentPost.classList.add('current_post');
+            }
         });
         votable.addEventListener('mouseout', event => {
-            currentPost = null;
+            //currentPost = null;
+            if(showCurrentPost) {
+                //var elementToRemoveClass = document.querySelector('.post_teaser.current_post');
+                //elementToRemoveClass.classList.remove('current_post');
+            }
         });
     });
 }
