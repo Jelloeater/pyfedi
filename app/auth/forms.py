@@ -16,7 +16,7 @@ class RegistrationForm(FlaskForm):
     user_name = StringField(_l('User name'), validators=[DataRequired()])
     email = HiddenField(_l('Email'))
     real_email = StringField(_l('Email'), validators=[DataRequired(), Email(), Length(min=5, max=255)])
-    password = PasswordField(_l('Password'), validators=[DataRequired(), Length(min=5, max=50)])
+    password = PasswordField(_l('Password'), validators=[DataRequired(), Length(min=8, max=50)])
     password2 = PasswordField(
         _l('Repeat password'), validators=[DataRequired(),
                                            EqualTo('password')])
@@ -27,18 +27,35 @@ class RegistrationForm(FlaskForm):
     def validate_real_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
-            raise ValidationError(_('An account with this email address already exists.'))
+            raise ValidationError(_l('An account with this email address already exists.'))
 
     def validate_user_name(self, user_name):
         user = User.query.filter_by(user_name=user_name.data, ap_id=None).first()
         if user is not None:
             if user.deleted:
-                raise ValidationError(_('This username was used in the past and cannot be reused.'))
+                raise ValidationError(_l('This username was used in the past and cannot be reused.'))
             else:
-                raise ValidationError(_('An account with this user name already exists.'))
+                raise ValidationError(_l('An account with this user name already exists.'))
         community = Community.query.filter_by(name=user_name.data).first()
         if community is not None:
-            raise ValidationError(_('A community with this name exists so it cannot be used for a user.'))
+            raise ValidationError(_l('A community with this name exists so it cannot be used for a user.'))
+        
+    def validate_password(self, password):
+        if not password.data:
+            return
+
+        first_char = password.data[0]    # the first character in the string
+
+        all_the_same = True
+        # Compare all characters to the first character
+        for char in password.data:
+            if char != first_char:
+                all_the_same = False
+        if all_the_same:
+            raise ValidationError(_l('This password is not secure.'))
+
+        if password.data == 'password' or password.data == '12345678' or password.data == '1234567890':
+            raise ValidationError(_l('This password is too common.'))
 
 
 class ResetPasswordRequestForm(FlaskForm):
