@@ -15,11 +15,11 @@
                 </div>
         {% endif %}
 {% else %}
-<div class="upvote_button digits_{{ digits(comment.up_votes) }} {{ upvoted_class }}">
+<div class="upvote_button digits_{{ digits(comment.up_votes) }} {{ upvoted_class }} redirect_login">
         <span class="fe fe-arrow-up"></span>
 </div>
 {{ comment.up_votes - comment.down_votes }}
-<div class="downvote_button digits_{{ digits(comment.down_votes) }} {{ downvoted_class }}">
+<div class="downvote_button digits_{{ digits(comment.down_votes) }} {{ downvoted_class }} redirect_login">
         <span class="fe fe-arrow-down"></span>
 </div>
 {% endif %}

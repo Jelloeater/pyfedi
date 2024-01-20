@@ -16,11 +16,11 @@
                 </div>
         {% endif %}
 {% else %}
-<div class="upvote_button digits_{{ digits(post.up_votes) }} {{ upvoted_class }}">
+<div class="upvote_button digits_{{ digits(post.up_votes) }} {{ upvoted_class }} redirect_login">
         <span class="fe fe-arrow-up"></span>
         {{ shorten_number(post.up_votes) }}
 </div>
-<div class="downvote_button digits_{{ digits(post.down_votes) }} {{ downvoted_class }}">
+<div class="downvote_button digits_{{ digits(post.down_votes) }} {{ downvoted_class }} redirect_login">
         <span class="fe fe-arrow-down"></span>
         {{ shorten_number(post.down_votes) }}
 </div>

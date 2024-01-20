@@ -151,6 +151,15 @@ function setupConfirmFirst() {
             return false;
         });
     })
+
+    const redirect_login = document.querySelectorAll('.redirect_login');
+    redirect_login.forEach(element => {
+        element.addEventListener("click", function(event) {
+            location.href = '/auth/login';
+            event.preventDefault();
+            return false;
+        });
+    });
 }
 
 function setupSubmitOnInputChange() {
