@@ -12,8 +12,16 @@
             {% endif %}
             <div class="masonry_thumb">
                 {% if post.type == POST_TYPE_LINK %}
-                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
-                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                    {% if post.image.thumbnail_url() %}
+                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
+                           alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                    {% elif post.image.source_url %}
+                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.source_url }}"
+                           alt="{{ post.title }}" loading="lazy" /></a>
+                    {% else %}
+                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.url }}"
+                           alt="{{ post.title }}" loading="lazy" /></a>
+                    {% endif %}
                 {% elif post.type == POST_TYPE_IMAGE %}
                         <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
