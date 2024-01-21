@@ -15,7 +15,7 @@
         {{ _('Active') }}
     </a>
 </div>
-{% if post_layout != '' %}
+{% if post_layout != '' and post_layout is not none %}
 <div class="btn-group mt-1 mb-2 layout_switcher">
     <a href="?layout=list" class="btn {{ 'btn-primary' if post_layout == '' or post_layout == 'list' else 'btn-outline-secondary' }}" rel="nofollow">
         {{ _('List') }}

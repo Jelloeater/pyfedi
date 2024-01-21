@@ -106,7 +106,7 @@ def show_community(community: Community):
     page = request.args.get('page', 1, type=int)
     sort = request.args.get('sort', '' if current_user.is_anonymous else current_user.default_sort)
     low_bandwidth = request.cookies.get('low_bandwidth', '0') == '1'
-    post_layout = request.args.get('layout', community.default_layout if not low_bandwidth else '')
+    post_layout = request.args.get('layout', community.default_layout if not low_bandwidth else None)
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{community.id}{sort}_{hash(community.last_active)}"
