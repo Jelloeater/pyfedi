@@ -13,18 +13,18 @@
             <div class="masonry_thumb" title="{{ post.title }}">
                 {% if post.type == POST_TYPE_LINK %}
                     {% if post.image.thumbnail_url() %}
-                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
-                           alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('View image') }}"><img src="{{ post.image.thumbnail_url() }}"
+                           alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                     {% elif post.image.source_url %}
-                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.source_url }}"
+                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('View image') }}"><img src="{{ post.image.source_url }}"
                            alt="{{ post.title }}" loading="lazy" /></a>
                     {% else %}
-                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.url }}"
+                        <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('View image') }}"><img src="{{ post.url }}"
                            alt="{{ post.title }}" loading="{{ 'lazy' if low_bandwidth else 'eager' }}" /></a>
                     {% endif %}
                 {% elif post.type == POST_TYPE_IMAGE %}
                         <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
-                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 {% else %}
                     <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
