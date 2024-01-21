@@ -109,7 +109,7 @@ def show_community(community: Community):
     post_layout = request.args.get('layout', community.default_layout if not low_bandwidth else None)
 
     # If nothing has changed since their last visit, return HTTP 304
-    current_etag = f"{community.id}{sort}_{hash(community.last_active)}"
+    current_etag = f"{community.id}{sort}{post_layout}_{hash(community.last_active)}"
     if current_user.is_anonymous and request_etag_matches(current_etag):
         return return_304(current_etag)
 
@@ -157,15 +157,15 @@ def show_community(community: Community):
     og_image = community.image.source_url if community.image_id else None
 
     next_url = url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name,
-                       page=posts.next_num, sort=sort) if posts.has_next else None
+                       page=posts.next_num, sort=sort, layout=post_layout) if posts.has_next else None
     prev_url = url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name,
-                       page=posts.prev_num, sort=sort) if posts.has_prev and page != 1 else None
+                       page=posts.prev_num, sort=sort, layout=post_layout) if posts.has_prev and page != 1 else None
 
     return render_template('community/community.html', community=community, title=community.title,
                            is_moderator=is_moderator, is_owner=is_owner, is_admin=is_admin, mods=mod_list, posts=posts, description=description,
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
-                           etag=f"{community.id}{sort}_{hash(community.last_active)}", related_communities=related_communities,
+                           etag=f"{community.id}{sort}{post_layout}_{hash(community.last_active)}", related_communities=related_communities,
                            next_url=next_url, prev_url=prev_url, low_bandwidth=low_bandwidth,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
