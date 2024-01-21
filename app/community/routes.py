@@ -90,6 +90,11 @@ def add_remote():
             message = Markup(
                 'Type address in the format !community@server.name. Search on <a href="https://lemmyverse.net/communities">Lemmyverse.net</a> to find some.')
             flash(message, 'error')
+        if new_community is None:
+            if g.site.enable_nsfw:
+                flash(_('Community not found.'), 'warning')
+            else:
+                flash(_('Community not found. If you are searching for a nsfw community it is blocked by this instance.'), 'warning')
 
     return render_template('community/add_remote.html',
                            title=_('Add remote community'), form=form, new_community=new_community,

@@ -382,6 +382,14 @@ def actor_json_to_model(activity_json, address, server):
             mods_url = activity_json['moderators']
         else:
             mods_url = None
+
+        # only allow nsfw communities if enabled for this instance
+        site = Site.query.get(1)    # can't use g.site because actor_json_to_model can be called from celery
+        if activity_json['sensitive'] and not site.enable_nsfw:
+            return None
+        if 'nsfl' in activity_json and activity_json['nsfl'] and not site.enable_nsfl:
+            return None
+
         community = Community(name=activity_json['preferredUsername'],
                               title=activity_json['name'],
                               description=activity_json['summary'] if 'summary' in activity_json else '',
