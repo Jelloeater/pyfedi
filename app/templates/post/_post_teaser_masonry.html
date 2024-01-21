@@ -34,9 +34,19 @@
                 <p><a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title|shorten(25) }}</a></p>
             </div>
         {% else %}
+            {% if post.url and (post.url.endswith('.jpg') or post.url.endswith('.webp') or post.url.endswith('.png') or post.url.endswith('.gif')) %}
+                <div class="masonry_thumb">
+                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('See image') }}"><img src="{{ post.url }}"
+                           alt="{{ post.title }}" loading="lazy" /></a>
+                </div>
+                <div class="masonry_info">
+                    <p><a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title|shorten(25) }}</a></p>
+                </div>
+            {% else %}
             <div class="masonry_info_no_image">
                 <p><a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a></p>
             </div>
+            {% endif %}
         {% endif %}
     </div>
         <!--
