@@ -241,6 +241,7 @@ def admin_community_edit(community_id):
         community.low_quality = form.low_quality.data
         community.content_retention = form.content_retention.data
         community.topic_id = form.topic.data if form.topic.data != 0 else None
+        community.default_layout = form.default_layout.data
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':
             if community.icon_id:
@@ -276,6 +277,7 @@ def admin_community_edit(community_id):
         form.low_quality.data = community.low_quality
         form.content_retention.data = community.content_retention
         form.topic.data = community.topic_id if community.topic_id else None
+        form.default_layout.data = community.default_layout
     return render_template('admin/edit_community.html', title=_('Edit community'), form=form, community=community,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())

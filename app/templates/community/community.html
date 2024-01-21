@@ -64,13 +64,23 @@
             </h1>
         {% endif %}
         {% include "community/_community_nav.html" %}
-        <div class="post_list">
-            {% for post in posts %}
-                {% include 'post/_post_teaser.html' %}
-            {% else %}
-                <p>{{ _('No posts in this community yet.') }}</p>
-            {% endfor %}
-        </div>
+        {% if post_layout == 'masonry' or post_layout == 'masonry_wide' %}
+            <div class="post_list_{{ post_layout }}">
+                {% for post in posts %}
+                    {% include 'post/_post_teaser_masonry.html' %}
+                {% else %}
+                    <p>{{ _('No posts in this community yet.') }}</p>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="post_list">
+                {% for post in posts %}
+                    {% include 'post/_post_teaser.html' %}
+                {% else %}
+                    <p>{{ _('No posts in this community yet.') }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <nav aria-label="Pagination" class="mt-4">
                 {% if prev_url %}

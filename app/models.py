@@ -146,6 +146,7 @@ class Community(db.Model):
     private_key = db.Column(db.Text)
     content_retention = db.Column(db.Integer, default=-1)
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), index=True)
+    default_layout = db.Column(db.String(15))
 
     ap_id = db.Column(db.String(255), index=True)
     ap_profile_id = db.Column(db.String(255), index=True)

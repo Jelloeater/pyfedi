@@ -4,6 +4,34 @@
 {% else %}
     <div class="post_teaser{{ ' reported' if post.reports and current_user.is_authenticated and post.community.is_moderator() }}{{ ' blocked' if content_blocked }}"
         {% if content_blocked %} title="{{ _('Filtered: ') }}{{ content_blocked }}"{% endif %}>
+        {% if post.image_id %}
+            {% if post_layout == 'masonry' or low_bandwidth %}
+                {% set thumbnail = post.image.thumbnail_url() %}
+            {% elif post_layout == 'masonry_wide' %}
+                {% set thumbnail = post.image.view_url() %}
+            {% endif %}
+            <div class="masonry_thumb">
+                {% if post.type == POST_TYPE_LINK %}
+                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
+                         alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                {% elif post.type == POST_TYPE_IMAGE %}
+                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
+                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                {% else %}
+                    <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
+                        alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                {% endif %}
+            </div>
+            <div class="masonry_info">
+                <p><a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title|shorten(25) }}</a></p>
+            </div>
+        {% else %}
+            <div class="masonry_info_no_image">
+                <p><a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}">{{ post.title }}</a></p>
+            </div>
+        {% endif %}
+    </div>
+        <!--
             <div class="row">
                 <div class="col-12">
                     <div class="row main_row">
@@ -16,15 +44,15 @@
                                     <div class="thumbnail">
                                         {% if post.type == POST_TYPE_LINK %}
                                             <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" loading="lazy" /></a>
+                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
                                         {% elif post.type == POST_TYPE_IMAGE %}
                                             {% if post.image_id %}
                                                 <a href="{{ post.image.view_url() }}" rel="nofollow ugc" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
-                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" loading="lazy" /></a>
+                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
                                             {% endif %}
                                         {% else %}
                                             <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" loading="lazy" /></a>
+                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" /></a>
                                         {% endif %}
                                     </div>
                                 {% endif %}
@@ -66,4 +94,5 @@
                 </div>
             </div>
         </div>
+        -->
 {% endif %}

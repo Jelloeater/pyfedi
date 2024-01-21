@@ -597,6 +597,83 @@ fieldset legend {
   font-size: 80%;
 }
 
+.post_list_masonry, .post_list_masonry_wide {
+  -webkit-column-count: 2;
+  -moz-column-count: 2;
+  column-count: 2;
+  -webkit-column-gap: 5px;
+  -moz-column-gap: 5px;
+  column-gap: 5px;
+  clear: both;
+}
+@media (min-width: 992px) {
+  .post_list_masonry, .post_list_masonry_wide {
+    -webkit-column-count: 4;
+    -moz-column-count: 4;
+    column-count: 4;
+    -webkit-column-gap: 5px;
+    -moz-column-gap: 5px;
+    column-gap: 5px;
+  }
+}
+.post_list_masonry .post_teaser, .post_list_masonry_wide .post_teaser {
+  margin-bottom: 5px;
+  position: relative;
+}
+.post_list_masonry .post_teaser img, .post_list_masonry_wide .post_teaser img {
+  width: 100%;
+  height: auto;
+}
+.post_list_masonry .post_teaser .masonry_info, .post_list_masonry_wide .post_teaser .masonry_info {
+  position: absolute;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  width: 100%;
+  text-align: center;
+}
+.post_list_masonry .post_teaser .masonry_info p, .post_list_masonry_wide .post_teaser .masonry_info p {
+  margin-bottom: 0;
+}
+.post_list_masonry .post_teaser .masonry_info p a, .post_list_masonry_wide .post_teaser .masonry_info p a {
+  color: white;
+  text-decoration: none;
+  line-height: 40px;
+}
+@media (min-width: 1280px) {
+  .post_list_masonry .post_teaser .masonry_info p a, .post_list_masonry_wide .post_teaser .masonry_info p a {
+    line-height: 30px;
+  }
+}
+.post_list_masonry .post_teaser .masonry_info_no_image, .post_list_masonry_wide .post_teaser .masonry_info_no_image {
+  background-color: rgba(0, 0, 0, 0.2);
+  width: 100%;
+  text-align: center;
+}
+.post_list_masonry .post_teaser .masonry_info_no_image p, .post_list_masonry_wide .post_teaser .masonry_info_no_image p {
+  margin-bottom: 0;
+}
+.post_list_masonry .post_teaser .masonry_info_no_image p a, .post_list_masonry_wide .post_teaser .masonry_info_no_image p a {
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+
+@media (min-width: 992px) {
+  .post_list_masonry_wide {
+    -webkit-column-count: 5;
+    -moz-column-count: 5;
+    column-count: 5;
+    -webkit-column-gap: 5px;
+    -moz-column-gap: 5px;
+    column-gap: 5px;
+  }
+}
+
+@media (min-width: 992px) {
+  .layout_switcher {
+    float: right;
+  }
+}
+
 .url_thumbnail {
   float: right;
   margin-top: -6px;

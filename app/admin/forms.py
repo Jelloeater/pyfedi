@@ -47,14 +47,14 @@ class EditCommunityForm(FlaskForm):
     icon_file = FileField(_('Icon image'))
     banner_file = FileField(_('Banner image'))
     rules = TextAreaField(_l('Rules'))
-    nsfw = BooleanField('Porn community')
-    local_only = BooleanField('Only accept posts from current instance')
-    restricted_to_mods = BooleanField('Only moderators can post')
-    new_mods_wanted = BooleanField('New moderators wanted')
-    show_home = BooleanField('Posts show on home page')
-    show_popular = BooleanField('Posts can be popular')
-    show_all = BooleanField('Posts show in All list')
-    low_quality = BooleanField("Low quality / toxic - upvotes in here don't add to reputation")
+    nsfw = BooleanField(_l('Porn community'))
+    local_only = BooleanField(_l('Only accept posts from current instance'))
+    restricted_to_mods = BooleanField(_l('Only moderators can post'))
+    new_mods_wanted = BooleanField(_l('New moderators wanted'))
+    show_home = BooleanField(_l('Posts show on home page'))
+    show_popular = BooleanField(_l('Posts can be popular'))
+    show_all = BooleanField(_l('Posts show in All list'))
+    low_quality = BooleanField(_l("Low quality / toxic - upvotes in here don't add to reputation"))
     options = [(-1, _l('Forever')),
                (7, _l('1 week')),
                (14, _l('2 weeks')),
@@ -69,6 +69,10 @@ class EditCommunityForm(FlaskForm):
              ]
     content_retention = SelectField(_l('Retain content'), choices=options, default=1, coerce=int)
     topic = SelectField(_l('Topic'), coerce=int, validators=[Optional()])
+    layouts = [('', _l('List')),
+               ('masonry', _l('Masonry')),
+               ('masonry_wide', _l('Wide masonry'))]
+    default_layout = SelectField(_l('Layout'), coerce=str, choices=layouts, validators=[Optional()])
     submit = SubmitField(_l('Save'))
 
     def validate(self, extra_validators=None):
@@ -93,8 +97,8 @@ class EditTopicForm(FlaskForm):
 class EditUserForm(FlaskForm):
     about = TextAreaField(_l('Bio'), validators=[Optional(), Length(min=3, max=5000)])
     matrix_user_id = StringField(_l('Matrix User ID'), validators=[Optional(), Length(max=255)])
-    profile_file = FileField(_('Avatar image'))
-    banner_file = FileField(_('Top banner image'))
+    profile_file = FileField(_l('Avatar image'))
+    banner_file = FileField(_l('Top banner image'))
     bot = BooleanField(_l('This profile is a bot'))
     newsletter = BooleanField(_l('Subscribe to email newsletter'))
     ignore_bots = BooleanField(_l('Hide posts by bots'))

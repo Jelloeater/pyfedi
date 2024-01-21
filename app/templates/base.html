@@ -94,7 +94,7 @@
     <!-- Page content -->
     {% block navbar %}
     <nav class="navbar navbar-expand-lg">
-        <div class="container-lg">
+        <div class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }}">
             <a class="navbar-brand" href="/">{% if not low_bandwidth %}<img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{% endif %}{{ g.site.name }}</a>
             {% if current_user.is_authenticated %}
                 <a class="nav-link d-lg-none" href="/notifications" aria-label="{{ _('Notifications') }}">
@@ -191,7 +191,7 @@
     {% endblock %}
 
     {% block content %}
-        <div id="outer_container" class="container-lg flex-shrink-0">
+        <div id="outer_container" class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }} flex-shrink-0">
             {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
                 {% for category, message in messages %}

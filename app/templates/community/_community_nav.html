@@ -15,3 +15,16 @@
         {{ _('Active') }}
     </a>
 </div>
+{% if post_layout != '' %}
+<div class="btn-group mt-1 mb-2 layout_switcher">
+    <a href="?layout=list" class="btn {{ 'btn-primary' if post_layout == '' or post_layout == 'list' else 'btn-outline-secondary' }}" rel="nofollow">
+        {{ _('List') }}
+    </a>
+    <a href="?layout=masonry" class="btn {{ 'btn-primary' if post_layout == 'masonry' else 'btn-outline-secondary' }}" rel="nofollow">
+        {{ _('Tile') }}
+    </a>
+    <a href="?layout=masonry_wide" class="btn {{ 'btn-primary' if post_layout == 'masonry_wide' else 'btn-outline-secondary' }}" rel="nofollow">
+        {{ _('Wide tile') }}
+    </a>
+</div>
+{% endif %}

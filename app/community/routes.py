@@ -105,6 +105,8 @@ def show_community(community: Community):
 
     page = request.args.get('page', 1, type=int)
     sort = request.args.get('sort', '' if current_user.is_anonymous else current_user.default_sort)
+    low_bandwidth = request.cookies.get('low_bandwidth', '0') == '1'
+    post_layout = request.args.get('layout', community.default_layout if not low_bandwidth else '')
 
     # If nothing has changed since their last visit, return HTTP 304
     current_etag = f"{community.id}{sort}_{hash(community.last_active)}"
@@ -138,7 +140,12 @@ def show_community(community: Community):
         posts = posts.order_by(desc(Post.posted_at))
     elif sort == 'active':
         posts = posts.order_by(desc(Post.last_active))
-    posts = posts.paginate(page=page, per_page=100, error_out=False)
+    per_page = 100
+    if post_layout == 'masonry':
+        per_page = 200
+    elif post_layout == 'masonry_wide':
+        per_page = 300
+    posts = posts.paginate(page=page, per_page=per_page, error_out=False)
 
     if community.topic_id:
         related_communities = Community.query.filter_by(topic_id=community.topic_id).\
@@ -159,11 +166,11 @@ def show_community(community: Community):
                            og_image=og_image, POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK, SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING,
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
                            etag=f"{community.id}{sort}_{hash(community.last_active)}", related_communities=related_communities,
-                           next_url=next_url, prev_url=prev_url, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           next_url=next_url, prev_url=prev_url, low_bandwidth=low_bandwidth,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), sort=sort,
-                           inoculation=inoculation[randint(0, len(inoculation) - 1)])
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)], post_layout=post_layout)
 
 
 # RSS feed of the community
