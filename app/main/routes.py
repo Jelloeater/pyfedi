@@ -135,7 +135,8 @@ def list_topics():
     topics = Topic.query.order_by(Topic.name).all()
 
     return render_template('list_topics.html', topics=topics, title=_('Browse by topic'),
-                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', moderating_communities=moderating_communities(current_user.get_id()),
+                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()))
 
 
@@ -222,8 +223,8 @@ def keyboard_shortcuts():
 
 @bp.route('/test')
 def test():
-    return pytesseract.image_to_string(Image.open('test.png').convert('L'))
 
+    return current_app.config['SERVER_NAME']
 
     #ip = request.headers.get('X-Forwarded-For') or request.remote_addr
     #if ',' in ip:  # Remove all but first ip addresses

@@ -31,12 +31,8 @@ def login():
             return redirect(url_for('auth.login'))
         if not user.check_password(form.password.data):
             if user.password_hash is None:
-                if "@gmail.com" in user.email:
-                    message = Markup(_('Invalid password. Please click the "Login using Google" button or <a href="/auth/reset_password_request">reset your password</a>.'))
-                    flash(message, 'warning')
-                else:
-                    message = Markup(_('Invalid password. Please <a href="/auth/reset_password_request">reset your password</a>.'))
-                    flash(message, 'error')
+                message = Markup(_('Invalid password. Please <a href="/auth/reset_password_request">reset your password</a>.'))
+                flash(message, 'error')
                 return redirect(url_for('auth.login'))
             flash(_('Invalid password'))
             return redirect(url_for('auth.login'))
