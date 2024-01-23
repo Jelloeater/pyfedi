@@ -8,3 +8,5 @@ User-Agent: *
   Disallow: /inbox
   Disallow: /search/
   Disallow: /modlog
+  Disallow: /u/
+  Disallow: /d/
