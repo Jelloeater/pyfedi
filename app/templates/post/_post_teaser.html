@@ -9,11 +9,11 @@
                     <div class="row main_row">
                         <div class="col">
                             <h3 class="post_teaser_title">
-                                <div class="voting_buttons">
+                                <div class="voting_buttons" aria-hidden="true">
                                     {% include "post/_post_voting_buttons.html" %}
                                 </div>
                                 {% if post.image_id %}
-                                    <div class="thumbnail{{ ' lbw' if low_bandwidth }}">
+                                    <div class="thumbnail{{ ' lbw' if low_bandwidth }}" aria-hidden="true">
                                         {% if low_bandwidth %}
                                             {% if post.type == POST_TYPE_LINK %}
                                                 <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><span class="fe fe-external"></span></a>
@@ -39,10 +39,10 @@
                                     </div>
                                 {% endif %}
                                 <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None) }}" class="post_teaser_title_a">{{ post.title }}</a>
-                                {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image"> </span>{% endif %}
+                                {% if post.type == POST_TYPE_IMAGE %}<span class="fe fe-image" aria-hidden="true"> </span>{% endif %}
                                 {% if post.type == POST_TYPE_LINK and post.domain_id %}
                                     {% if post.url and 'youtube.com' in post.url %}
-                                        <span class="fe fe-video"></span>
+                                        <span class="fe fe-video" aria-hidden="true"></span>
                                     {% endif %}
                                     <span class="domain_link">(<a href="/d/{{ post.domain_id }}" aria-label="{{ _('All posts about this domain') }}">{{ post.domain.name }}</a>)</span>
                                 {% endif %}
@@ -58,13 +58,13 @@
                     </div>
                     <div class="row utilities_row">
                         <div class="col-6">
-                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}"><span class="fe fe-reply"></span></a>
+                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}" aria-hidden="true"><span class="fe fe-reply"></span></a>
                             <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}">{{ post.reply_count }}</a>
                             {% if post.type == POST_TYPE_IMAGE %}
                                 {% if post.image_id %}
-                                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image" aria-label="{{ _('View image') }}"><span class="fe fe-magnify"></span></a>
+                                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image" aria-label="{{ _('View image') }}" aria-hidden="true"><span class="fe fe-magnify"></span></a>
                                 {% else %}
-                                    <a href="{{ post.url }}" rel="nofollow ugc" class="preview_image" target="_blank" aria-label="{{ _('View image') }}"><span class="fe fe-magnify"></span></a>
+                                    <a href="{{ post.url }}" rel="nofollow ugc" class="preview_image" target="_blank" aria-label="{{ _('View image') }}" aria-hidden="true"><span class="fe fe-magnify"></span></a>
                                 {% endif %}
                             {% endif %}
                         </div>
