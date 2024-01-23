@@ -10,3 +10,4 @@ User-Agent: *
   Disallow: /modlog
   Disallow: /u/
   Disallow: /d/
+  Disallow: /static/media/users/
