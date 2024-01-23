@@ -23,7 +23,7 @@
             {% else %}
                 <h1 class="mt-2">{{ _('Add filter') }}</h1>
             {% endif %}
-            <form method='post'>
+            <form method='post' role="form">
                 {{ form.csrf_token() }}
                 {{ render_field(form.title) }}
                 <h4>{{ _('Filter in these places') }}</h4>

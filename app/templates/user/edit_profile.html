@@ -12,7 +12,7 @@
               </ol>
             </nav>
             <h1 class="mt-2">{{ _('Edit profile of %(name)s', name=user.user_name) }}</h1>
-            <form method='post' enctype="multipart/form-data">
+            <form method='post' enctype="multipart/form-data" role="form">
                 {{ form.csrf_token() }}
                 {{ render_field(form.title) }}
                 {{ render_field(form.email) }}

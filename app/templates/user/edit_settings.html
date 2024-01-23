@@ -12,7 +12,7 @@
               </ol>
             </nav>
             <h1 class="mt-2">{{ _('Change settings') }}</h1>
-            <form method='post' enctype="multipart/form-data">
+            <form method='post' enctype="multipart/form-data" role="form">
                 {{ form.csrf_token() }}
                 {{ render_field(form.newsletter) }}
                 {{ render_field(form.ignore_bots) }}

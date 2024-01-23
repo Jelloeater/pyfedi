@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-12 col-md-8 position-relative main_pane">
         <h1>{{ _('Create post') }}</h1>
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" role="form">
             {{ form.csrf_token() }}
             {{ render_field(form.communities) }}
             <nav id="post_type_chooser">
@@ -95,7 +95,7 @@
         </form>
     </div>
 
-    <div class="col-12 col-md-4 side_pane">
+    <div class="col-12 col-md-4 side_pane" role="complementary">
         <div class="card mt-3">
             <div class="card-header">
                  <h2>{{ community.title }}</h2>

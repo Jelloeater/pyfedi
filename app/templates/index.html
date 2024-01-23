@@ -14,7 +14,7 @@
             {% endfor %}
         </div>
 
-        <nav aria-label="Pagination" class="mt-4">
+        <nav aria-label="Pagination" class="mt-4" role="navigation">
                 {% if prev_url %}
                     <a href="{{ prev_url }}" class="btn btn-primary" rel="nofollow">
                         <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
@@ -28,7 +28,7 @@
         </nav>
     </div>
 
-    <div class="col-12 col-md-4 side_pane">
+    <div class="col-12 col-md-4 side_pane" role="complementary">
         <!-- <div class="card">
             <div class="card-body">
                 <form method="get">
@@ -45,7 +45,7 @@
                 <ul class="list-group list-group-flush">
                     {% for community in active_communities %}
                         <li class="list-group-item">
-                            <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" />
+                            <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />
                                 {{ community.display_name() }}
                             </a>
                         </li>

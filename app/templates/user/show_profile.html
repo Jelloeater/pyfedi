@@ -14,12 +14,12 @@
                   </ol>
                 </nav>
             </div>
-            <img class="community_icon_big bump_up rounded-circle" src="{{ user.avatar_image() }}" />
+            <img class="community_icon_big bump_up rounded-circle" src="{{ user.avatar_image() }}" alt="{{ _('Profile pic') }}" />
             <h1 class="mt-2">{{ user.display_name() if user.is_local()  else user.display_name() + ', ' + user.ap_id }}</h1>
         {% elif user.avatar_image() != '' %}
             <div class="row">
                 <div class="col-2">
-                    <img class="community_icon_big rounded-circle" src="{{ user.avatar_image() }}" />
+                    <img class="community_icon_big rounded-circle" src="{{ user.avatar_image() }}" alt="{{ _('Profile pic') }}" />
                 </div>
                 <div class="col-10">
                     <h1 class="mt-3">{{ user.display_name() if user.is_local() else user.display_name() + ', ' + user.ap_id }}</h1>
@@ -38,7 +38,7 @@
         {% if current_user.is_authenticated %}
             <div class="profile_action_buttons">
                 {% if user.matrix_user_id %}
-                    <a class="btn btn-primary" href="https://matrix.to/#/{{ user.matrix_user_id }}" rel="nofollow">{{ _('Send message') }}</a>
+                    <a class="btn btn-primary" href="https://matrix.to/#/{{ user.matrix_user_id }}" rel="nofollow" aria-label="{{ _('Send message with matrix chat') }}">{{ _('Send message') }}</a>
                 {% endif %}
                 {% if current_user.id != user.id %}
                     {% if current_user.has_blocked_user(user.id) %}
@@ -60,7 +60,7 @@
                     {% include 'post/_post_teaser.html' %}
                 {% endfor %}
             </div>
-            <nav aria-label="Pagination" class="mt-4">
+            <nav aria-label="{{ _('Post pagination') }}" class="mt-4" role="navigation">
                     {% if post_prev_url %}
                         <a href="{{ post_prev_url }}" class="btn btn-primary">
                             <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
@@ -83,7 +83,7 @@
                     {% include 'post/_post_reply_teaser.html' %}
                 {% endfor %}
             </div>
-            <nav aria-label="Pagination" class="mt-4">
+            <nav aria-label="{{ _('Comment pagination') }}" class="mt-4" role="navigation">
                     {% if replies_prev_url %}
                         <a href="{{ replies_prev_url }}#comments" class="btn btn-primary">
                             <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
@@ -100,7 +100,7 @@
         {% endif %}
     </div>
 
-    <div class="col-12 col-md-4 side_pane">
+    <div class="col-12 col-md-4 side_pane" role="complementary">
         {% if current_user.is_authenticated and current_user.id == user.id %}
             <div class="card mt-3">
                 <div class="card-header">

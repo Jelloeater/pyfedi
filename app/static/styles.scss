@@ -8,7 +8,7 @@ body {
   font-size: 0.95rem;
 }
 
-nav.navbar {
+div.navbar {
   border-bottom: 1px solid rgba(0, 40, 100, 0.12);
   min-height: 60px;
 }
@@ -181,10 +181,10 @@ nav.navbar {
 }
 
 .domain_link {
-  color: $grey;
+  color: #777;
   font-size: 73%;
   a {
-    color: $dark-grey;
+    color: #777;
   }
 }
 

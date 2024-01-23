@@ -401,7 +401,7 @@ function setupKeyboardShortcuts() {
                     didSomething = true;
                 }
             } else if (event.key === 'Enter') {
-                if(currentPost) {
+                if(currentPost && document.activeElement.tagName !== 'a') {
                     currentPost.querySelector('.post_teaser_title_a').click();
                     didSomething = true;
                 }

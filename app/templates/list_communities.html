@@ -17,7 +17,7 @@
             {% if topics %}
                 <span class="mt-1 pl-4">
                     <form method="get">Topic:
-                        <select name="topic_id" class="form-control-sm submit_on_change">
+                        <select name="topic_id" class="form-control-sm submit_on_change" aria-label="{{ _('Choose a topic to filter communities by') }}">
                             <option value="0">All</option>
                             {% for topic in topics %}
                                 <option value="{{ topic.id }}" {{ 'selected' if topic.id == topic_id }}>{{ topic.name }}</option>
@@ -44,23 +44,23 @@
         <table class="communities_table table table-striped table-hover w-100">
             <thead>
                 <tr>
-                    <th scope="col"> </th>
-                    <th scope="col" {% if not low_bandwidth %}colspan="2"{% endif %}>
+                    <th> </th>
+                    <th {% if not low_bandwidth %}colspan="2"{% endif %}>
                         <a href="?sort_by=title{{ ' desc' if sort_by.text == 'community.title' }}" title="{{ _('Sort by name') }}" class="no-underline" rel="nofollow">{{ _('Community') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.title' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.title desc' }}"></span>
                         </a>
                     </th>
-                    <th scope="col">
+                    <th>
                         <a href="?sort_by=post_count{{ ' desc' if sort_by.text == 'community.post_count' }}" title="{{ _('Sort by post count') }}" class="no-underline" rel="nofollow">{{ _('Posts') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.post_count' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.post_count desc' }}"></span>
                         </a>
                     </th>
-                    <th scope="col">
+                    <th>
                         <a href="?sort_by=post_reply_count{{ ' desc' if sort_by.text == 'community.post_reply_count' }}" title="{{ _('Sort by reply count') }}" class="no-underline" rel="nofollow">{{ _('Comments') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.post_reply_count' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.post_reply_count desc' }}"></span>
                         </a>
                     </th>
-                    <th scope="col">
+                    <th>
                         <a href="?sort_by=last_active{{ ' desc' if sort_by.text == 'community.last_active' }}" title="{{ _('Sort by recent activity') }}" class="no-underline" rel="nofollow">{{ _('Active') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.last_active' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.last_active desc' }}"></span>
                         </a>
@@ -83,10 +83,10 @@
                             {% endif %}</td>
                         {% if not low_bandwidth %}
                             <td width="46">
-                                    <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" /></a>
+                                    <a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" alt="" /></a>
                             </td>
                         {% endif %}
-                        <td scope="row" class="pl-0"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></td>
+                        <td class="pl-0"><a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}">{{ community.display_name() }}</a></td>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>

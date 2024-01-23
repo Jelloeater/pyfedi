@@ -26,7 +26,7 @@ import os
 def show_people():
     people = User.query.filter_by(ap_id=None, deleted=False, banned=False).all()
     return render_template('user/people.html', people=people, moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()))
+                           joined_communities=joined_communities(current_user.get_id()), title=_('People'))
 
 
 def show_profile(user):

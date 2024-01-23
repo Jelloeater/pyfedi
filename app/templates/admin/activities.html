@@ -38,7 +38,7 @@
                 </tr>
             {% endfor %}
         </table>
-        <nav aria-label="Pagination" class="mt-4">
+        <nav aria-label="Pagination" class="mt-4" role="navigation">
                 {% if prev_url %}
                     <a href="{{ prev_url }}" class="btn btn-primary" rel="nofollow">
                         <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}

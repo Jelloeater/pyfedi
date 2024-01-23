@@ -91,11 +91,11 @@
     {% endblock %}
   </head>
   <body class="d-flex flex-column{{ ' low_bandwidth' if low_bandwidth }}">
-    <a href="#outer_container" class="skip-link" role="navigation" aria-label="Skip main navigation">Skip to main content</a>
+    <a href="#outer_container" class="skip-link" role="navigation" aria-label="Skip main navigation" tabindex="">Skip to main content</a>
     <!-- Page content -->
     {% block navbar %}
-    <nav class="navbar navbar-expand-lg">
-        <div class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }}">
+    <div class="navbar navbar-expand-lg">
+        <div class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }}" role="banner">
             <a class="navbar-brand" href="/">{% if not low_bandwidth %}<img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{% endif %}{{ g.site.name }}</a>
             {% if current_user.is_authenticated %}
                 <a class="nav-link d-lg-none" href="/notifications" aria-label="{{ _('Notifications') }}">
@@ -115,14 +115,14 @@
                     <ul class="nav navbar-nav ml-md-4">
                         {% if current_user.is_anonymous %}
                             <li class="nav-item dropdown{% if active_parent == 'home' %} active{% endif %}">
-                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/home"><span class="fe fe-home"></span>{{ _('Home') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/popular"><span class="fe fe-popular"></span>{{ _('Popular') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'all_posts' %} active{% endif %}" href="/all"><span class="fe fe-all"></span>{{ _('All posts') }}</a></li>
                                 </ul>
                             <li class="nav-item dropdown{% if active_parent == 'communities' %} active{% endif %}">
-                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities" aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'list_communities' %} active{% endif %}" href="/communities">{{ _('Browse all') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'list_topics' %} active{% endif %}" href="/topics">{{ _('By topic') }}</a></li>
@@ -133,14 +133,14 @@
                             <li class="nav-item"><a class="nav-link" href="/donate">{{ _('Donate') }}</a></li>
                         {% else %}
                             <li class="nav-item dropdown{% if active_parent == 'home' %} active{% endif %}">
-                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/home"><span class="fe fe-home"></span>{{ _('Home') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/popular"><span class="fe fe-popular"></span>{{ _('Popular') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'all_posts' %} active{% endif %}" href="/all"><span class="fe fe-all"></span>{{ _('All posts') }}</a></li>
                                 </ul>
                             <li class="nav-item dropdown{% if active_parent == 'communities' %} active{% endif %}">
-                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/communities"  aria-haspopup="true" aria-expanded="false">{{ _('Communities') }}</a>
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'list_communities' %} active{% endif %}" href="/communities">{{ _('Browse all') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'list_topics' %} active{% endif %}" href="/topics">{{ _('By topic') }}</a></li>
@@ -159,7 +159,7 @@
                                 </ul>
                             </li>
                             <li class="nav-item dropdown{% if active_parent == 'account' %} active{% endif %}">
-                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/u/{{ current_user.user_name }}" role="button" aria-haspopup="true" aria-expanded="false">{{ _('Account') }}</a>
+                                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/u/{{ current_user.user_name }}" aria-haspopup="true" aria-expanded="false">{{ _('Account') }}</a>
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'view_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}">{{ _('View profile') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}/profile">{{ _('Edit profile') }}</a></li>
@@ -182,17 +182,17 @@
                                 </a>
                             </li>
                         {% endif %}
-                        <li class="nav-item"><a class="nav-link" id="light_mode" aria-label="{{ _('Light mode') }}"><span class="fe fe-sun" title="{{ _('Light mode') }}"></span></a></li>
-                        <li class="nav-item"><a class="nav-link" id="dark_mode" aria-label="{{ _('Dark mode') }}"><span class="fe fe-moon" title="{{ _('Dark mode') }}"></span></a></li>
+                        <li class="nav-item" aria-label="{{ _('Light mode') }}"><a class="nav-link" id="light_mode" href="#" tabindex=""><span class="fe fe-sun" title="{{ _('Light mode') }}"></span></a></li>
+                        <li class="nav-item" aria-label="{{ _('Dark mode') }}"><a class="nav-link" id="dark_mode" href="#" tabindex=""><span class="fe fe-moon" title="{{ _('Dark mode') }}"></span></a></li>
                     </ul>
             </div>
 
         </div>
-    </nav>
+    </div>
     {% endblock %}
 
     {% block content %}
-        <div id="outer_container" class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }} flex-shrink-0">
+        <div id="outer_container" class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }} flex-shrink-0" role="main">
             {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -204,7 +204,7 @@
             {# application content needs to be provided in the app_content block #}
             {% block app_content %}{% endblock %}
         </div>
-        <footer class="footer mt-auto">
+        <footer class="footer mt-auto" role="contentinfo">
             <p id="timeSpent" class="text-center mt-4" title="This is how long you have spent using PieFed during this month. We hope this use of your time aligns with your priorities and values."></p>
             {% if not low_bandwidth %}
                 <p class="text-center mt-4"><a href="https://liberapay.com/PieFed/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>

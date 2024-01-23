@@ -12,7 +12,7 @@
               </ol>
             </nav>
             <h1 class="mt-2">{{ _('Delete %(username)s', username=user.link()) }}</h1>
-            <form method='post'>
+            <form method='post' role="form">
                 <p class="btn-warning">{{ _('You are about to permanently delete the account with the username "<strong>%(username)s</strong>." This means your profile will disappear, pictures will be deleted. Text-based posts will stay but look like they are from someone named "deleted."', username=user.user_name) }}</p>
                 <p>{{ _('Once you hit delete, nobody can use "%(username)s" as a username again. We are doing this so nobody pretends to be you.', username=user.user_name) }}</p>
                 <p>{{ _("We will tell other websites (fediverse instances) that your account is gone. But it's up to them to decide what to do with any copies they have of your stuff. Some websites work differently than ours.") }}</p>

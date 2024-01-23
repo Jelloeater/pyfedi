@@ -7,7 +7,7 @@
             <div class="card mt-5">
                 <div class="card-body p-6">
                     <div class="card-title">{{ _('Create community') }}</div>
-                    <form method="post" enctype="multipart/form-data" id="add_local_community_form">
+                    <form method="post" enctype="multipart/form-data" id="add_local_community_form" role="form">
                         {{ form.csrf_token() }}
                         {{ render_field(form.community_name) }}
                         <div class="form-group">{{ form.url.label(class_="form-control-label required") }}
