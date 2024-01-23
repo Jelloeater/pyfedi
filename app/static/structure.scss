@@ -356,6 +356,9 @@ nav, etc which are used site-wide */
 [data-bs-theme=dark] {
   .post_list .post_teaser {
     border-bottom: solid 1px $super-dark-grey;
+    .thumbnail .fe {
+      background-color: rgba(0,0,0,0.4);
+    }
   }
 
   .comments > .comment {

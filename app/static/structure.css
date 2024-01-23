@@ -724,6 +724,9 @@ fieldset legend {
 [data-bs-theme=dark] .post_list .post_teaser {
   border-bottom: solid 1px #424549;
 }
+[data-bs-theme=dark] .post_list .post_teaser .thumbnail .fe {
+  background-color: rgba(0, 0, 0, 0.4);
+}
 [data-bs-theme=dark] .comments > .comment {
   border-top-color: #424549;
 }
