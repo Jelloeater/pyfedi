@@ -189,6 +189,18 @@ nav, etc which are used site-wide */
       float: right;
       padding-left: 0;
       padding-right: 0;
+      position: relative;
+
+      .fe {
+        display: block;
+        position: absolute;
+        right: 0;
+        background-color: rgba(256,256,256, 0.7);
+        padding-bottom: 1px;
+        padding-left: 1px;
+        border-radius: 2px;
+        top: 0;
+      }
 
       img {
         height: 60px;
@@ -200,6 +212,16 @@ nav, etc which are used site-wide */
           height: 70px;
           width: 133px;
 
+        }
+      }
+
+      &.lbw {
+        .fe {
+          background: none;
+        }
+        .fe::before {
+          font-size: 28px;
+          padding-right: 7px;
         }
       }
     }

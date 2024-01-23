@@ -12,19 +12,29 @@
                                 <div class="voting_buttons">
                                     {% include "post/_post_voting_buttons.html" %}
                                 </div>
-                                {% if post.image_id and not low_bandwidth %}
-                                    <div class="thumbnail">
-                                        {% if post.type == POST_TYPE_LINK %}
-                                            <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" loading="lazy" /></a>
-                                        {% elif post.type == POST_TYPE_IMAGE %}
-                                            {% if post.image_id %}
-                                                <a href="{{ post.image.view_url() }}" rel="nofollow ugc" aria-label="{{ _('View image') }}" target="_blank"><img src="{{ post.image.thumbnail_url() }}"
-                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" loading="lazy" /></a>
+                                {% if post.image_id %}
+                                    <div class="thumbnail{{ ' lbw' if low_bandwidth }}">
+                                        {% if low_bandwidth %}
+                                            {% if post.type == POST_TYPE_LINK %}
+                                                <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><span class="fe fe-external"></span></a>
+                                            {% elif post.type == POST_TYPE_IMAGE %}
+                                                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc" aria-label="{{ _('View image') }}" target="_blank"><span class="fe fe-magnify"></span></a>
+                                            {% else %}
+                                                <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" aria-label="{{ _('Read post') }}"><span class="fe fe-reply"></span></a>
                                             {% endif %}
                                         {% else %}
-                                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" aria-label="{{ _('Read post') }}"><img src="{{ post.image.thumbnail_url() }}"
-                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" height="50" loading="lazy" /></a>
+                                            {% if post.type == POST_TYPE_LINK %}
+                                                <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><span class="fe fe-external"></span><img src="{{ post.image.thumbnail_url() }}"
+                                                     alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                                            {% elif post.type == POST_TYPE_IMAGE %}
+                                                {% if post.image_id %}
+                                                    <a href="{{ post.image.view_url() }}" rel="nofollow ugc" aria-label="{{ _('View image') }}" target="_blank"><span class="fe fe-magnify"></span><img src="{{ post.image.thumbnail_url() }}"
+                                                    alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                                                {% endif %}
+                                            {% else %}
+                                                <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" aria-label="{{ _('Read post') }}"><span class="fe fe-reply"></span><img src="{{ post.image.thumbnail_url() }}"
+                                                    alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                                            {% endif %}
                                         {% endif %}
                                     </div>
                                 {% endif %}
@@ -34,9 +44,6 @@
                                     {% if post.url and 'youtube.com' in post.url %}
                                         <span class="fe fe-video"></span>
                                     {% endif %}
-                                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" class="post_link" aria-label="{{ _('Read article') }}">
-                                        <img src="/static/images/external_link_black.svg" class="external_link_icon" alt="External link"  />
-                                    </a>
                                     <span class="domain_link">(<a href="/d/{{ post.domain_id }}" aria-label="{{ _('All posts about this domain') }}">{{ post.domain.name }}</a>)</span>
                                 {% endif %}
                                 {% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}

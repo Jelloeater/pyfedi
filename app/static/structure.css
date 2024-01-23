@@ -571,6 +571,17 @@ fieldset legend {
   float: right;
   padding-left: 0;
   padding-right: 0;
+  position: relative;
+}
+.post_list .post_teaser .thumbnail .fe {
+  display: block;
+  position: absolute;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding-bottom: 1px;
+  padding-left: 1px;
+  border-radius: 2px;
+  top: 0;
 }
 .post_list .post_teaser .thumbnail img {
   height: 60px;
@@ -584,6 +595,13 @@ fieldset legend {
     height: 70px;
     width: 133px;
   }
+}
+.post_list .post_teaser .thumbnail.lbw .fe {
+  background: none;
+}
+.post_list .post_teaser .thumbnail.lbw .fe::before {
+  font-size: 28px;
+  padding-right: 7px;
 }
 .post_list .post_teaser.blocked {
   opacity: 0.2;
