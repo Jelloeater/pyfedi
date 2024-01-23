@@ -705,3 +705,14 @@ fieldset {
 .list-group-item:first-child {
   padding-top: 0;
 }
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background-color: #fff;
+  z-index: 999;
+}
+.skip-link:focus {
+  top: 0;
+}
