@@ -11,3 +11,4 @@ User-Agent: *
   Disallow: /u/
   Disallow: /d/
   Disallow: /static/media/users/
+  Disallow: /post/*/options
