@@ -216,6 +216,23 @@ def robots():
     return resp
 
 
+@bp.route('/sitemap.xml')
+@cache.cached(timeout=6000)
+def sitemap():
+    posts = Post.query.filter(Post.from_bot == False)
+    posts = posts.join(Community, Community.id == Post.community_id)
+    posts = posts.filter(Community.show_all == True, Community.ap_id == None)   # sitemap.xml only includes local posts
+    if not g.site.enable_nsfw:
+        posts = posts.filter(Community.nsfw == False)
+    if not g.site.enable_nsfl:
+        posts = posts.filter(Community.nsfl == False)
+    posts = posts.order_by(desc(Post.posted_at))
+
+    resp = make_response(render_template('sitemap.xml', posts=posts, current_app=current_app))
+    resp.mimetype = 'text/xml'
+    return resp
+
+
 @bp.route('/keyboard_shortcuts')
 def keyboard_shortcuts():
     return render_template('keyboard_shortcuts.html')

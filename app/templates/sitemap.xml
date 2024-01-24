@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{% for post in posts %}
+	<url>
+		<loc>https://{{ current_app.config['SERVER_NAME'] }}/post/{{ post.id }}</loc>
+		<lastmod>{{ ap_datetime(post.edited_at) if post.edited_at else ap_datetime(post.posted_at) }}</lastmod>
+	</url>
+{% endfor %}
+</urlset>
