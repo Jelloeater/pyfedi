@@ -818,16 +818,16 @@ class CommunityBan(db.Model):
 
 class UserNote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    target_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    target_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     body = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=utcnow)
 
 
 class UserBlock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    blocker_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    blocked_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    blocker_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    blocked_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     created_at = db.Column(db.DateTime, default=utcnow)
 
 
@@ -845,7 +845,7 @@ class Interest(db.Model):
 class CommunityJoinRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    community_id = db.Column(db.Integer, db.ForeignKey('community.id'))
+    community_id = db.Column(db.Integer, db.ForeignKey('community.id'), index=True)
 
 
 class UserFollowRequest(db.Model):
@@ -856,9 +856,9 @@ class UserFollowRequest(db.Model):
 
 class PostVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), index=True)
     effect = db.Column(db.Float, index=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     post = db.relationship('Post', foreign_keys=[post_id])
@@ -866,9 +866,9 @@ class PostVote(db.Model):
 
 class PostReplyVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))   # who voted
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)   # who voted
     author_id = db.Column(db.Integer, db.ForeignKey('user.id')) # the author of the reply voted on - who's reputation is affected
-    post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
+    post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'), index=True)
     effect = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=utcnow)
 
@@ -892,7 +892,7 @@ class Filter(db.Model):
     filter_posts = db.Column(db.Boolean, default=True)
     filter_replies = db.Column(db.Boolean, default=False)
     hide_type = db.Column(db.Integer, default=0)    # 0 = hide with warning, 1 = hide completely
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
     expire_after = db.Column(db.Date)
     keywords = db.Column(db.String(500))
 
@@ -919,7 +919,7 @@ class Notification(db.Model):
     title = db.Column(db.String(50))
     url = db.Column(db.String(512))
     read = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))       # who the notification should go to
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)       # who the notification should go to
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))     # the person who caused the notification to happen
     created_at = db.Column(db.DateTime, default=utcnow)
 
