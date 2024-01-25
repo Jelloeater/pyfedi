@@ -17,6 +17,9 @@ a {
   a:not(.btn):hover {
     text-decoration: underline;
   }
+  a:not(.btn):has(span.fe):hover {  /* do not have underlines on icons */
+    text-decoration: none;
+  }
 
   a:not(.btn):active {
     border: dotted 2px #0A5CA0;
