@@ -19,7 +19,7 @@ from app.models import Post, PostReply, \
     PostReplyVote, PostVote, Notification, utcnow, UserBlock, DomainBlock, InstanceBlock, Report, Site, Community
 from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, ap_datetime, return_304, \
+    shorten_string, markdown_to_text, gibberish, ap_datetime, return_304, \
     request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking, \
     reply_already_exists, reply_is_just_link_to_gif_reaction, confidence, moderating_communities, joined_communities
 
@@ -643,16 +643,16 @@ def post_edit(post_id: int):
             return redirect(url_for('activitypub.post_ap', post_id=post.id))
         else:
             if post.type == constants.POST_TYPE_ARTICLE:
-                form.type.data = 'discussion'
+                form.post_type.data = 'discussion'
                 form.discussion_title.data = post.title
                 form.discussion_body.data = post.body
             elif post.type == constants.POST_TYPE_LINK:
-                form.type.data = 'link'
+                form.post_type.data = 'link'
                 form.link_title.data = post.title
                 form.link_body.data = post.body
                 form.link_url.data = post.url
             elif post.type == constants.POST_TYPE_IMAGE:
-                form.type.data = 'image'
+                form.post_type.data = 'image'
                 form.image_title.data = post.title
                 form.image_body.data = post.body
             form.notify_author.data = post.notify_author

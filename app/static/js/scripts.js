@@ -234,26 +234,36 @@ function setupPostTypeTabs() {
     const tabEl = document.querySelector('#discussion-tab')
     if(tabEl) {
         tabEl.addEventListener('show.bs.tab', event => {
-            document.getElementById('type').value = 'discussion';
+            document.getElementById('post_type  ').value = 'discussion';
         });
     }
     const tabE2 = document.querySelector('#link-tab')
     if(tabE2) {
         tabE2.addEventListener('show.bs.tab', event => {
-            document.getElementById('type').value = 'link';
+            document.getElementById('post_type').value = 'link';
         });
     }
     const tabE3 = document.querySelector('#image-tab')
     if(tabE3) {
         tabE3.addEventListener('show.bs.tab', event => {
-            document.getElementById('type').value = 'image';
+            document.getElementById('post_type').value = 'image';
         });
     }
     const tabE4 = document.querySelector('#poll-tab')
     if(tabE4) {
         tabE4.addEventListener('show.bs.tab', event => {
-            document.getElementById('type').value = 'poll';
+            document.getElementById('post_type').value = 'poll';
         });
+    }
+    // Check if there is a hidden field with the name 'type'. This is set if server-side validation of the form fails
+    var typeField = document.getElementById('post_type');
+    if (typeField && typeField.tagName === 'INPUT' && typeField.type === 'hidden') {
+        var typeVal = typeField.value;
+        if(typeVal) {
+            const tab = document.getElementById(typeVal + '-tab');
+            if(tab)
+                tab.click();
+        }
     }
 }
 

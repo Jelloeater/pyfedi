@@ -1,3 +1,4 @@
+from io import BytesIO
 from random import randint
 
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort, g, json
@@ -19,7 +20,7 @@ from app.models import User, Community, CommunityMember, CommunityJoinRequest, C
     File, PostVote, utcnow, Report, Notification, InstanceBlock, ActivityPubLog
 from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
-    shorten_string, markdown_to_text, domain_from_url, validate_image, gibberish, community_membership, ap_datetime, \
+    shorten_string, gibberish, community_membership, ap_datetime, \
     request_etag_matches, return_304, instance_banned, can_create, can_upvote, can_downvote, user_filters_posts, \
     joined_communities, moderating_communities
 from feedgen.feed import FeedGenerator
@@ -459,13 +460,16 @@ def add_post(actor):
 
         return redirect(f"/c/{community.link()}")
     else:
+        # when request.form has some data in it, it means form validation failed. Set the post_type so the correct tab is shown. See setupPostTypeTabs() in scripts.js
+        if request.form.get('post_type', None):
+            form.post_type.data = request.form.get('post_type')
         form.communities.data = community.id
         form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
                            images_disabled=images_disabled, markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities = joined_communities(current_user.id),
+                           joined_communities=joined_communities(current_user.id),
                            inoculation=inoculation[randint(0, len(inoculation) - 1)]
     )
 

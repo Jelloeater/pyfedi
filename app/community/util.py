@@ -14,7 +14,7 @@ from app.activitypub.util import find_actor_or_create, actor_json_to_model, post
 from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site, \
     Instance, Notification, User
-from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, validate_image, allowlist_html, \
+from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, allowlist_html, \
     html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string
 from sqlalchemy import desc, text
 import os
@@ -152,6 +152,7 @@ def url_to_thumbnail_file(filename) -> File:
         with open(final_place, 'wb') as f:
             f.write(response.content)
         response.close()
+        Image.MAX_IMAGE_PIXELS = 89478485
         with Image.open(final_place) as img:
             img = ImageOps.exif_transpose(img)
             img.thumbnail((150, 150))
@@ -167,12 +168,12 @@ def save_post(form, post: Post):
     post.nsfw = form.nsfw.data
     post.nsfl = form.nsfl.data
     post.notify_author = form.notify_author.data
-    if form.type.data == '' or form.type.data == 'discussion':
+    if form.post_type.data == '' or form.post_type.data == 'discussion':
         post.title = form.discussion_title.data
         post.body = form.discussion_body.data
         post.body_html = markdown_to_html(post.body)
         post.type = POST_TYPE_ARTICLE
-    elif form.type.data == 'link':
+    elif form.post_type.data == 'link':
         post.title = form.link_title.data
         post.body = form.link_body.data
         post.body_html = markdown_to_html(post.body)
@@ -187,10 +188,10 @@ def save_post(form, post: Post):
             if post.image_id:
                 remove_old_file(post.image_id)
                 post.image_id = None
-            valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
             unused, file_extension = os.path.splitext(form.link_url.data)  # do not use _ here instead of 'unused'
             # this url is a link to an image - generate a thumbnail of it
-            if file_extension.lower() in valid_extensions:
+            if file_extension.lower() in allowed_extensions:
                 file = url_to_thumbnail_file(form.link_url.data)
                 if file:
                     post.image = file
@@ -200,16 +201,15 @@ def save_post(form, post: Post):
                 opengraph = opengraph_parse(form.link_url.data)
                 if opengraph and opengraph.get('og:image', '') != '':
                     filename = opengraph.get('og:image')
-                    valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
                     unused, file_extension = os.path.splitext(filename)
-                    if file_extension.lower() in valid_extensions:
+                    if file_extension.lower() in allowed_extensions:
                         file = url_to_thumbnail_file(filename)
                         if file:
                             file.alt_text = opengraph.get('og:title')
                             post.image = file
                             db.session.add(file)
 
-    elif form.type.data == 'image':
+    elif form.post_type.data == 'image':
         post.title = form.image_title.data
         post.body = form.image_body.data
         post.body_html = markdown_to_html(post.body)
@@ -222,7 +222,7 @@ def save_post(form, post: Post):
 
             # check if this is an allowed type of file
             file_ext = os.path.splitext(uploaded_file.filename)[1]
-            if file_ext.lower() not in allowed_extensions or file_ext.lower() != validate_image(uploaded_file.stream):
+            if file_ext.lower() not in allowed_extensions:
                 abort(400)
             new_filename = gibberish(15)
 
@@ -233,35 +233,39 @@ def save_post(form, post: Post):
             # save the file
             final_place = os.path.join(directory, new_filename + file_ext)
             final_place_thumbnail = os.path.join(directory, new_filename + '_thumbnail.webp')
+            uploaded_file.seek(0)
             uploaded_file.save(final_place)
 
             if file_ext.lower() == '.heic':
                 register_heif_opener()
 
+            #Image.MAX_IMAGE_PIXELS = 89478485
+
             # resize if necessary
             img = Image.open(final_place)
-            img = ImageOps.exif_transpose(img)
-            img_width = img.width
-            img_height = img.height
-            if img.width > 2000 or img.height > 2000:
-                img.thumbnail((2000, 2000))
-                img.save(final_place)
+            if '.' + img.format.lower() in allowed_extensions:
+                img = ImageOps.exif_transpose(img)
                 img_width = img.width
                 img_height = img.height
-            # save a second, smaller, version as a thumbnail
-            img.thumbnail((256, 256))
-            img.save(final_place_thumbnail, format="WebP", quality=93)
-            thumbnail_width = img.width
-            thumbnail_height = img.height
+                if img.width > 2000 or img.height > 2000:
+                    img.thumbnail((2000, 2000))
+                    img.save(final_place)
+                    img_width = img.width
+                    img_height = img.height
+                # save a second, smaller, version as a thumbnail
+                img.thumbnail((256, 256))
+                img.save(final_place_thumbnail, format="WebP", quality=93)
+                thumbnail_width = img.width
+                thumbnail_height = img.height
 
-            file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=form.image_title.data,
-                        width=img_width, height=img_height, thumbnail_width=thumbnail_width,
-                        thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail,
-                        source_url=final_place.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/"))
-            post.image = file
-            db.session.add(file)
+                file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=form.image_title.data,
+                            width=img_width, height=img_height, thumbnail_width=thumbnail_width,
+                            thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail,
+                            source_url=final_place.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/"))
+                post.image = file
+                db.session.add(file)
 
-    elif form.type.data == 'poll':
+    elif form.post_type.data == 'poll':
         ...
     else:
         raise Exception('invalid post type')
@@ -285,7 +289,7 @@ def remove_old_file(file_id):
 def save_icon_file(icon_file, directory='communities') -> File:
     # check if this is an allowed type of file
     file_ext = os.path.splitext(icon_file.filename)[1]
-    if file_ext.lower() not in allowed_extensions or file_ext.lower() != validate_image(icon_file.stream):
+    if file_ext.lower() not in allowed_extensions:
         abort(400)
     new_filename = gibberish(15)
 
@@ -302,33 +306,36 @@ def save_icon_file(icon_file, directory='communities') -> File:
         register_heif_opener()
 
     # resize if necessary
+    Image.MAX_IMAGE_PIXELS = 89478485
     img = Image.open(final_place)
-    img = ImageOps.exif_transpose(img)
-    img_width = img.width
-    img_height = img.height
-    if img.width > 250 or img.height > 250:
-        img.thumbnail((250, 250))
-        img.save(final_place)
+    if '.' + img.format.lower() in allowed_extensions:
+        img = ImageOps.exif_transpose(img)
         img_width = img.width
         img_height = img.height
-    # save a second, smaller, version as a thumbnail
-    img.thumbnail((40, 40))
-    img.save(final_place_thumbnail, format="WebP", quality=93)
-    thumbnail_width = img.width
-    thumbnail_height = img.height
+        if img.width > 250 or img.height > 250:
+            img.thumbnail((250, 250))
+            img.save(final_place)
+            img_width = img.width
+            img_height = img.height
+        # save a second, smaller, version as a thumbnail
+        img.thumbnail((40, 40))
+        img.save(final_place_thumbnail, format="WebP", quality=93)
+        thumbnail_width = img.width
+        thumbnail_height = img.height
 
-    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} icon',
-                width=img_width, height=img_height, thumbnail_width=thumbnail_width,
-                thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
-    db.session.add(file)
-    return file
+        file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} icon',
+                    width=img_width, height=img_height, thumbnail_width=thumbnail_width,
+                    thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail)
+        db.session.add(file)
+        return file
+    else:
+        abort(400)
 
 
 def save_banner_file(banner_file, directory='communities') -> File:
     # check if this is an allowed type of file
     file_ext = os.path.splitext(banner_file.filename)[1]
-    if file_ext.lower() not in allowed_extensions or file_ext.lower() != validate_image(
-            banner_file.stream):
+    if file_ext.lower() not in allowed_extensions:
         abort(400)
     new_filename = gibberish(15)
 
@@ -345,26 +352,30 @@ def save_banner_file(banner_file, directory='communities') -> File:
         register_heif_opener()
 
     # resize if necessary
+    Image.MAX_IMAGE_PIXELS = 89478485
     img = Image.open(final_place)
-    img = ImageOps.exif_transpose(img)
-    img_width = img.width
-    img_height = img.height
-    if img.width > 1600 or img.height > 600:
-        img.thumbnail((1600, 600))
-        img.save(final_place)
+    if '.' + img.format.lower() in allowed_extensions:
+        img = ImageOps.exif_transpose(img)
         img_width = img.width
         img_height = img.height
+        if img.width > 1600 or img.height > 600:
+            img.thumbnail((1600, 600))
+            img.save(final_place)
+            img_width = img.width
+            img_height = img.height
 
-    # save a second, smaller, version as a thumbnail
-    img.thumbnail((700, 500))
-    img.save(final_place_thumbnail, format="WebP", quality=93)
-    thumbnail_width = img.width
-    thumbnail_height = img.height
+        # save a second, smaller, version as a thumbnail
+        img.thumbnail((700, 500))
+        img.save(final_place_thumbnail, format="WebP", quality=93)
+        thumbnail_width = img.width
+        thumbnail_height = img.height
 
-    file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} banner',
-                width=img_width, height=img_height, thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
-    db.session.add(file)
-    return file
+        file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} banner',
+                    width=img_width, height=img_height, thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
+        db.session.add(file)
+        return file
+    else:
+        abort(400)
 
 
 # NB this always signs POSTs as the community so is only suitable for Announce activities

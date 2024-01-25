@@ -312,15 +312,6 @@ def ensure_directory_exists(directory):
         rebuild_directory += '/'
 
 
-def validate_image(stream):
-        header = stream.read(512)
-        stream.seek(0)
-        format = imghdr.what(None, header)
-        if not format:
-            return None
-        return '.' + (format if format != 'jpeg' else 'jpg')
-
-
 def validation_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
@@ -609,9 +600,9 @@ def _confidence(ups, downs):
 
 
 def confidence(ups, downs) -> float:
-    if ups is None:
+    if ups is None or ups < 0:
         ups = 0
-    if downs is None:
+    if downs is None or downs < 0:
         downs = 0
     if ups + downs == 0:
         return 0.0

@@ -408,7 +408,10 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
 
                 # Announce is new content and votes that happened on a remote server.
                 if request_json['type'] == 'Announce':
-                    if request_json['object']['type'] == 'Create':
+                    if isinstance(request_json['object'], str):
+                        activity_log.activity_json = json.dumps(request_json)
+                        activity_log.exception_message = 'invalid json?'
+                    elif request_json['object']['type'] == 'Create':
                         activity_log.activity_type = request_json['object']['type']
                         user_ap_id = request_json['object']['object']['attributedTo']
                         try:
