@@ -401,6 +401,18 @@ body {
   font-size: 0.95rem;
 }
 
+a {
+  text-decoration: none;
+  border: solid 2px transparent;
+}
+
+#outer_container a:not(.btn):hover, footer a:not(.btn):hover {
+  text-decoration: underline;
+}
+#outer_container a:not(.btn):active, footer a:not(.btn):active {
+  border: dotted 2px #0A5CA0;
+}
+
 div.navbar {
   border-bottom: 1px solid rgba(0, 40, 100, 0.12);
   min-height: 60px;

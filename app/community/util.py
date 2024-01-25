@@ -239,7 +239,7 @@ def save_post(form, post: Post):
             if file_ext.lower() == '.heic':
                 register_heif_opener()
 
-            #Image.MAX_IMAGE_PIXELS = 89478485
+            Image.MAX_IMAGE_PIXELS = 89478485
 
             # resize if necessary
             img = Image.open(final_place)
