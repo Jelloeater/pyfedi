@@ -626,9 +626,9 @@ fieldset legend {
 }
 @media (min-width: 992px) {
   .post_list_masonry, .post_list_masonry_wide {
-    -webkit-column-count: 4;
-    -moz-column-count: 4;
-    column-count: 4;
+    -webkit-column-count: 3;
+    -moz-column-count: 3;
+    column-count: 3;
     -webkit-column-gap: 5px;
     -moz-column-gap: 5px;
     column-gap: 5px;

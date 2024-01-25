@@ -250,9 +250,9 @@ nav, etc which are used site-wide */
   clear: both;
 
   @include breakpoint(tablet) {
-    -webkit-column-count: 4;
-    -moz-column-count: 4;
-    column-count: 4;
+    -webkit-column-count: 3;
+    -moz-column-count: 3;
+    column-count: 3;
     -webkit-column-gap: 5px;
     -moz-column-gap: 5px;
     column-gap: 5px;

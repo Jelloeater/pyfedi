@@ -97,6 +97,12 @@ class File(db.Model):
         else:
             return ''
 
+    def medium_url(self):
+        if self.file_path is None:
+            return self.thumbnail_url()
+        file_path = self.file_path[4:] if self.file_path.startswith('app/') else self.file_path
+        return f"https://{current_app.config['SERVER_NAME']}/{file_path}"
+
     def thumbnail_url(self):
         if self.thumbnail_path is None:
             if self.source_url:
