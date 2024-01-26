@@ -42,26 +42,27 @@
 {% if len(communities) > 0 %}
     <div class="table-responsive-md mt-4">
         <table class="communities_table table table-striped table-hover w-100">
+            <caption class="visually-hidden">{{ _('Communities') }}</caption>
             <thead>
                 <tr>
                     <th> </th>
-                    <th {% if not low_bandwidth %}colspan="2"{% endif %}>
-                        <a href="?sort_by=title{{ ' desc' if sort_by.text == 'community.title' }}" title="{{ _('Sort by name') }}" class="no-underline" rel="nofollow">{{ _('Community') }}
+                    <th {% if not low_bandwidth %}colspan="2"{% endif %} scope="col">
+                        <a href="?sort_by=title{{ ' desc' if sort_by.text == 'community.title' }}" title="{{ _('Sort by name') }}" rel="nofollow">{{ _('Community') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.title' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.title desc' }}"></span>
                         </a>
                     </th>
-                    <th>
-                        <a href="?sort_by=post_count{{ ' desc' if sort_by.text == 'community.post_count' }}" title="{{ _('Sort by post count') }}" class="no-underline" rel="nofollow">{{ _('Posts') }}
+                    <th scope="col">
+                        <a href="?sort_by=post_count{{ ' desc' if sort_by.text == 'community.post_count' }}" title="{{ _('Sort by post count') }}" rel="nofollow">{{ _('Posts') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.post_count' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.post_count desc' }}"></span>
                         </a>
                     </th>
-                    <th>
-                        <a href="?sort_by=post_reply_count{{ ' desc' if sort_by.text == 'community.post_reply_count' }}" title="{{ _('Sort by reply count') }}" class="no-underline" rel="nofollow">{{ _('Comments') }}
+                    <th scope="col">
+                        <a href="?sort_by=post_reply_count{{ ' desc' if sort_by.text == 'community.post_reply_count' }}" title="{{ _('Sort by reply count') }}" rel="nofollow">{{ _('Comments') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.post_reply_count' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.post_reply_count desc' }}"></span>
                         </a>
                     </th>
-                    <th>
-                        <a href="?sort_by=last_active{{ ' desc' if sort_by.text == 'community.last_active' }}" title="{{ _('Sort by recent activity') }}" class="no-underline" rel="nofollow">{{ _('Active') }}
+                    <th scope="col">
+                        <a href="?sort_by=last_active{{ ' desc' if sort_by.text == 'community.last_active' }}" title="{{ _('Sort by recent activity') }}" rel="nofollow">{{ _('Active') }}
                             <span class="{{ 'fe fe-chevron-up' if sort_by.text == 'community.last_active' }}{{ 'fe fe-chevron-down' if sort_by.text == 'community.last_active desc' }}"></span>
                         </a>
                     </th>
@@ -86,7 +87,7 @@
                                     <a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" alt="" /></a>
                             </td>
                         {% endif %}
-                        <td class="pl-0"><a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}">{{ community.display_name() }}</a></td>
+                        <th scope="row" class="pl-0"><a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}">{{ community.display_name() }}</a></th>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>

@@ -606,6 +606,10 @@ div.navbar {
   padding-top: 8px;
 }
 
+.table tbody tr th a {
+  font-weight: normal;
+}
+
 .text-right {
   text-align: right;
 }
