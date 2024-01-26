@@ -232,36 +232,37 @@ def post_vote(post_id: int, vote_direction):
         post.author.reputation += effect
         db.session.add(vote)
 
-        action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
-        action_json = {
-            'actor': current_user.profile_id(),
-            'object': post.profile_id(),
-            'type': action_type,
-            'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
-            'audience': post.community.profile_id()
-        }
-        if post.community.is_local():
-            announce = {
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                "type": 'Announce',
-                "to": [
-                    "https://www.w3.org/ns/activitystreams#Public"
-                ],
-                "actor": post.community.ap_profile_id,
-                "cc": [
-                    post.community.ap_followers_url
-                ],
-                '@context': default_context(),
-                'object': action_json
+        if not post.community.local_only:
+            action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
+            action_json = {
+                'actor': current_user.profile_id(),
+                'object': post.profile_id(),
+                'type': action_type,
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
+                'audience': post.community.profile_id()
             }
-            for instance in post.community.following_instances():
-                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
-                    send_to_remote_instance(instance.id, post.community.id, announce)
-        else:
-            success = post_request(post.community.ap_inbox_url, action_json, current_user.private_key,
-                                                       current_user.ap_profile_id + '#main-key')
-            if not success:
-                flash('Failed to send vote', 'warning')
+            if post.community.is_local():
+                announce = {
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                    "type": 'Announce',
+                    "to": [
+                        "https://www.w3.org/ns/activitystreams#Public"
+                    ],
+                    "actor": post.community.ap_profile_id,
+                    "cc": [
+                        post.community.ap_followers_url
+                    ],
+                    '@context': default_context(),
+                    'object': action_json
+                }
+                for instance in post.community.following_instances():
+                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                        send_to_remote_instance(instance.id, post.community.id, announce)
+            else:
+                success = post_request(post.community.ap_inbox_url, action_json, current_user.private_key,
+                                                           current_user.ap_profile_id + '#main-key')
+                if not success:
+                    flash('Failed to send vote', 'warning')
 
     current_user.last_seen = utcnow()
     current_user.ip_address = ip_address()
@@ -325,18 +326,19 @@ def comment_vote(comment_id, vote_direction):
             ...
             # todo: federate vote
         else:
-            action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
-            action_json = {
-                'actor': current_user.profile_id(),
-                'object': comment.profile_id(),
-                'type': action_type,
-                'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
-                'audience': comment.community.profile_id()
-            }
-            success = post_request(comment.community.ap_inbox_url, action_json, current_user.private_key,
-                                                       current_user.ap_profile_id + '#main-key')
-            if not success:
-                flash('Failed to send vote', 'error')
+            if not comment.community.local_only:
+                action_type = 'Like' if vote_direction == 'upvote' else 'Dislike'
+                action_json = {
+                    'actor': current_user.profile_id(),
+                    'object': comment.profile_id(),
+                    'type': action_type,
+                    'id': f"https://{current_app.config['SERVER_NAME']}/activities/{action_type.lower()}/{gibberish(15)}",
+                    'audience': comment.community.profile_id()
+                }
+                success = post_request(comment.community.ap_inbox_url, action_json, current_user.private_key,
+                                                           current_user.ap_profile_id + '#main-key')
+                if not success:
+                    flash('Failed to send vote', 'error')
 
     current_user.last_seen = utcnow()
     current_user.ip_address = ip_address()
@@ -438,80 +440,81 @@ def add_reply(post_id: int, comment_id: int):
         post.flush_cache()
 
         # federation
-        reply_json = {
-            'type': 'Note',
-            'id': reply.profile_id(),
-            'attributedTo': current_user.profile_id(),
-            'to': [
-                'https://www.w3.org/ns/activitystreams#Public',
-                in_reply_to.author.profile_id()
-            ],
-            'cc': [
-                post.community.profile_id(),
-                current_user.followers_url()
-            ],
-            'content': reply.body_html,
-            'inReplyTo': in_reply_to.profile_id(),
-            'url': reply.profile_id(),
-            'mediaType': 'text/html',
-            'source': {
-                'content': reply.body,
-                'mediaType': 'text/markdown'
-            },
-            'published': ap_datetime(utcnow()),
-            'distinguished': False,
-            'audience': post.community.profile_id(),
-            'contentMap': {
-                'en': reply.body_html
-            }
-        }
-        create_json = {
-            '@context': default_context(),
-            'type': 'Create',
-            'actor': current_user.profile_id(),
-            'audience': post.community.profile_id(),
-            'to': [
-                'https://www.w3.org/ns/activitystreams#Public',
-                in_reply_to.author.profile_id()
-            ],
-            'cc': [
-                post.community.profile_id(),
-                current_user.followers_url()
-            ],
-            'object': reply_json,
-            'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
-        }
-        if in_reply_to.notify_author and in_reply_to.author.ap_id is not None:
-            reply_json['tag'] = [
-                {
-                    'href': in_reply_to.author.ap_profile_id,
-                    'name': '@' + in_reply_to.author.ap_id,
-                    'type': 'Mention'
+        if not post.community.local_only:
+            reply_json = {
+                'type': 'Note',
+                'id': reply.profile_id(),
+                'attributedTo': current_user.profile_id(),
+                'to': [
+                    'https://www.w3.org/ns/activitystreams#Public',
+                    in_reply_to.author.profile_id()
+                ],
+                'cc': [
+                    post.community.profile_id(),
+                    current_user.followers_url()
+                ],
+                'content': reply.body_html,
+                'inReplyTo': in_reply_to.profile_id(),
+                'url': reply.profile_id(),
+                'mediaType': 'text/html',
+                'source': {
+                    'content': reply.body,
+                    'mediaType': 'text/markdown'
+                },
+                'published': ap_datetime(utcnow()),
+                'distinguished': False,
+                'audience': post.community.profile_id(),
+                'contentMap': {
+                    'en': reply.body_html
                 }
-            ]
-        if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
-            success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
-                                                       current_user.ap_profile_id + '#main-key')
-            if not success:
-                flash('Failed to send reply', 'error')
-        else:                       # local community - send it to followers on remote instances
-            announce = {
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                "type": 'Announce',
-                "to": [
-                    "https://www.w3.org/ns/activitystreams#Public"
-                ],
-                "actor": post.community.ap_profile_id,
-                "cc": [
-                    post.community.ap_followers_url
-                ],
-                '@context': default_context(),
-                'object': create_json
             }
+            create_json = {
+                '@context': default_context(),
+                'type': 'Create',
+                'actor': current_user.profile_id(),
+                'audience': post.community.profile_id(),
+                'to': [
+                    'https://www.w3.org/ns/activitystreams#Public',
+                    in_reply_to.author.profile_id()
+                ],
+                'cc': [
+                    post.community.profile_id(),
+                    current_user.followers_url()
+                ],
+                'object': reply_json,
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
+            }
+            if in_reply_to.notify_author and in_reply_to.author.ap_id is not None:
+                reply_json['tag'] = [
+                    {
+                        'href': in_reply_to.author.ap_profile_id,
+                        'name': '@' + in_reply_to.author.ap_id,
+                        'type': 'Mention'
+                    }
+                ]
+            if not post.community.is_local():    # this is a remote community, send it to the instance that hosts it
+                success = post_request(post.community.ap_inbox_url, create_json, current_user.private_key,
+                                                           current_user.ap_profile_id + '#main-key')
+                if not success:
+                    flash('Failed to send reply', 'error')
+            else:                       # local community - send it to followers on remote instances
+                announce = {
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                    "type": 'Announce',
+                    "to": [
+                        "https://www.w3.org/ns/activitystreams#Public"
+                    ],
+                    "actor": post.community.ap_profile_id,
+                    "cc": [
+                        post.community.ap_followers_url
+                    ],
+                    '@context': default_context(),
+                    'object': create_json
+                }
 
-            for instance in post.community.following_instances():
-                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
-                    send_to_remote_instance(instance.id, post.community.id, announce)
+                for instance in post.community.following_instances():
+                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                        send_to_remote_instance(instance.id, post.community.id, announce)
 
         if reply.depth <= constants.THREAD_CUTOFF_DEPTH:
             return redirect(url_for('activitypub.post_ap', post_id=post_id, _anchor=f'comment_{reply.id}'))
@@ -566,79 +569,80 @@ def post_edit(post_id: int):
             flash(_('Your changes have been saved.'), 'success')
             # federate edit
 
-            page_json = {
-                'type': 'Page',
-                'id': post.ap_id,
-                'attributedTo': current_user.ap_profile_id,
-                'to': [
-                    post.community.ap_profile_id,
-                    'https://www.w3.org/ns/activitystreams#Public'
-                ],
-                'name': post.title,
-                'cc': [],
-                'content': post.body_html if post.body_html else '',
-                'mediaType': 'text/html',
-                'source': {
-                    'content': post.body if post.body else '',
-                    'mediaType': 'text/markdown'
-                },
-                'attachment': [],
-                'commentsEnabled': post.comments_enabled,
-                'sensitive': post.nsfw,
-                'nsfl': post.nsfl,
-                'published': ap_datetime(post.posted_at),
-                'updated': ap_datetime(post.edited_at),
-                'audience': post.community.ap_profile_id
-            }
-            update_json = {
-                'id': f"https://{current_app.config['SERVER_NAME']}/activities/update/{gibberish(15)}",
-                'type': 'Update',
-                'actor': current_user.profile_id(),
-                'audience': post.community.profile_id(),
-                'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
-                'published': ap_datetime(utcnow()),
-                'cc': [
-                    current_user.followers_url()
-                ],
-                'object': page_json,
-            }
-            if post.type == POST_TYPE_LINK:
-                page_json['attachment'] = [{'href': post.url, 'type': 'Link'}]
-            elif post.image_id:
-                if post.image.file_path:
-                    image_url = post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
-                elif post.image.thumbnail_path:
-                    image_url = post.image.thumbnail_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
-                else:
-                    image_url = post.image.source_url
-                # NB image is a dict while attachment is a list of dicts (usually just one dict in the list)
-                page_json['image'] = {'type': 'Image', 'url': image_url}
-                if post.type == POST_TYPE_IMAGE:
-                    page_json['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
-
-            if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
-                success = post_request(post.community.ap_inbox_url, update_json, current_user.private_key,
-                                       current_user.ap_profile_id + '#main-key')
-                if not success:
-                    flash('Failed to send edit to remote server', 'error')
-            else:  # local community - send it to followers on remote instances
-                announce = {
-                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                    "type": 'Announce',
-                    "to": [
-                        "https://www.w3.org/ns/activitystreams#Public"
+            if not post.community.local_only:
+                page_json = {
+                    'type': 'Page',
+                    'id': post.ap_id,
+                    'attributedTo': current_user.ap_profile_id,
+                    'to': [
+                        post.community.ap_profile_id,
+                        'https://www.w3.org/ns/activitystreams#Public'
                     ],
-                    "actor": post.community.ap_profile_id,
-                    "cc": [
-                        post.community.ap_followers_url
-                    ],
-                    '@context': default_context(),
-                    'object': update_json
+                    'name': post.title,
+                    'cc': [],
+                    'content': post.body_html if post.body_html else '',
+                    'mediaType': 'text/html',
+                    'source': {
+                        'content': post.body if post.body else '',
+                        'mediaType': 'text/markdown'
+                    },
+                    'attachment': [],
+                    'commentsEnabled': post.comments_enabled,
+                    'sensitive': post.nsfw,
+                    'nsfl': post.nsfl,
+                    'published': ap_datetime(post.posted_at),
+                    'updated': ap_datetime(post.edited_at),
+                    'audience': post.community.ap_profile_id
                 }
+                update_json = {
+                    'id': f"https://{current_app.config['SERVER_NAME']}/activities/update/{gibberish(15)}",
+                    'type': 'Update',
+                    'actor': current_user.profile_id(),
+                    'audience': post.community.profile_id(),
+                    'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
+                    'published': ap_datetime(utcnow()),
+                    'cc': [
+                        current_user.followers_url()
+                    ],
+                    'object': page_json,
+                }
+                if post.type == POST_TYPE_LINK:
+                    page_json['attachment'] = [{'href': post.url, 'type': 'Link'}]
+                elif post.image_id:
+                    if post.image.file_path:
+                        image_url = post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
+                    elif post.image.thumbnail_path:
+                        image_url = post.image.thumbnail_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
+                    else:
+                        image_url = post.image.source_url
+                    # NB image is a dict while attachment is a list of dicts (usually just one dict in the list)
+                    page_json['image'] = {'type': 'Image', 'url': image_url}
+                    if post.type == POST_TYPE_IMAGE:
+                        page_json['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
 
-                for instance in post.community.following_instances():
-                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
-                        send_to_remote_instance(instance.id, post.community.id, announce)
+                if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
+                    success = post_request(post.community.ap_inbox_url, update_json, current_user.private_key,
+                                           current_user.ap_profile_id + '#main-key')
+                    if not success:
+                        flash('Failed to send edit to remote server', 'error')
+                else:  # local community - send it to followers on remote instances
+                    announce = {
+                        "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                        "type": 'Announce',
+                        "to": [
+                            "https://www.w3.org/ns/activitystreams#Public"
+                        ],
+                        "actor": post.community.ap_profile_id,
+                        "cc": [
+                            post.community.ap_followers_url
+                        ],
+                        '@context': default_context(),
+                        'object': update_json
+                    }
+
+                    for instance in post.community.following_instances():
+                        if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                            send_to_remote_instance(instance.id, post.community.id, announce)
 
             return redirect(url_for('activitypub.post_ap', post_id=post.id))
         else:
@@ -680,43 +684,44 @@ def post_delete(post_id: int):
         db.session.commit()
         flash(_('Post deleted.'))
 
-        delete_json = {
-            'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
-            'type': 'Delete',
-            'actor': current_user.profile_id(),
-            'audience': post.community.profile_id(),
-            'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
-            'published': ap_datetime(utcnow()),
-            'cc': [
-                current_user.followers_url()
-            ],
-            'object': post.ap_id,
-        }
-
-        if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
-            success = post_request(post.community.ap_inbox_url, delete_json, current_user.private_key,
-                                   current_user.ap_profile_id + '#main-key')
-            if not success:
-                flash('Failed to send delete to remote server', 'error')
-        else:  # local community - send it to followers on remote instances
-            announce = {
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                "type": 'Announce',
-                "to": [
-                    "https://www.w3.org/ns/activitystreams#Public"
+        if not community.local_only:
+            delete_json = {
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
+                'type': 'Delete',
+                'actor': current_user.profile_id(),
+                'audience': post.community.profile_id(),
+                'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
+                'published': ap_datetime(utcnow()),
+                'cc': [
+                    current_user.followers_url()
                 ],
-                "actor": post.community.ap_profile_id,
-                "cc": [
-                    post.community.ap_followers_url
-                ],
-                '@context': default_context(),
-                'object': delete_json
+                'object': post.ap_id,
             }
 
-            for instance in post.community.following_instances():
-                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(
-                        instance.domain):
-                    send_to_remote_instance(instance.id, post.community.id, announce)
+            if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
+                success = post_request(post.community.ap_inbox_url, delete_json, current_user.private_key,
+                                       current_user.ap_profile_id + '#main-key')
+                if not success:
+                    flash('Failed to send delete to remote server', 'error')
+            else:  # local community - send it to followers on remote instances
+                announce = {
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                    "type": 'Announce',
+                    "to": [
+                        "https://www.w3.org/ns/activitystreams#Public"
+                    ],
+                    "actor": post.community.ap_profile_id,
+                    "cc": [
+                        post.community.ap_followers_url
+                    ],
+                    '@context': default_context(),
+                    'object': delete_json
+                }
+
+                for instance in post.community.following_instances():
+                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(
+                            instance.domain):
+                        send_to_remote_instance(instance.id, post.community.id, announce)
 
     return redirect(url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not None else community.name))
 
@@ -919,71 +924,72 @@ def post_reply_edit(post_id: int, comment_id: int):
             else:
                 in_reply_to = post
             # federate edit
-            reply_json = {
-                'type': 'Note',
-                'id': post_reply.profile_id(),
-                'attributedTo': current_user.profile_id(),
-                'to': [
-                    'https://www.w3.org/ns/activitystreams#Public',
-                    in_reply_to.author.profile_id()
-                ],
-                'cc': [
-                    post.community.profile_id(),
-                    current_user.followers_url()
-                ],
-                'content': post_reply.body_html,
-                'inReplyTo': in_reply_to.profile_id(),
-                'url': post_reply.profile_id(),
-                'mediaType': 'text/html',
-                'source': {
-                    'content': post_reply.body,
-                    'mediaType': 'text/markdown'
-                },
-                'published': ap_datetime(post_reply.posted_at),
-                'updated': ap_datetime(post_reply.edited_at),
-                'distinguished': False,
-                'audience': post.community.profile_id(),
-                'contentMap': {
-                    'en': post_reply.body_html
+            if not post.community.local_only:
+                reply_json = {
+                    'type': 'Note',
+                    'id': post_reply.profile_id(),
+                    'attributedTo': current_user.profile_id(),
+                    'to': [
+                        'https://www.w3.org/ns/activitystreams#Public',
+                        in_reply_to.author.profile_id()
+                    ],
+                    'cc': [
+                        post.community.profile_id(),
+                        current_user.followers_url()
+                    ],
+                    'content': post_reply.body_html,
+                    'inReplyTo': in_reply_to.profile_id(),
+                    'url': post_reply.profile_id(),
+                    'mediaType': 'text/html',
+                    'source': {
+                        'content': post_reply.body,
+                        'mediaType': 'text/markdown'
+                    },
+                    'published': ap_datetime(post_reply.posted_at),
+                    'updated': ap_datetime(post_reply.edited_at),
+                    'distinguished': False,
+                    'audience': post.community.profile_id(),
+                    'contentMap': {
+                        'en': post_reply.body_html
+                    }
                 }
-            }
-            update_json = {
-                'id': f"https://{current_app.config['SERVER_NAME']}/activities/update/{gibberish(15)}",
-                'type': 'Update',
-                'actor': current_user.profile_id(),
-                'audience': post.community.profile_id(),
-                'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
-                'published': ap_datetime(utcnow()),
-                'cc': [
-                    current_user.followers_url()
-                ],
-                'object': reply_json,
-            }
-
-            if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
-                success = post_request(post.community.ap_inbox_url, update_json, current_user.private_key,
-                                       current_user.ap_profile_id + '#main-key')
-                if not success:
-                    flash('Failed to send edit to remote server', 'error')
-            else:  # local community - send it to followers on remote instances
-                announce = {
-                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                    "type": 'Announce',
-                    "to": [
-                        "https://www.w3.org/ns/activitystreams#Public"
+                update_json = {
+                    'id': f"https://{current_app.config['SERVER_NAME']}/activities/update/{gibberish(15)}",
+                    'type': 'Update',
+                    'actor': current_user.profile_id(),
+                    'audience': post.community.profile_id(),
+                    'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
+                    'published': ap_datetime(utcnow()),
+                    'cc': [
+                        current_user.followers_url()
                     ],
-                    "actor": post.community.ap_profile_id,
-                    "cc": [
-                        post.community.ap_followers_url
-                    ],
-                    '@context': default_context(),
-                    'object': update_json
+                    'object': reply_json,
                 }
 
-                for instance in post.community.following_instances():
-                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(
-                            instance.domain):
-                        send_to_remote_instance(instance.id, post.community.id, announce)
+                if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
+                    success = post_request(post.community.ap_inbox_url, update_json, current_user.private_key,
+                                           current_user.ap_profile_id + '#main-key')
+                    if not success:
+                        flash('Failed to send edit to remote server', 'error')
+                else:  # local community - send it to followers on remote instances
+                    announce = {
+                        "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                        "type": 'Announce',
+                        "to": [
+                            "https://www.w3.org/ns/activitystreams#Public"
+                        ],
+                        "actor": post.community.ap_profile_id,
+                        "cc": [
+                            post.community.ap_followers_url
+                        ],
+                        '@context': default_context(),
+                        'object': update_json
+                    }
+
+                    for instance in post.community.following_instances():
+                        if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(
+                                instance.domain):
+                            send_to_remote_instance(instance.id, post.community.id, announce)
             return redirect(url_for('activitypub.post_ap', post_id=post.id))
         else:
             form.body.data = post_reply.body
@@ -1014,42 +1020,43 @@ def post_reply_delete(post_id: int, comment_id: int):
         post.flush_cache()
         flash(_('Comment deleted.'))
         # federate delete
-        delete_json = {
-            'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
-            'type': 'Delete',
-            'actor': current_user.profile_id(),
-            'audience': post.community.profile_id(),
-            'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
-            'published': ap_datetime(utcnow()),
-            'cc': [
-                current_user.followers_url()
-            ],
-            'object': post_reply.ap_id,
-        }
-
-        if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
-            success = post_request(post.community.ap_inbox_url, delete_json, current_user.private_key,
-                                   current_user.ap_profile_id + '#main-key')
-            if not success:
-                flash('Failed to send delete to remote server', 'error')
-        else:  # local community - send it to followers on remote instances
-            announce = {
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                "type": 'Announce',
-                "to": [
-                    "https://www.w3.org/ns/activitystreams#Public"
+        if not post.community.local_only:
+            delete_json = {
+                'id': f"https://{current_app.config['SERVER_NAME']}/activities/delete/{gibberish(15)}",
+                'type': 'Delete',
+                'actor': current_user.profile_id(),
+                'audience': post.community.profile_id(),
+                'to': [post.community.profile_id(), 'https://www.w3.org/ns/activitystreams#Public'],
+                'published': ap_datetime(utcnow()),
+                'cc': [
+                    current_user.followers_url()
                 ],
-                "actor": post.community.ap_profile_id,
-                "cc": [
-                    post.community.ap_followers_url
-                ],
-                '@context': default_context(),
-                'object': delete_json
+                'object': post_reply.ap_id,
             }
 
-            for instance in post.community.following_instances():
-                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
-                    send_to_remote_instance(instance.id, post.community.id, announce)
+            if not post.community.is_local():  # this is a remote community, send it to the instance that hosts it
+                success = post_request(post.community.ap_inbox_url, delete_json, current_user.private_key,
+                                       current_user.ap_profile_id + '#main-key')
+                if not success:
+                    flash('Failed to send delete to remote server', 'error')
+            else:  # local community - send it to followers on remote instances
+                announce = {
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                    "type": 'Announce',
+                    "to": [
+                        "https://www.w3.org/ns/activitystreams#Public"
+                    ],
+                    "actor": post.community.ap_profile_id,
+                    "cc": [
+                        post.community.ap_followers_url
+                    ],
+                    '@context': default_context(),
+                    'object': delete_json
+                }
+
+                for instance in post.community.following_instances():
+                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                        send_to_remote_instance(instance.id, post.community.id, announce)
 
     return redirect(url_for('activitypub.post_ap', post_id=post.id))
 

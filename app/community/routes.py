@@ -376,87 +376,88 @@ def add_post(actor):
 
         notify_about_post(post)
 
-        page = {
-            'type': 'Page',
-            'id': post.ap_id,
-            'attributedTo': current_user.ap_profile_id,
-            'to': [
-                community.ap_profile_id,
-                'https://www.w3.org/ns/activitystreams#Public'
-            ],
-            'name': post.title,
-            'cc': [],
-            'content': post.body_html if post.body_html else '',
-            'mediaType': 'text/html',
-            'source': {
-                'content': post.body if post.body else '',
-                'mediaType': 'text/markdown'
-            },
-            'attachment': [],
-            'commentsEnabled': post.comments_enabled,
-            'sensitive': post.nsfw,
-            'nsfl': post.nsfl,
-            'published': ap_datetime(utcnow()),
-            'audience': community.ap_profile_id
-        }
-        create = {
-            "id": f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}",
-            "actor": current_user.ap_profile_id,
-            "to": [
-                "https://www.w3.org/ns/activitystreams#Public"
-            ],
-            "cc": [
-                community.ap_profile_id
-            ],
-            "type": "Create",
-            "audience": community.ap_profile_id,
-            "object": page,
-            '@context': default_context()
-        }
-        if post.type == POST_TYPE_LINK:
-            page['attachment'] = [{'href': post.url, 'type': 'Link'}]
-        elif post.image_id:
-            if post.image.file_path:
-                image_url = post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
-            elif post.image.thumbnail_path:
-                image_url = post.image.thumbnail_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
-            else:
-                image_url = post.image.source_url
-            # NB image is a dict while attachment is a list of dicts (usually just one dict in the list)
-            page['image'] = {'type': 'Image', 'url': image_url}
-            if post.type == POST_TYPE_IMAGE:
-                page['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
-        if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
-            success = post_request(community.ap_inbox_url, create, current_user.private_key,
-                                   current_user.ap_profile_id + '#main-key')
-            if success:
-                flash(_('Your post to %(name)s has been made.', name=community.title))
-            else:
-                flash('There was a problem making your post to ' + community.title)
-        else:   # local community - send (announce) post out to followers
-            announce = {
-                "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
-                "type": 'Announce',
+        if not community.local_only:
+            page = {
+                'type': 'Page',
+                'id': post.ap_id,
+                'attributedTo': current_user.ap_profile_id,
+                'to': [
+                    community.ap_profile_id,
+                    'https://www.w3.org/ns/activitystreams#Public'
+                ],
+                'name': post.title,
+                'cc': [],
+                'content': post.body_html if post.body_html else '',
+                'mediaType': 'text/html',
+                'source': {
+                    'content': post.body if post.body else '',
+                    'mediaType': 'text/markdown'
+                },
+                'attachment': [],
+                'commentsEnabled': post.comments_enabled,
+                'sensitive': post.nsfw,
+                'nsfl': post.nsfl,
+                'published': ap_datetime(utcnow()),
+                'audience': community.ap_profile_id
+            }
+            create = {
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}",
+                "actor": current_user.ap_profile_id,
                 "to": [
                     "https://www.w3.org/ns/activitystreams#Public"
                 ],
-                "actor": community.ap_profile_id,
                 "cc": [
-                    community.ap_followers_url
+                    community.ap_profile_id
                 ],
-                '@context': default_context(),
-                'object': create
+                "type": "Create",
+                "audience": community.ap_profile_id,
+                "object": page,
+                '@context': default_context()
             }
+            if post.type == POST_TYPE_LINK:
+                page['attachment'] = [{'href': post.url, 'type': 'Link'}]
+            elif post.image_id:
+                if post.image.file_path:
+                    image_url = post.image.file_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
+                elif post.image.thumbnail_path:
+                    image_url = post.image.thumbnail_path.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/")
+                else:
+                    image_url = post.image.source_url
+                # NB image is a dict while attachment is a list of dicts (usually just one dict in the list)
+                page['image'] = {'type': 'Image', 'url': image_url}
+                if post.type == POST_TYPE_IMAGE:
+                    page['attachment'] = [{'type': 'Link', 'href': post.image.source_url}]  # source_url is always a https link, no need for .replace() as done above
+            if not community.is_local():  # this is a remote community - send the post to the instance that hosts it
+                success = post_request(community.ap_inbox_url, create, current_user.private_key,
+                                       current_user.ap_profile_id + '#main-key')
+                if success:
+                    flash(_('Your post to %(name)s has been made.', name=community.title))
+                else:
+                    flash('There was a problem making your post to ' + community.title)
+            else:   # local community - send (announce) post out to followers
+                announce = {
+                    "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}",
+                    "type": 'Announce',
+                    "to": [
+                        "https://www.w3.org/ns/activitystreams#Public"
+                    ],
+                    "actor": community.ap_profile_id,
+                    "cc": [
+                        community.ap_followers_url
+                    ],
+                    '@context': default_context(),
+                    'object': create
+                }
 
-            sent_to = 0
-            for instance in community.following_instances():
-                if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
-                    send_to_remote_instance(instance.id, community.id, announce)
-                    sent_to += 1
-            if sent_to:
-                flash(_('Your post to %(name)s has been made.', name=community.title))
-            else:
-                flash(_('Your post to %(name)s has been made.', name=community.title))
+                sent_to = 0
+                for instance in community.following_instances():
+                    if instance.inbox and not current_user.has_blocked_instance(instance.id) and not instance_banned(instance.domain):
+                        send_to_remote_instance(instance.id, community.id, announce)
+                        sent_to += 1
+                if sent_to:
+                    flash(_('Your post to %(name)s has been made.', name=community.title))
+                else:
+                    flash(_('Your post to %(name)s has been made.', name=community.title))
 
         return redirect(f"/c/{community.link()}")
     else:

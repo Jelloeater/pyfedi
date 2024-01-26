@@ -917,6 +917,10 @@ def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id
 
 
 def create_post_reply(activity_log: ActivityPubLog, community: Community, in_reply_to, request_json: dict, user: User, announce_id=None) -> Union[Post, None]:
+    if community.local_only:
+        activity_log.exception_message = 'Community is local only, reply discarded'
+        activity_log.result = 'ignored'
+        return None
     post_id, parent_comment_id, root_id = find_reply_parent(in_reply_to)
     if post_id or parent_comment_id or root_id:
         # set depth to +1 of the parent depth
@@ -1006,6 +1010,10 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
 
 
 def create_post(activity_log: ActivityPubLog, community: Community, request_json: dict, user: User, announce_id=None) -> Union[Post, None]:
+    if community.local_only:
+        activity_log.exception_message = 'Community is local only, post discarded'
+        activity_log.result = 'ignored'
+        return None
     post = Post(user_id=user.id, community_id=community.id,
                 title=html.unescape(request_json['object']['name']),
                 comments_enabled=request_json['object']['commentsEnabled'],
