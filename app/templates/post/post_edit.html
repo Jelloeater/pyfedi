@@ -56,6 +56,19 @@
               <div class="tab-pane fade show active" id="discussion-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
                   {{ render_field(form.discussion_title) }}
                   {{ render_field(form.discussion_body) }}
+                  {% if markdown_editor %}
+                    <script nonce="{{ session['nonce'] }}">
+                        window.addEventListener("load", function () {
+                            var downarea = new DownArea({
+                                elem: document.querySelector('#discussion_body'),
+                                resize: DownArea.RESIZE_VERTICAL,
+                                hide: ['heading', 'bold-italic'],
+                                value: {{ form.discussion_body.data | tojson | safe }},
+                            });
+                            setupAutoResize('discussion_body');
+                        });
+                    </script>
+                  {% endif %}
               </div>
               <div class="tab-pane fade" id="link-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
                   {{ render_field(form.link_title) }}
@@ -68,6 +81,7 @@
                                 elem: document.querySelector('#link_body'),
                                 resize: DownArea.RESIZE_VERTICAL,
                                 hide: ['heading', 'bold-italic'],
+                                value: {{ form.link_body.data | tojson | safe }},
                             });
                             setupAutoResize('link_body');
                         });
@@ -77,6 +91,8 @@
               <div class="tab-pane fade" id="image-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
                   {{ render_field(form.image_title) }}
                   {{ render_field(form.image_file) }}
+                  {{ render_field(form.image_alt_text) }}
+                  <small class="field_hint">{{ _('Describe the image, to help visually impaired people.') }}</small>
                   {{ render_field(form.image_body) }}
                   {% if markdown_editor %}
                     <script nonce="{{ session['nonce'] }}">
@@ -85,6 +101,7 @@
                                 elem: document.querySelector('#image_body'),
                                 resize: DownArea.RESIZE_VERTICAL,
                                 hide: ['heading', 'bold-italic'],
+                                value: {{ form.image_body.data | tojson | safe }},
                             });
                             setupAutoResize('image_body');
                         });

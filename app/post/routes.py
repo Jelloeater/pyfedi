@@ -655,6 +655,7 @@ def post_edit(post_id: int):
                 form.post_type.data = 'image'
                 form.image_title.data = post.title
                 form.image_body.data = post.body
+                form.image_alt_text.data = post.image.alt_text
             form.notify_author.data = post.notify_author
             return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
                                    images_disabled=images_disabled, markdown_editor=True,

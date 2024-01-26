@@ -57,6 +57,8 @@
               <div class="tab-pane fade" id="image-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
                   {{ render_field(form.image_title) }}
                   {{ render_field(form.image_file) }}
+                  {{ render_field(form.image_alt_text) }}
+                  <small class="field_hint">{{ _('Describe the image, to help visually impaired people.') }}</small>
                   {{ render_field(form.image_body) }}
                   {% if markdown_editor %}
                     <script nonce="{{ session['nonce'] }}">

@@ -214,6 +214,8 @@ def save_post(form, post: Post):
         post.body = form.image_body.data
         post.body_html = markdown_to_html(post.body)
         post.type = POST_TYPE_IMAGE
+        alt_text = form.image_alt_text.data if form.image_alt_text.data else form.image_title.data
+        post.image.alt_text = alt_text
         uploaded_file = request.files['image_file']
         if uploaded_file and uploaded_file.filename != '':
             if post.image_id:
@@ -258,7 +260,7 @@ def save_post(form, post: Post):
                 thumbnail_width = img.width
                 thumbnail_height = img.height
 
-                file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=form.image_title.data,
+                file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=alt_text,
                             width=img_width, height=img_height, thumbnail_width=thumbnail_width,
                             thumbnail_height=thumbnail_height, thumbnail_path=final_place_thumbnail,
                             source_url=final_place.replace('app/static/', f"https://{current_app.config['SERVER_NAME']}/static/"))
