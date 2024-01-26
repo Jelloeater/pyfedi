@@ -23,6 +23,8 @@
                         <small class="field_hint">Provide a wide image - letterbox orientation.</small>
                         {{ render_field(form.rules) }}
                         {{ render_field(form.nsfw) }}
+                        {{ render_field(form.local_only) }}
+                        <small class="field_hint">{{ _('Only people using %(name)s can post or reply', name=current_app.config['SERVER_NAME']) }}.</small>
                         {{ render_field(form.submit) }}
                     </form>
                 </div>

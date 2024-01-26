@@ -43,7 +43,7 @@ def add_local():
         community = Community(title=form.community_name.data, name=form.url.data, description=form.description.data,
                               rules=form.rules.data, nsfw=form.nsfw.data, private_key=private_key,
                               public_key=public_key, description_html=markdown_to_html(form.description.data),
-                              rules_html=markdown_to_html(form.rules.data),
+                              rules_html=markdown_to_html(form.rules.data), local_only=form.local_only.data,
                               ap_profile_id='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data,
                               ap_followers_url='https://' + current_app.config['SERVER_NAME'] + '/c/' + form.url.data + '/followers',
                               subscriptions_count=1, instance_id=1, low_quality='memes' in form.url.data)
@@ -70,7 +70,7 @@ def add_local():
         return redirect('/c/' + community.name)
 
     return render_template('community/add_local.html', title=_('Create community'), form=form, moderating_communities=moderating_communities(current_user.get_id()),
-                           joined_communities=joined_communities(current_user.get_id()))
+                           joined_communities=joined_communities(current_user.get_id()), current_app=current_app)
 
 
 @bp.route('/add_remote', methods=['GET', 'POST'])
@@ -176,7 +176,7 @@ def show_community(community: Community):
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), sort=sort,
-                           inoculation=inoculation[randint(0, len(inoculation) - 1)], post_layout=post_layout)
+                           inoculation=inoculation[randint(0, len(inoculation) - 1)], post_layout=post_layout, current_app=current_app)
 
 
 # RSS feed of the community

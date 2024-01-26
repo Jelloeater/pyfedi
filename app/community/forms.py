@@ -20,6 +20,7 @@ class AddLocalCommunity(FlaskForm):
     banner_file = FileField(_('Banner image'))
     rules = TextAreaField(_l('Rules'))
     nsfw = BooleanField('NSFW')
+    local_only = BooleanField('Local only')
     submit = SubmitField(_l('Create'))
 
     def validate(self, extra_validators=None):
