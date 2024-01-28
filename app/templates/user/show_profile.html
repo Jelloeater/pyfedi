@@ -100,7 +100,7 @@
         {% endif %}
     </div>
 
-    <div class="col-12 col-md-4 side_pane" role="complementary">
+    <aside class="col-12 col-md-4 side_pane" role="complementary">
         {% if current_user.is_authenticated and current_user.id == user.id %}
             <div class="card mt-3">
                 <div class="card-header">
@@ -193,6 +193,6 @@
                 </div>
             </div>
         {% endif %}
-    </div>
+    </aside>
 </div>
 {% endblock %}
