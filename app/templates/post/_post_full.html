@@ -32,10 +32,10 @@
             <div class="post_image">
                 {% if post.image_id %}
                     {% if low_bandwidth %}
-                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
                              width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
                     {% else %}
-                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                        <a href="{{ post.image.view_url() }}" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
                              width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
                     {% endif %}
                 {% else %}
@@ -69,7 +69,7 @@
             </h1>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">
-                    <a href="{{ post.url }}" target="_blank" rel="nofollow ugc" class="post_link"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                    <a href="{{ post.url }}" target="_blank" rel="nofollow ugc" class="post_link"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 </div>
             {% endif %}
@@ -87,12 +87,12 @@
                 {% endif %}
             {% elif post.type == POST_TYPE_IMAGE %}
                 <div class="post_image">
-                    <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text }}"
+                    <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.view_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
                             width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
                 </div>
             {% else %}
                 {% if post.image_id and not (post.url and 'youtube.com' in post.url) %}
-                        <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text }}"
+                        <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" /></a>
                 {% endif %}
             {% endif %}
