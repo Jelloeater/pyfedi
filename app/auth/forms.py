@@ -25,25 +25,25 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField(_l('Register'))
 
     def validate_real_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+        user = User.query.filter(User.email.ilike(email.data.strip())).first()
         if user is not None:
             raise ValidationError(_l('An account with this email address already exists.'))
 
     def validate_user_name(self, user_name):
-        user = User.query.filter_by(user_name=user_name.data, ap_id=None).first()
+        user = User.query.filter(User.user_name.ilike(user_name.data.strip())).filter_by(ap_id=None).first()
         if user is not None:
             if user.deleted:
                 raise ValidationError(_l('This username was used in the past and cannot be reused.'))
             else:
                 raise ValidationError(_l('An account with this user name already exists.'))
-        community = Community.query.filter_by(name=user_name.data).first()
+        community = Community.query.filter(Community.name.ilike(user_name.data.strip())).first()
         if community is not None:
             raise ValidationError(_l('A community with this name exists so it cannot be used for a user.'))
         
     def validate_password(self, password):
         if not password.data:
             return
-
+        password.data = password.data.strip()
         if password.data == 'password' or password.data == '12345678' or password.data == '1234567890':
             raise ValidationError(_l('This password is too common.'))
 
