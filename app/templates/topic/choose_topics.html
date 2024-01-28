@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6" id="choose_topics_card">
+                    <div class="card-title text-center">{{ _('Please choose at least 3 topics that interest you.') }}</div>
+                    {{ render_form(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

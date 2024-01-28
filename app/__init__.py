@@ -74,6 +74,9 @@ def create_app(config_class=Config):
     from app.domain import bp as domain_bp
     app.register_blueprint(domain_bp)
 
+    from app.topic import bp as topic_bp
+    app.register_blueprint(topic_bp)
+
     def get_resource_as_string(name, charset='utf-8'):
         with app.open_resource(name) as f:
             return f.read().decode(charset)

@@ -57,7 +57,10 @@ def login():
         db.session.commit()
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('main.index')
+            if len(current_user.communities()) == 0:
+                next_page = url_for('topic.choose_topics')
+            else:
+                next_page = url_for('main.index')
         response = make_response(redirect(next_page))
         if form.low_bandwidth_mode.data:
             response.set_cookie('low_bandwidth', '1', expires=datetime(year=2099, month=12, day=30))
@@ -108,9 +111,9 @@ def register():
                 if current_app.config['MODE'] == 'development':
                     current_app.logger.info('Verify account:' + url_for('auth.verify_email', token=user.verification_token, _external=True))
 
-                flash(_('Great, you are now a registered user! Choose some communities to join. Use the topic filter to narrow things down.'))
+                flash(_('Great, you are now a registered user!'))
 
-        resp = make_response(redirect(url_for('main.list_communities')))
+        resp = make_response(redirect(url_for('topic.choose_topics')))
         if user_ip_banned():
             resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
         return resp
@@ -176,7 +179,10 @@ def verify_email(token):
             flash(_('Thank you for verifying your email address.'))
         else:
             flash(_('Email address validation failed.'), 'error')
-        return redirect(url_for('main.index'))
+        if len(user.communities()) == 0:
+            return redirect(url_for('topic.choose_topics'))
+        else:
+            return redirect(url_for('main.index'))
 
 
 @bp.route('/validation_required')

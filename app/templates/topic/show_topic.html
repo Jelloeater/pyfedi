@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+            <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
+            <li class="breadcrumb-item active">{{ topic.name|shorten }}</li>
+          </ol>
+        </nav>
+        <h1 class="mt-2">{{ topic.name }}
+        </h1>
+
+        {% include "community/_community_nav.html" %}
+        {% if post_layout == 'masonry' or post_layout == 'masonry_wide' %}
+            <div class="post_list_{{ post_layout }}">
+                {% for post in posts %}
+                    {% include 'post/_post_teaser_masonry.html' %}
+                {% else %}
+                    <p>{{ _('No posts in this topic yet.') }}</p>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="post_list">
+                {% for post in posts %}
+                    {% include 'post/_post_teaser.html' %}
+                {% else %}
+                    <p>{{ _('No posts in this topic yet.') }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <nav aria-label="Pagination" class="mt-4" role="navigation">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}" class="btn btn-primary" rel='nofollow'>
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                    </a>
+                {% endif %}
+                {% if next_url %}
+                    <a href="{{ next_url }}" class="btn btn-primary" rel='nofollow'>
+                        {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+        </nav>
+    </div>
+
+    <div class="col-12 col-md-4 side_pane" role="complementary">
+        {% if topic_communities %}
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('Topic communities') }}</h2>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for community in topic_communities %}
+                        <li class="list-group-item">
+                            <a href="/c/{{ community.link() }}" aria-label="{{ _('Go to community') }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />
+                                {{ community.display_name() }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p class="mt-4"><a class="btn btn-primary" href="/communities">{{ _('Explore communities') }}</a></p>
+            </div>
+        </div>
+        {% endif %}
+        {% include "_inoculation_links.html" %}
+    </div>
+</div>
+<div class="row">
+
+
+</div>
+{% endblock %}

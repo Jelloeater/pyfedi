@@ -478,6 +478,16 @@ fieldset legend {
     content: ">";
   }
 }
+.communities_table tbody tr th {
+  padding: 0;
+}
+.communities_table tbody tr th a {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  width: 100%;
+  display: inline-block;
+}
+
 .community_header {
   background-repeat: no-repeat;
   background-position: center center;
@@ -526,6 +536,25 @@ fieldset legend {
 .community_header_no_background .community_icon, .community_header .community_icon {
   width: 120px;
   height: auto;
+}
+
+#choose_topics_card label.form-control-label {
+  display: none;
+}
+#choose_topics_card .form-group {
+  margin-bottom: 0;
+}
+#choose_topics_card ul.form-control {
+  border: none;
+  list-style-type: none;
+  padding-top: 0;
+  margin-bottom: 0;
+}
+#choose_topics_card ul.form-control li {
+  vertical-align: center;
+}
+#choose_topics_card ul.form-control li label {
+  height: 44px;
 }
 
 .form-check .form-check-input {

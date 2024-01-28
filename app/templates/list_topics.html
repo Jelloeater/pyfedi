@@ -8,8 +8,8 @@
         <table class="communities_table table table-striped table-hover w-100">
             <tbody>
                 {% for topic in topics %}
-                    <tr class="">
-                        <td><a href="/communities?topic_id={{ topic.id }}">{{ topic.name }}</a></td>
+                    <tr>
+                        <th class="pl-2"><a href="/topic/{{ topic.machine_name }}">{{ topic.name }}</a></th>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -18,4 +18,5 @@
 {% else %}
 <p>{{ _('There are no communities yet.') }}</p>
 {% endif %}
+<p><a href="/communities" class="btn btn-primary">{{ _('Explore communities') }}</a></p>
 {% endblock %}

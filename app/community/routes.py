@@ -315,7 +315,7 @@ def unsubscribe(actor):
                     activity.result = 'success'
                     db.session.commit()
                     if not success:
-                        flash('There was a problem while trying to join', 'error')
+                        flash('There was a problem while trying to unsubscribe', 'error')
 
                 if proceed:
                     db.session.query(CommunityMember).filter_by(user_id=current_user.id, community_id=community.id).delete()

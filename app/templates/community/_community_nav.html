@@ -1,6 +1,8 @@
-<div class="mobile_create_post d-md-none mt-1">
-    <a class="btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create post') }}</a>
-</div>
+{% if community %}
+    <div class="mobile_create_post d-md-none mt-1">
+        <a class="btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create post') }}</a>
+    </div>
+{% endif %}
 <div class="btn-group mt-1 mb-2">
     <a href="?sort=hot&layout={{ post_layout }}" class="btn {{ 'btn-primary' if sort == '' or sort == 'hot' else 'btn-outline-secondary' }}" rel="nofollow">
         {{ _('Hot') }}

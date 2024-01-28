@@ -9,9 +9,9 @@
                 <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
                   <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-                    <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
                     {% if community.topic_id %}
-                    <li class="breadcrumb-item"><a href="/communities?topic_id={{ community.topic.id }}" rel="nofollow">{{ community.topic.name }}</a></li>
+                      <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
+                      <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                     {% endif %}
                     <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
                   </ol>
@@ -28,9 +28,9 @@
                 <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
                   <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-                    <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
                     {% if community.topic_id %}
-                    <li class="breadcrumb-item"><a href="/communities?topic_id={{ community.topic.id }}" rel="nofollow">{{ community.topic.name }}</a></li>
+                      <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
+                      <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                     {% endif %}
                     <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
                   </ol>
@@ -50,9 +50,9 @@
             <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-                <li class="breadcrumb-item"><a href="/communities">{{ _('Communities') }}</a></li>
                 {% if community.topic_id %}
-                <li class="breadcrumb-item"><a href="/communities?topic_id={{ community.topic.id }}" rel="nofollow">{{ community.topic.name }}</a></li>
+                  <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
+                  <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                 {% endif %}
                 <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
               </ol>

@@ -82,6 +82,18 @@ nav, etc which are used site-wide */
   }
 }
 
+.communities_table {
+  tbody tr th {
+    padding: 0;
+    a {
+      padding-top: 10px;
+      padding-bottom: 10px;
+      width: 100%;
+      display: inline-block;
+    }
+  }
+}
+
 .community_header {
   background-repeat: no-repeat;
   background-position: center center;
@@ -130,6 +142,27 @@ nav, etc which are used site-wide */
   .community_icon {
     width: 120px;
     height: auto;
+  }
+}
+
+#choose_topics_card {
+  label.form-control-label {
+    display: none;
+  }
+  .form-group {
+    margin-bottom: 0;
+  }
+  ul.form-control {
+    border: none;
+    list-style-type: none;
+    padding-top: 0;
+    margin-bottom: 0;
+    li {
+      vertical-align: center;
+      label {
+        height: 44px;
+      }
+    }
   }
 }
 

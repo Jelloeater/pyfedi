@@ -121,6 +121,7 @@ class File(db.Model):
 
 class Topic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    machine_name = db.Column(db.String(50), index=True)
     name = db.Column(db.String(50))
     num_communities = db.Column(db.Integer, default=0)
     communities = db.relationship('Community', lazy='dynamic', backref='topic', cascade="all, delete-orphan")
@@ -540,7 +541,7 @@ class User(UserMixin, db.Model):
 
     def communities(self) -> List[Community]:
         return Community.query.filter(Community.banned == False).\
-            join(CommunityMember).filter(CommunityMember.is_banned == False).all()
+            join(CommunityMember).filter(CommunityMember.is_banned == False, CommunityMember.user_id == self.id).all()
 
     def profile_id(self):
         return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
