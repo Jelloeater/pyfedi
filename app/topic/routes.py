@@ -87,7 +87,10 @@ def choose_topics():
             flash(_('You did not choose any topics. Would you like to choose individual communities instead?'))
             return redirect(url_for('main.list_communities'))
     else:
-        return render_template('topic/choose_topics.html', form=form)
+        return render_template('topic/choose_topics.html', form=form,
+                               moderating_communities=moderating_communities(current_user.get_id()),
+                               joined_communities=joined_communities(current_user.get_id()),
+                               )
 
 
 def topics_for_form():
