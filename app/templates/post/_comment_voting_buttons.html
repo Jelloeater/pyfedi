@@ -1,6 +1,6 @@
 {% if current_user.is_authenticated and current_user.verified %}
         {% if can_upvote(current_user, community) %}
-                <div class="upvote_button digits_{{ digits(comment.up_votes) }} {{ upvoted_class }}" role="button" aria-label="{{ _('UpVote') }}"
+                <div class="upvote_button {{ upvoted_class }}" role="button" aria-label="{{ _('UpVote') }}"
                  hx-post="/comment/{{ comment.id }}/upvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons_new" tabindex="0">
                         <span class="fe fe-arrow-up"></span>
                         <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
@@ -8,7 +8,7 @@
         {% endif %}
         <span title="{{ comment.up_votes }}, {{ comment.down_votes }}">{{ comment.up_votes - comment.down_votes }}</span>
         {% if can_downvote(current_user, community) %}
-                <div class="downvote_button digits_{{ digits(comment.down_votes) }} {{ downvoted_class }}" role="button" aria-label="{{ _('DownVote') }}"
+                <div class="downvote_button {{ downvoted_class }}" role="button" aria-label="{{ _('DownVote') }}"
                  hx-post="/comment/{{ comment.id }}/downvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons_new" tabindex="0">
                         <span class="fe fe-arrow-down"></span>
                         <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
