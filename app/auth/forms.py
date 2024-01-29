@@ -6,17 +6,17 @@ from app.models import User, Community
 
 
 class LoginForm(FlaskForm):
-    user_name = StringField(_l('User name'), validators=[DataRequired()])
+    user_name = StringField(_l('User name'), validators=[DataRequired()], render_kw={'autofocus': True, 'autocomplete': 'username'})
     password = PasswordField(_l('Password'), validators=[DataRequired()])
     low_bandwidth_mode = BooleanField(_l('Low bandwidth mode'))
     submit = SubmitField(_l('Log In'))
 
 
 class RegistrationForm(FlaskForm):
-    user_name = StringField(_l('User name'), validators=[DataRequired()])
+    user_name = StringField(_l('User name'), validators=[DataRequired()], render_kw={'autofocus': True, 'autocomplete': 'username'})
     email = HiddenField(_l('Email'))
-    real_email = StringField(_l('Email'), validators=[DataRequired(), Email(), Length(min=5, max=255)])
-    password = PasswordField(_l('Password'), validators=[DataRequired(), Length(min=8, max=50)])
+    real_email = StringField(_l('Email'), validators=[DataRequired(), Email(), Length(min=5, max=255)], render_kw={'autocomplete': 'email'})
+    password = PasswordField(_l('Password'), validators=[DataRequired(), Length(min=8, max=50)], render_kw={'autocomplete': 'new-password'})
     password2 = PasswordField(
         _l('Repeat password'), validators=[DataRequired(),
                                            EqualTo('password')])
@@ -62,12 +62,12 @@ class RegistrationForm(FlaskForm):
 
 
 class ResetPasswordRequestForm(FlaskForm):
-    email = StringField(_l('Email'), validators=[DataRequired(), Email()])
+    email = StringField(_l('Email'), validators=[DataRequired(), Email()], render_kw={'autofocus': True})
     submit = SubmitField(_l('Request password reset'))
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField(_l('Password'), validators=[DataRequired()])
+    password = PasswordField(_l('Password'), validators=[DataRequired()], render_kw={'autofocus': True})
     password2 = PasswordField(
         _l('Repeat password'), validators=[DataRequired(),
                                            EqualTo('password')])

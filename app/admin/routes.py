@@ -343,7 +343,7 @@ def admin_topic_add():
     form = EditTopicForm()
     form.add_community.choices = communities_for_form()
     if form.validate_on_submit():
-        topic = Topic(name=form.name.data, num_communities=0)
+        topic = Topic(name=form.name.data, machine_name=form.machine_name.data, num_communities=0)
         db.session.add(topic)
         db.session.commit()
         if form.add_community.data:
@@ -369,6 +369,7 @@ def admin_topic_edit(topic_id):
     if form.validate_on_submit():
         topic.name = form.name.data
         topic.num_communities = topic.communities.count() + 1
+        topic.machine_name = form.machine_name.data
         if form.add_community.data:
             community = Community.query.get(form.add_community.data)
             community.topic_id = topic.id
@@ -377,6 +378,7 @@ def admin_topic_edit(topic_id):
         return redirect(url_for('admin.admin_topics'))
     else:
         form.name.data = topic.name
+        form.machine_name.data = topic.machine_name
     return render_template('admin/edit_topic.html', title=_('Edit topic'), form=form, topic=topic,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())
