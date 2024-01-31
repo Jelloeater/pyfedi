@@ -272,7 +272,8 @@ def post_vote(post_id: int, vote_direction):
         current_user.recalculate_attitude()
         db.session.commit()
     post.flush_cache()
-    return render_template('post/_post_voting_buttons.html', post=post, community=post.community,
+    template = 'post/_post_voting_buttons.html' if request.args.get('style', '') == '' else 'post/_post_voting_buttons_masonry.html'
+    return render_template(template, post=post, community=post.community,
                            upvoted_class=upvoted_class,
                            downvoted_class=downvoted_class)
 

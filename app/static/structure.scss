@@ -299,12 +299,21 @@ nav, etc which are used site-wide */
       height: auto;
     }
 
+    .masonry_thumb a {
+      border: none;
+    }
+
     .masonry_info {
       position: absolute;
       bottom: 0;
-      background-color: rgba(0, 0, 0, 0.2);
+      background-color: rgba(0, 0, 0, 0.3);
       width: 100%;
       text-align: center;
+
+      .voting_buttons_masonry {
+        width: 100%;
+        display: flex;
+      }
       p {
         margin-bottom: 0;
 
@@ -315,6 +324,55 @@ nav, etc which are used site-wide */
           @include breakpoint(laptop) {
             line-height: 30px;
           }
+        }
+      }
+      .row {
+        margin-left: 0;
+        margin-right: 0;
+
+        .col {
+          padding: 0;
+          flex-direction: row;
+          display: inline-flex;
+
+          a {
+            color: white;
+          }
+
+          .upvote_button, .downvote_button {
+            display: inline;
+            color: white;
+            padding-top: 5px;
+            width: 50%;
+            position: relative;
+
+            .htmx-indicator {
+              position: absolute;
+              width: 20px;
+              height: 20px;
+              left: 7px;
+            }
+
+            &.voted_up {
+              color: $green;
+            }
+            &.voted_down {
+              color: red;
+            }
+          }
+        }
+        .col-8 {
+          justify-content: center;
+          p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+
+        .reply_col {
+          justify-content: right;
+          padding-right: 5px;
         }
       }
     }

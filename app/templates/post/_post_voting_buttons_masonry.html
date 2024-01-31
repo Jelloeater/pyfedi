@@ -1,0 +1,23 @@
+{% if current_user.is_authenticated and current_user.verified %}
+        {% if can_upvote(current_user, post.community) %}
+                <div class="upvote_button {{ upvoted_class }}" role="button" aria-label="{{ _('UpVote') }}"
+                 hx-post="/post/{{ post.id }}/upvote?style=masonry" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons_masonry" tabindex="0" title="{{ post.up_votes }} upvotes">
+                        <span class="fe fe-arrow-up"></span>
+                        <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
+                </div>
+        {% endif %}
+        {% if can_downvote(current_user, post.community) %}
+                <div class="downvote_button {{ downvoted_class }}" role="button" aria-label="{{ _('DownVote') }}"
+                 hx-post="/post/{{ post.id }}/downvote?style=masonry" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons_masonry" tabindex="0" title="{{ post.down_votes }} downvotes">
+                        <span class="fe fe-arrow-down"></span>
+                        <img class="htmx-indicator" src="/static/images/spinner.svg" alt="" style="opacity: 0;">
+                </div>
+        {% endif %}
+{% else %}
+<div class="upvote_button digits_{{ digits(post.up_votes) }} {{ upvoted_class }} redirect_login" title="{{ shorten_number(post.up_votes) }} upvotes">
+        <span class="fe fe-arrow-up"></span>
+</div>
+<div class="downvote_button digits_{{ digits(post.down_votes) }} {{ downvoted_class }} redirect_login" title="{{ shorten_number(post.down_votes) }} downvotes">
+        <span class="fe fe-arrow-down"></span>
+</div>
+{% endif %}

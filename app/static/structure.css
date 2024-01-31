@@ -671,12 +671,19 @@ fieldset legend {
   width: 100%;
   height: auto;
 }
+.post_list_masonry .post_teaser .masonry_thumb a, .post_list_masonry_wide .post_teaser .masonry_thumb a {
+  border: none;
+}
 .post_list_masonry .post_teaser .masonry_info, .post_list_masonry_wide .post_teaser .masonry_info {
   position: absolute;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
   width: 100%;
   text-align: center;
+}
+.post_list_masonry .post_teaser .masonry_info .voting_buttons_masonry, .post_list_masonry_wide .post_teaser .masonry_info .voting_buttons_masonry {
+  width: 100%;
+  display: flex;
 }
 .post_list_masonry .post_teaser .masonry_info p, .post_list_masonry_wide .post_teaser .masonry_info p {
   margin-bottom: 0;
@@ -690,6 +697,49 @@ fieldset legend {
   .post_list_masonry .post_teaser .masonry_info p a, .post_list_masonry_wide .post_teaser .masonry_info p a {
     line-height: 30px;
   }
+}
+.post_list_masonry .post_teaser .masonry_info .row, .post_list_masonry_wide .post_teaser .masonry_info .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col, .post_list_masonry_wide .post_teaser .masonry_info .row .col {
+  padding: 0;
+  flex-direction: row;
+  display: inline-flex;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col a, .post_list_masonry_wide .post_teaser .masonry_info .row .col a {
+  color: white;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col .upvote_button, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button {
+  display: inline;
+  color: white;
+  padding-top: 5px;
+  width: 50%;
+  position: relative;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col .upvote_button .htmx-indicator, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button .htmx-indicator, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button .htmx-indicator, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button .htmx-indicator {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 7px;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col .upvote_button.voted_up, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button.voted_up, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button.voted_up, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button.voted_up {
+  color: #00b550;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col .upvote_button.voted_down, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button.voted_down, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button.voted_down, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button.voted_down {
+  color: red;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col-8, .post_list_masonry_wide .post_teaser .masonry_info .row .col-8 {
+  justify-content: center;
+}
+.post_list_masonry .post_teaser .masonry_info .row .col-8 p, .post_list_masonry_wide .post_teaser .masonry_info .row .col-8 p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.post_list_masonry .post_teaser .masonry_info .row .reply_col, .post_list_masonry_wide .post_teaser .masonry_info .row .reply_col {
+  justify-content: right;
+  padding-right: 5px;
 }
 .post_list_masonry .post_teaser .masonry_info_no_image, .post_list_masonry_wide .post_teaser .masonry_info_no_image {
   background-color: rgba(0, 0, 0, 0.2);
