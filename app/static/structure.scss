@@ -218,6 +218,16 @@ nav, etc which are used site-wide */
       }
     }
 
+    .utilities_row {
+      a {
+        display: inline-block;
+        width: 44px;
+      }
+      .preview_image, .post_options {
+        text-align: center;
+      }
+    }
+
     .thumbnail {
       float: right;
       padding-left: 0;

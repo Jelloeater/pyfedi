@@ -58,8 +58,7 @@
                     </div>
                     <div class="row utilities_row">
                         <div class="col-6">
-                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}" aria-hidden="true"><span class="fe fe-reply"></span></a>
-                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}">{{ post.reply_count }}</a>
+                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}"><span class="fe fe-reply"></span> {{ post.reply_count }}</a>
                             {% if post.type == POST_TYPE_IMAGE %}
                                 {% if post.image_id %}
                                     <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image" aria-label="{{ _('View image') }}" aria-hidden="true"><span class="fe fe-magnify"></span></a>
@@ -68,7 +67,7 @@
                                 {% endif %}
                             {% endif %}
                         </div>
-                        <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}" rel="nofollow" aria-label="{{ _('Options') }}"><span class="fe fe-options" title="Options"> </span></a></div>
+                        <div class="col-2"><a href="{{ url_for('post.post_options', post_id=post.id) }}" rel="nofollow" class="post_options" aria-label="{{ _('Options') }}"><span class="fe fe-options" title="Options"> </span></a></div>
                     </div>
                 </div>
             </div>
