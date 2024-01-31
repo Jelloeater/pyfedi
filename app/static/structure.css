@@ -709,13 +709,24 @@ fieldset legend {
 }
 .post_list_masonry .post_teaser .masonry_info .row .col a, .post_list_masonry_wide .post_teaser .masonry_info .row .col a {
   color: white;
+  padding-top: 6px;
+}
+@media (min-width: 1280px) {
+  .post_list_masonry .post_teaser .masonry_info .row .col a, .post_list_masonry_wide .post_teaser .masonry_info .row .col a {
+    padding-top: 0;
+  }
 }
 .post_list_masonry .post_teaser .masonry_info .row .col .upvote_button, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button {
   display: inline;
   color: white;
-  padding-top: 5px;
+  padding-top: 10px;
   width: 50%;
   position: relative;
+}
+@media (min-width: 1280px) {
+  .post_list_masonry .post_teaser .masonry_info .row .col .upvote_button, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button {
+    padding-top: 5px;
+  }
 }
 .post_list_masonry .post_teaser .masonry_info .row .col .upvote_button .htmx-indicator, .post_list_masonry .post_teaser .masonry_info .row .col .downvote_button .htmx-indicator, .post_list_masonry_wide .post_teaser .masonry_info .row .col .upvote_button .htmx-indicator, .post_list_masonry_wide .post_teaser .masonry_info .row .col .downvote_button .htmx-indicator {
   position: absolute;

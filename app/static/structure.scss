@@ -337,12 +337,19 @@ nav, etc which are used site-wide */
 
           a {
             color: white;
+            padding-top: 6px;
+            @include breakpoint(laptop) {
+              padding-top: 0;
+            }
           }
 
           .upvote_button, .downvote_button {
             display: inline;
             color: white;
-            padding-top: 5px;
+            padding-top: 10px;
+            @include breakpoint(laptop) {
+              padding-top: 5px;
+            }
             width: 50%;
             position: relative;
 
