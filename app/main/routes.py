@@ -85,6 +85,14 @@ def home_page(type, sort):
             posts = Post.query
             posts = posts.join(Community, Community.id == Post.community_id)
             posts = posts.filter(Community.show_all == True)
+
+        if current_user.ignore_bots:
+            posts = posts.filter(Post.from_bot == False)
+        if current_user.show_nsfl is False:
+            posts = posts.filter(Post.nsfl == False)
+        if current_user.show_nsfw is False:
+            posts = posts.filter(Post.nsfw == False)
+
         domains_ids = blocked_domains(current_user.id)
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))

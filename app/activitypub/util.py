@@ -1013,12 +1013,13 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
         activity_log.exception_message = 'Community is local only, post discarded'
         activity_log.result = 'ignored'
         return None
+    nsfl_in_title = '[NSFL]' in request_json['object']['name'].upper() or '(NSFL)' in request_json['object']['name'].upper()
     post = Post(user_id=user.id, community_id=community.id,
                 title=html.unescape(request_json['object']['name']),
                 comments_enabled=request_json['object']['commentsEnabled'],
                 sticky=request_json['object']['stickied'] if 'stickied' in request_json['object'] else False,
                 nsfw=request_json['object']['sensitive'],
-                nsfl=request_json['object']['nsfl'] if 'nsfl' in request_json['object'] else False,
+                nsfl=request_json['object']['nsfl'] if 'nsfl' in request_json['object'] else nsfl_in_title,
                 ap_id=request_json['object']['id'],
                 ap_create_id=request_json['id'],
                 ap_announce_id=announce_id,

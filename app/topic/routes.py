@@ -31,6 +31,21 @@ def show_topic(topic_name):
     if topic:
         # get posts from communities in that topic
         posts = Post.query.join(Community, Post.community_id == Community.id).filter(Community.topic_id == topic.id, Community.banned == False)
+
+        # filter out nsfw and nsfl if desired
+        if current_user.is_anonymous:
+            posts = posts.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+            content_filters = {}
+        else:
+            if current_user.ignore_bots:
+                posts = posts.filter(Post.from_bot == False)
+            if current_user.show_nsfl is False:
+                posts = posts.filter(Post.nsfl == False)
+            if current_user.show_nsfw is False:
+                posts = posts.filter(Post.nsfw == False)
+            content_filters = user_filters_posts(current_user.id)
+
+        # sorting
         if sort == '' or sort == 'hot':
             posts = posts.order_by(desc(Post.ranking))
         elif sort == 'top':
@@ -39,11 +54,8 @@ def show_topic(topic_name):
             posts = posts.order_by(desc(Post.posted_at))
         elif sort == 'active':
             posts = posts.order_by(desc(Post.last_active))
-        if current_user.is_anonymous or current_user.ignore_bots:
-            posts = posts.filter(Post.from_bot == False)
-            content_filters = {}
-        else:
-            content_filters = user_filters_posts(current_user.id)
+
+        # paging
         per_page = 100
         if post_layout == 'masonry':
             per_page = 200

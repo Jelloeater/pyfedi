@@ -132,12 +132,21 @@ def show_community(community: Community):
         mod_user_ids = [mod.user_id for mod in mods]
         mod_list = User.query.filter(User.id.in_(mod_user_ids)).all()
 
-    if current_user.is_anonymous or current_user.ignore_bots:
-        posts = community.posts.filter(Post.from_bot == False)
+    posts = community.posts
+
+    # filter out nsfw and nsfl if desired
+    if current_user.is_anonymous:
+        posts = posts.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
         content_filters = {}
     else:
+        if current_user.ignore_bots:
+            posts = posts.filter(Post.from_bot == False)
+        if current_user.show_nsfl is False:
+            posts = posts.filter(Post.nsfl == False)
+        if current_user.show_nsfw is False:
+            posts = posts.filter(Post.nsfw == False)
         content_filters = user_filters_posts(current_user.id)
-        posts = community.posts
+
     if sort == '' or sort == 'hot':
         posts = posts.order_by(desc(Post.ranking))
     elif sort == 'top':
