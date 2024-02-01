@@ -7,8 +7,11 @@ A lemmy/kbin clone written in Python with Flask.
  - AGPL.
  - First class moderation tools.
 
-[Screencast: overview of the PieFed codebase](https://join.piefed.social/2024/01/22/an-introduction-to-the-piefed-codebase/)
-
 ## Project goals
 
 To build a federated discussion and link aggregation platform, similar to Reddit, Lemmy, Mbin.
+
+## For developers
+
+- [Screencast: overview of the PieFed codebase](https://join.piefed.social/2024/01/22/an-introduction-to-the-piefed-codebase/)
+- [Database / entity relationship diagram](https://join.piefed.social/wp-content/uploads/2024/02/PieFed-entity-relationships.png)
