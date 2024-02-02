@@ -155,15 +155,15 @@ def list_communities():
     topic_id = int(request.args.get('topic_id', 0))
     sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.post_reply_count desc')
     topics = Topic.query.order_by(Topic.name).all()
+    communities = Community.query.filter_by(banned=False)
     if search_param == '':
         pass
     else:
-        flash('Sorry, no search function yet. Use the topic filter for now.', 'warning')
-        # communities = Community.query.filter_by(banned=False)
+        communities = communities.filter(or_(Community.title.ilike(f"%{search_param}%"), Community.ap_id.ilike(f"%{search_param}%")))
         #query = search(select(Community), search_param, sort=True)  # todo: exclude banned communities from search
         #communities = db.session.scalars(query).all()
 
-    communities = Community.query.filter_by(banned=False)
+
     if topic_id != 0:
         communities = communities.filter_by(topic_id=topic_id)
 
