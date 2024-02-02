@@ -4,12 +4,12 @@ from flask import redirect, url_for, flash, request, make_response, session, Mar
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
-from app import db, constants
+from app import db, constants, cache
 from app.inoculation import inoculation
 from app.models import Post, Domain, Community, DomainBlock
 from app.domain import bp
 from app.utils import get_setting, render_template, permission_required, joined_communities, moderating_communities, \
-    user_filters_posts
+    user_filters_posts, blocked_domains
 from sqlalchemy import desc
 
 
@@ -78,6 +78,7 @@ def domain_block(domain_id):
         block = DomainBlock(user_id=current_user.id, domain_id=domain_id)
         db.session.add(block)
         db.session.commit()
+    cache.delete_memoized(blocked_domains, current_user.id)
     flash(_('%(name)s blocked.', name=domain.name))
     return redirect(url_for('domain.show_domain', domain_id=domain.id))
 
@@ -87,9 +88,10 @@ def domain_block(domain_id):
 def domain_unblock(domain_id):
     domain = Domain.query.get_or_404(domain_id)
     block = DomainBlock.query.filter_by(user_id=current_user.id, domain_id=domain_id).first()
-    if not block:
+    if block:
         db.session.delete(block)
         db.session.commit()
+    cache.delete_memoized(blocked_domains, current_user.id)
     flash(_('%(name)s un-blocked.', name=domain.name))
     return redirect(url_for('domain.show_domain', domain_id=domain.id))
 
@@ -113,7 +115,7 @@ def domain_ban(domain_id):
 def domain_unban(domain_id):
     domain = Domain.query.get_or_404(domain_id)
     if domain:
-        domain.banned = True
+        domain.banned = False
         db.session.commit()
         flash(_('%(name)s un-banned for all users.', name=domain.name))
         return redirect(url_for('domain.show_domain', domain_id=domain.id))
