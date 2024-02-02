@@ -148,7 +148,7 @@ def post_to_activity(post: Post, community: Community):
         "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{post.ap_announce_id}"
     }
     if post.edited_at is not None:
-        activity_data["object"]["object"]["updated"] = post.edited_at
+        activity_data["object"]["object"]["updated"] = ap_datetime(post.edited_at)
     if post.language is not None:
         activity_data["object"]["object"]["language"] = {"identifier": post.language}
     if post.type == POST_TYPE_LINK and post.url is not None:
