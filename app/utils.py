@@ -22,6 +22,7 @@ from wtforms.widgets import Select, html_params, ListWidget, CheckboxInput
 from app import db, cache
 import re
 
+from app.email import send_welcome_email
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
     Site, Post, PostReply, utcnow, Filter, CommunityMember
 
@@ -561,6 +562,19 @@ def joined_communities(user_id):
         filter(CommunityMember.is_moderator == False, CommunityMember.is_owner == False). \
         filter(CommunityMember.user_id == user_id).order_by(Community.title).all()
 
+
+def finalize_user_setup(user, application_required=False):
+    from app.activitypub.signature import RsaKeys
+    user.verified = True
+    user.last_seen = utcnow()
+    private_key, public_key = RsaKeys.generate_keypair()
+    user.private_key = private_key
+    user.public_key = public_key
+    user.ap_profile_id = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
+    user.ap_public_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
+    user.ap_inbox_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}/inbox"
+    db.session.commit()
+    send_welcome_email(user, application_required)
 
 
 # All the following post/comment ranking math is explained at https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9

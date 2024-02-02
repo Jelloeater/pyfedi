@@ -13,9 +13,9 @@ class ProfileForm(FlaskForm):
     title = StringField(_l('Display name'), validators=[Optional(), Length(max=255)])
     email = EmailField(_l('Email address'), validators=[Email(), DataRequired(), Length(min=5, max=255)])
     password_field = PasswordField(_l('Set new password'), validators=[Optional(), Length(min=1, max=50)],
-                                   render_kw={"autocomplete": 'Off'})
+                                   render_kw={"autocomplete": 'new-password'})
     about = TextAreaField(_l('Bio'), validators=[Optional(), Length(min=3, max=5000)])
-    matrix_user_id = StringField(_l('Matrix User ID'), validators=[Optional(), Length(max=255)], render_kw={'autocomplete': 'off'})
+    matrixuserid = StringField(_l('Matrix User ID'), validators=[Optional(), Length(max=255)], render_kw={'autocomplete': 'off'})
     profile_file = FileField(_('Avatar image'))
     banner_file = FileField(_('Top banner image'))
     bot = BooleanField(_l('This profile is a bot'))
@@ -24,6 +24,10 @@ class ProfileForm(FlaskForm):
     def validate_email(self, field):
         if current_user.another_account_using_email(field.data):
             raise ValidationError(_l('That email address is already in use by another account'))
+
+    def validate_matrix_user_id(self, matrix_user_id):
+        if not matrix_user_id.data.strip().startswith('@'):
+            raise ValidationError(_('Matrix user ids start with @'))
 
 
 class SettingsForm(FlaskForm):

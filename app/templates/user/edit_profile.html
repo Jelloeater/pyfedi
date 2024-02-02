@@ -12,14 +12,14 @@
               </ol>
             </nav>
             <h1 class="mt-2">{{ _('Edit profile of %(name)s', name=user.user_name) }}</h1>
-            <form method='post' enctype="multipart/form-data" role="form">
+            <form method='post' enctype="multipart/form-data" role="form" autocomplete="off">
                 {{ form.csrf_token() }}
                 {{ render_field(form.title) }}
                 {{ render_field(form.email) }}
                 {{ render_field(form.password_field) }}
                 <hr />
                 {{ render_field(form.about) }}
-                {{ render_field(form.matrix_user_id) }}
+                {{ render_field(form.matrixuserid) }}
                 <small class="field_hint">e.g. @something:matrix.org. Include leading @ and use : before server</small>
                 {{ render_field(form.profile_file) }}
                 <small class="field_hint">Provide a square image that looks good when small.</small>

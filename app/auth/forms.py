@@ -20,6 +20,7 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField(
         _l('Repeat password'), validators=[DataRequired(),
                                            EqualTo('password')])
+    question = StringField(_('Why would you like to join this site?'), validators=[DataRequired(), Length(min=1, max=512)])
     recaptcha = RecaptchaField()
 
     submit = SubmitField(_l('Register'))

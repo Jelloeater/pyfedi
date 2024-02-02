@@ -598,7 +598,7 @@ fieldset legend {
 }
 .post_list .post_teaser .utilities_row a {
   display: inline-block;
-  width: 44px;
+  min-width: 44px;
 }
 .post_list .post_teaser .utilities_row .preview_image, .post_list .post_teaser .utilities_row .post_options {
   text-align: center;

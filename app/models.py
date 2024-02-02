@@ -447,6 +447,10 @@ class User(UserMixin, db.Model):
     def is_local(self):
         return self.ap_id is None or self.ap_profile_id.startswith('https://' + current_app.config['SERVER_NAME'])
 
+    def waiting_for_approval(self):
+        application = UserRegistration.query.filter_by(user_id=self.id, status=0).first()
+        return application is not None
+
     @cache.memoize(timeout=30)
     def is_admin(self):
         for role in self.roles:
@@ -581,6 +585,8 @@ class User(UserMixin, db.Model):
             file.delete_from_disk()
             self.avatar_id = None
             db.session.delete(file)
+        if self.waiting_for_approval():
+            db.session.query(UserRegistration).filter(UserRegistration.user_id == self.id).delete()
 
     def purge_content(self):
         files = File.query.join(Post).filter(Post.user_id == self.id).all()
@@ -861,6 +867,17 @@ class UserFollowRequest(db.Model):
     follow_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
+class UserRegistration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    answer = db.Column(db.String(512))
+    status = db.Column(db.Integer, default=0, index=True)                        # 0 = unapproved, 1 = approved
+    created_at = db.Column(db.DateTime, default=utcnow)
+    approved_at = db.Column(db.DateTime)
+    approved_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', foreign_keys=[user_id], lazy='joined')
+
+
 class PostVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
@@ -980,7 +997,7 @@ class Site(db.Model):
     enable_nsfl = db.Column(db.Boolean, default=False)
     community_creation_admin_only = db.Column(db.Boolean, default=False)
     reports_email_admins = db.Column(db.Boolean, default=True)
-    registration_mode = db.Column(db.String(20), default='Closed')
+    registration_mode = db.Column(db.String(20), default='Closed')      # possible values: Open, RequireApplication, Closed
     application_question = db.Column(db.Text, default='')
     allow_or_block_list = db.Column(db.Integer, default=2)  # 1 = allow list, 2 = block list
     allowlist = db.Column(db.Text, default='')

@@ -3,14 +3,16 @@ from flask import redirect, url_for, flash, request, make_response, session, Mar
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
+from wtforms import Label
+
 from app import db, cache
 from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.auth.util import random_token, normalize_utf
-from app.models import User, utcnow, IpBan
-from app.auth.email import send_password_reset_email, send_welcome_email, send_verification_email
-from app.activitypub.signature import RsaKeys
-from app.utils import render_template, ip_address, user_ip_banned, user_cookie_banned, banned_ip_addresses
+from app.email import send_verification_email, send_password_reset_email
+from app.models import User, utcnow, IpBan, UserRegistration
+from app.utils import render_template, ip_address, user_ip_banned, user_cookie_banned, banned_ip_addresses, \
+    finalize_user_setup
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -51,6 +53,8 @@ def login():
             # Set a cookie so we have another way to track banned people
             response.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
             return response
+        if user.waiting_for_approval():
+            return redirect(url_for('auth.please_wait'))
         login_user(user, remember=True)
         current_user.last_seen = utcnow()
         current_user.ip_address = ip_address()
@@ -84,6 +88,8 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
+    if g.site.registration_mode != 'RequireApplication':
+        form.question.validators = ()
     if form.validate_on_submit():
         if form.email.data == '': # ignore any registration where the email field is filled out. spam prevention
             if form.real_email.data.lower().startswith('postmaster@') or form.real_email.data.lower().startswith('abuse@') or \
@@ -104,20 +110,37 @@ def register():
                 user.set_password(form.password.data)
                 db.session.add(user)
                 db.session.commit()
-                login_user(user, remember=True)
-                send_welcome_email(user)
                 send_verification_email(user)
-
                 if current_app.config['MODE'] == 'development':
                     current_app.logger.info('Verify account:' + url_for('auth.verify_email', token=user.verification_token, _external=True))
-
-                flash(_('Great, you are now a registered user!'))
+                if g.site.registration_mode == 'RequireApplication':
+                    application = UserRegistration(user_id=user.id, answer=form.question.data)
+                    db.session.add(application)
+                    db.session.commit()
+                    return redirect(url_for('auth.please_wait'))
+                else:
+                    return redirect(url_for('auth.check_email'))
 
         resp = make_response(redirect(url_for('topic.choose_topics')))
         if user_ip_banned():
             resp.set_cookie('sesion', '17489047567495', expires=datetime(year=2099, month=12, day=30))
         return resp
-    return render_template('auth/register.html', title=_('Register'), form=form, site=g.site)
+    else:
+        if g.site.registration_mode == 'RequireApplication' and g.site.application_question != '':
+            form.question.label = Label('question', g.site.application_question)
+        if g.site.registration_mode != 'RequireApplication':
+            del form.question
+        return render_template('auth/register.html', title=_('Register'), form=form, site=g.site)
+
+
+@bp.route('/please_wait', methods=['GET'])
+def please_wait():
+    return render_template('auth/please_wait.html', title=_('Account under review'), site=g.site)
+
+
+@bp.route('/check_email', methods=['GET'])
+def check_email():
+    return render_template('auth/check_email.html', title=_('Check your email'), site=g.site)
 
 
 @bp.route('/reset_password_request', methods=['GET', 'POST'])
@@ -168,21 +191,21 @@ def verify_email(token):
             if user.verified:   # guard against users double-clicking the link in the email
                 return redirect(url_for('main.index'))
             user.verified = True
-            user.last_seen = utcnow()
-            private_key, public_key = RsaKeys.generate_keypair()
-            user.private_key = private_key
-            user.public_key = public_key
-            user.ap_profile_id = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
-            user.ap_public_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
-            user.ap_inbox_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}/inbox"
             db.session.commit()
-            flash(_('Thank you for verifying your email address.'))
+            if not user.waiting_for_approval():
+                finalize_user_setup(user)
+            else:
+                flash(_('Thank you for verifying your email address.'))
         else:
             flash(_('Email address validation failed.'), 'error')
-        if len(user.communities()) == 0:
-            return redirect(url_for('topic.choose_topics'))
+        if user.waiting_for_approval():
+            return redirect(url_for('auth.please_wait'))
         else:
-            return redirect(url_for('main.index'))
+            login_user(user, remember=True)
+            if len(user.communities()) == 0:
+                return redirect(url_for('topic.choose_topics'))
+            else:
+                return redirect(url_for('main.index'))
 
 
 @bp.route('/validation_required')

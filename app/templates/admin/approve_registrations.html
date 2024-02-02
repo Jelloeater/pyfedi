@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        {% if registrations %}
+        <p>{{ _('When registering, people are asked "%(question)s".', question=site.application_question) }} </p>
+        <form method="get">
+            <input type="search" name="search" value="{{ search }}">
+        </form>
+        <table class="table table-striped">
+            <tr>
+               <th>Name</th>
+                <th>Email</th>
+                <th>Email verifed</th>
+                <th>Answer</th>
+                <th>Applied</th>
+                <th>IP</th>
+               <th>Actions</th>
+            </tr>
+            {% for registration in registrations %}
+                <tr>
+                    <td><img src="{{ registration.user.avatar_thumbnail() }}" class="community_icon rounded-circle" loading="lazy" />
+                        {{ registration.user.display_name() }}</td>
+                    <td><a href="mailto:{{ registration.user.email }}">{{ registration.user.email }}</a></td>
+                    <td>{{ '<span class="green">&check;</span>'|safe if registration.user.verified else '<span class="red">&cross;</span>'|safe }}</td>
+                    <td>{{ registration.answer }}</td>
+                    <td>{{ moment(registration.created_at).fromNow() }}</td>
+                    <td>{{ registration.user.ip_address if registration.user.ip_address }} </td>
+                    <td><a href="{{ url_for('admin.admin_approve_registrations_approve', user_id=registration.user.id) }}" class="btn btn-sm btn-primary">{{ _('Approve') }}</a>
+                        <a href="/u/{{ registration.user.link() }}">{{ _('View') }}</a> |
+                        <a href="{{ url_for('admin.admin_user_delete', user_id=registration.user.id) }}" class="confirm_first">{{ _('Delete') }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+            <p>{{ _('No one is waiting to be approved.') }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

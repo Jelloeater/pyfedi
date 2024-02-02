@@ -1,12 +1,40 @@
 from flask import current_app, render_template, escape
 from app import db, celery
-from flask_babel import _, lazy_gettext as _l           # todo: set the locale based on account_id so that _() works
+from flask_babel import _, lazy_gettext as _l  # todo: set the locale based on account_id so that _() works
 import boto3
 from botocore.exceptions import ClientError
 from typing import List
 
 AWS_REGION = "ap-southeast-2"
 CHARSET = "UTF-8"
+
+
+def send_password_reset_email(user):
+    token = user.get_reset_password_token()
+    send_email(_('[PieFed] Reset Your Password'),
+               sender='PieFed <rimu@chorebuster.net>',
+               recipients=[user.email],
+               text_body=render_template('email/reset_password.txt',
+                                         user=user, token=token),
+               html_body=render_template('email/reset_password.html',
+                                         user=user, token=token))
+
+
+def send_verification_email(user):
+    send_email(_('Please verify your email address'),
+               sender='PieFed <rimu@chorebuster.net>',
+               recipients=[user.email],
+               text_body=render_template('email/verification.txt', user=user),
+               html_body=render_template('email/verification.html', user=user))
+
+
+def send_welcome_email(user, application_required):
+    subject = _('Your application has been approved - welcome to PieFed') if application_required else _('Welcome to PieFed')
+    send_email(subject,
+               sender='PieFed <rimu@chorebuster.net>',
+               recipients=[user.email],
+               text_body=render_template('email/welcome.txt', user=user, application_required=application_required),
+               html_body=render_template('email/welcome.html', user=user, application_required=application_required))
 
 
 @celery.task

@@ -33,7 +33,12 @@
                     <td><img src="{{ user.avatar_thumbnail() }}" class="community_icon rounded-circle" loading="lazy" />
                         {{ user.display_name() }}</td>
                     <td>{{ 'Local' if user.is_local() else 'Remote' }}</td>
-                    <td>{{ user.last_seen }}</td>
+                    <td>{% if request.args.get('local_remote', '') == 'local' %}
+                            {{ moment(user.last_seen).fromNow() }}
+                        {% else %}
+                            {{ user.last_seen }}
+                        {% endif %}
+                    </td>
                     <td>{{ user.attitude * 100 if user.attitude != 1 }}</td>
                     <td>{{ 'R ' + str(user.reputation) if user.reputation }}</td>
                     <td>{{ '<span class="red">Banned</span>'|safe if user.banned }} </td>

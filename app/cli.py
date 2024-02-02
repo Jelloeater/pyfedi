@@ -9,8 +9,8 @@ import click
 import os
 
 from app.activitypub.signature import RsaKeys
-from app.auth.email import send_verification_email
 from app.auth.util import random_token
+from app.email import send_verification_email
 from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain, ActivityPubLog, \
     utcnow, Site, Instance
 from app.utils import file_get_contents, retrieve_block_list
