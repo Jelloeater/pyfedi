@@ -215,7 +215,6 @@ def save_post(form, post: Post):
         post.body_html = markdown_to_html(post.body)
         post.type = POST_TYPE_IMAGE
         alt_text = form.image_alt_text.data if form.image_alt_text.data else form.image_title.data
-        post.image.alt_text = alt_text
         uploaded_file = request.files['image_file']
         if uploaded_file and uploaded_file.filename != '':
             if post.image_id:
