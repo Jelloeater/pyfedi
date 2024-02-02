@@ -1,11 +1,15 @@
+from random import randint
+
 from flask import redirect, url_for, flash, request, make_response, session, Markup, current_app, abort
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 
 from app import db, constants
+from app.inoculation import inoculation
 from app.models import Post, Domain, Community, DomainBlock
 from app.domain import bp
-from app.utils import get_setting, render_template, permission_required
+from app.utils import get_setting, render_template, permission_required, joined_communities, moderating_communities, \
+    user_filters_posts
 from sqlalchemy import desc
 
 
@@ -26,13 +30,23 @@ def show_domain(domain_id):
                 order_by(desc(Post.posted_at)).all()
         else:
             posts = Post.query.join(Community).filter(Post.domain_id == domain.id, Community.banned == False).order_by(desc(Post.posted_at))
+
+        if current_user.is_authenticated:
+            content_filters = user_filters_posts(current_user.id)
+        else:
+            content_filters = {}
         # pagination
         posts = posts.paginate(page=page, per_page=100, error_out=False)
         next_url = url_for('domain.show_domain', domain_id=domain_id, page=posts.next_num) if posts.has_next else None
         prev_url = url_for('domain.show_domain', domain_id=domain_id, page=posts.prev_num) if posts.has_prev and page != 1 else None
         return render_template('domain/domain.html', domain=domain, title=domain.name, posts=posts,
                                POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE, POST_TYPE_LINK=constants.POST_TYPE_LINK,
-                               next_url=next_url, prev_url=prev_url)
+                               next_url=next_url, prev_url=prev_url,
+                               content_filters=content_filters,
+                               moderating_communities=moderating_communities(current_user.get_id()),
+                               joined_communities=joined_communities(current_user.get_id()),
+                               inoculation=inoculation[randint(0, len(inoculation) - 1)]
+                               )
     else:
         abort(404)
 
