@@ -23,13 +23,13 @@ def show_domain(domain_id):
         if current_user.is_anonymous or current_user.ignore_bots:
             posts = Post.query.join(Community, Community.id == Post.community_id).\
                 filter(Post.from_bot == False, Post.domain_id == domain.id, Community.banned == False).\
-                order_by(desc(Post.last_active)).all()
+                order_by(desc(Post.posted_at)).all()
         else:
-            posts = Post.query.join(Community).filter(Post.domain_id == domain.id, Community.banned == False).order_by(desc(Post.last_active))
+            posts = Post.query.join(Community).filter(Post.domain_id == domain.id, Community.banned == False).order_by(desc(Post.posted_at))
         # pagination
         posts = posts.paginate(page=page, per_page=100, error_out=False)
-        next_url = url_for('main.index', page=posts.next_num) if posts.has_next else None
-        prev_url = url_for('main.index', page=posts.prev_num) if posts.has_prev and page != 1 else None
+        next_url = url_for('domain.show_domain', page=posts.next_num) if posts.has_next else None
+        prev_url = url_for('domain.show_domain', page=posts.prev_num) if posts.has_prev and page != 1 else None
         return render_template('domain/domain.html', domain=domain, title=domain.name, posts=posts,
                                POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE, POST_TYPE_LINK=constants.POST_TYPE_LINK,
                                next_url=next_url, prev_url=prev_url)
@@ -48,8 +48,8 @@ def domains():
     domains = domains.order_by(Domain.name)
     domains = domains.paginate(page=page, per_page=100, error_out=False)
 
-    next_url = url_for('main.index', page=domains.next_num) if domains.has_next else None
-    prev_url = url_for('main.index', page=domains.prev_num) if domains.has_prev and page != 1 else None
+    next_url = url_for('domain.domains', page=domains.next_num) if domains.has_next else None
+    prev_url = url_for('domain.domains', page=domains.prev_num) if domains.has_prev and page != 1 else None
 
     return render_template('domain/domains.html', title='All known domains', domains=domains,
                            next_url=next_url, prev_url=prev_url, search=search)
