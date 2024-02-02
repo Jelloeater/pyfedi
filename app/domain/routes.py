@@ -28,8 +28,8 @@ def show_domain(domain_id):
             posts = Post.query.join(Community).filter(Post.domain_id == domain.id, Community.banned == False).order_by(desc(Post.posted_at))
         # pagination
         posts = posts.paginate(page=page, per_page=100, error_out=False)
-        next_url = url_for('domain.show_domain', page=posts.next_num) if posts.has_next else None
-        prev_url = url_for('domain.show_domain', page=posts.prev_num) if posts.has_prev and page != 1 else None
+        next_url = url_for('domain.show_domain', domain_id=domain_id, page=posts.next_num) if posts.has_next else None
+        prev_url = url_for('domain.show_domain', domain_id=domain_id, page=posts.prev_num) if posts.has_prev and page != 1 else None
         return render_template('domain/domain.html', domain=domain, title=domain.name, posts=posts,
                                POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE, POST_TYPE_LINK=constants.POST_TYPE_LINK,
                                next_url=next_url, prev_url=prev_url)
