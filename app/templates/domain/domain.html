@@ -51,29 +51,20 @@
                                 <a class="w-100 btn btn-primary" href="/d/{{ domain.id }}/block">{{ _('Block') }}</a>
                             </div>
                         {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
-            <div class="card mt-3">
-                <div class="card-header">
-                     <h2>{{ _('Domain management') }}</h2>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if domain.banned %}
-                            <div class="col-8">
-                                <a class="w-100 btn btn-primary confirm_first" href="/d/{{ domain.id }}/unban">{{ _('Unban') }}</a>
-                            </div>
-                        {% else %}
-                            <div class="col-8">
-                                <a class="w-100 btn btn-primary confirm_first" href="/d/{{ domain.id }}/ban">{{ _('Ban instance-wide') }}</a>
-                            </div>
+                        {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
+                            {% if domain.banned %}
+                                <div class="col-8">
+                                    <a class="w-100 btn btn-primary confirm_first" href="/d/{{ domain.id }}/unban">{{ _('Unban') }}</a>
+                                </div>
+                            {% else %}
+                                <div class="col-8">
+                                    <a class="w-100 btn btn-primary confirm_first" href="/d/{{ domain.id }}/ban">{{ _('Ban instance-wide') }}</a>
+                                </div>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
             </div>
-            {% endif %}
         {% endif %}
 
         {% include "_inoculation_links.html" %}
