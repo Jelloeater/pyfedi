@@ -10,16 +10,26 @@
             <li class="breadcrumb-item active">Domains</li>
           </ol>
         </nav>
+        {% if search == '' %}
         <h1 class="mt-2">{{ _('All known domains') }}</h1>
-        <div class="post_list">
-            <ul>
+        {% else %}
+        <h1 class="mt-2">{{ _('Domains containing %(search)s', search=search) }}</h1>
+        {% endif %}
+        <form method="get"><input type="search" name="search" value="{{ search }}" placeholder="{{ _('Search') }}" autofocus></form>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{{ _('Domain') }}</th>
+                </tr>
+            </thead>
+            <tbody>
                 {% for domain in domains %}
-                    <li>
-                        <a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a>
-                    </li>
+                    <tr>
+                        <th><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></th>
+                    </tr>
                 {% endfor %}
-            </ul>
-        </div>
+            </tbody>
+        </table>
     </div>
 
     <aside class="col-12 col-md-4 side_pane" role="complementary">

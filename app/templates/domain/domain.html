@@ -19,10 +19,64 @@
                 <p>{{ _('No posts in this domain yet.') }}</p>
             {% endfor %}
         </div>
+
+        <nav aria-label="Pagination" class="mt-4" role="navigation">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}" class="btn btn-primary" rel='nofollow'>
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                    </a>
+                {% endif %}
+                {% if next_url %}
+                    <a href="{{ next_url }}" class="btn btn-primary" rel='nofollow'>
+                        {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+        </nav>
     </div>
 
     <aside class="col-12 col-md-4 side_pane" role="complementary">
+        {% if current_user.is_authenticated %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Domain management') }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if domain.blocked_by(current_user) %}
+                            <div class="col-4">
+                                <a class="w-100 btn btn-primary" href="/d/{{ domain.id }}/unblock">{{ _('Unblock') }}</a>
+                            </div>
+                        {% else %}
+                            <div class="col-4">
+                                <a class="w-100 btn btn-primary" href="/d/{{ domain.id }}/block">{{ _('Block') }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
+            <div class="card mt-3">
+                <div class="card-header">
+                     <h2>{{ _('Domain management') }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if domain.banned %}
+                            <div class="col-8">
+                                <a class="w-100 btn btn-primary confirm_first" href="/d/{{ domain.id }}/unban">{{ _('Unban') }}</a>
+                            </div>
+                        {% else %}
+                            <div class="col-8">
+                                <a class="w-100 btn btn-primary confirm_first" href="/d/{{ domain.id }}/ban">{{ _('Ban instance-wide') }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
 
+        {% include "_inoculation_links.html" %}
     </aside>
 </div>
 <div class="row">

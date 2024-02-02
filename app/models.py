@@ -796,6 +796,21 @@ class Domain(db.Model):
     notify_mods = db.Column(db.Boolean, default=False, index=True)
     notify_admins = db.Column(db.Boolean, default=False, index=True)
 
+    def blocked_by(self, user):
+        block = DomainBlock.query.filter_by(domain_id=self.id, user_id=user.id).first()
+        return block is not None
+
+    def purge_content(self):
+        files = File.query.join(Post).filter(Post.domain_id == self.id).all()
+        for file in files:
+            file.delete_from_disk()
+        posts = Post.query.filter_by(domain_id=self.id).all()
+        for post in posts:
+            post.delete_dependencies()
+            post.flush_cache()
+            db.session.delete(post)
+        db.session.commit()
+
 
 class DomainBlock(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
