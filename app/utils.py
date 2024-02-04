@@ -464,6 +464,9 @@ def reply_already_exists(user_id, post_id, parent_id, body) -> bool:
 def reply_is_just_link_to_gif_reaction(body) -> bool:
     tmp_body = body.strip()
     if tmp_body.startswith('https://media.tenor.com/') or \
+            tmp_body.startswith('https://media1.tenor.com/') or \
+            tmp_body.startswith('https://media2.tenor.com/') or \
+            tmp_body.startswith('https://media3.tenor.com/') or \
             tmp_body.startswith('https://i.giphy.com/') or \
             tmp_body.startswith('https://i.imgflip.com') or \
             tmp_body.startswith('https://media1.giphy.com/') or \
