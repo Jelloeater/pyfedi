@@ -15,10 +15,9 @@ from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site, \
     Instance, Notification, User
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, allowlist_html, \
-    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string
+    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string, parse_page
 from sqlalchemy import desc, text
 import os
-from opengraph_parse import parse_page
 
 
 allowed_extensions = ['.gif', '.jpg', '.jpeg', '.png', '.webp', '.heic']
@@ -130,7 +129,6 @@ def actor_to_community(actor) -> Community:
     return community
 
 
-@cache.memoize(timeout=50)
 def opengraph_parse(url):
     if '?' in url:
         url = url.split('?')
@@ -199,8 +197,10 @@ def save_post(form, post: Post):
             else:
                 # check opengraph tags on the page and make a thumbnail if an image is available in the og:image meta tag
                 opengraph = opengraph_parse(form.link_url.data)
-                if opengraph and opengraph.get('og:image', '') != '':
-                    filename = opengraph.get('og:image')
+                if opengraph and (opengraph.get('og:image', '') != '' or opengraph.get('og:image:url', '') != ''):
+                    filename = opengraph.get('og:image') or opengraph.get('og:image:url')
+                    if '?' in filename:
+                        filename = filename.split('?')[0]
                     unused, file_extension = os.path.splitext(filename)
                     if file_extension.lower() in allowed_extensions:
                         file = url_to_thumbnail_file(filename)
