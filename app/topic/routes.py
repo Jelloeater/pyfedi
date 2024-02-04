@@ -4,7 +4,7 @@ from random import randint
 from flask import request, flash, json, url_for, current_app, redirect, abort
 from flask_login import login_required, current_user
 from flask_babel import _
-from sqlalchemy import text, desc
+from sqlalchemy import text, desc, or_
 
 from app.activitypub.signature import post_request
 from app.constants import SUBSCRIPTION_NONMEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK
@@ -14,7 +14,7 @@ from app.topic import bp
 from app import db, celery, cache
 from app.topic.forms import ChooseTopicsForm
 from app.utils import render_template, user_filters_posts, moderating_communities, joined_communities, \
-    community_membership
+    community_membership, blocked_domains
 
 
 @bp.route('/topic/<topic_name>', methods=['GET'])
@@ -44,6 +44,10 @@ def show_topic(topic_name):
             if current_user.show_nsfw is False:
                 posts = posts.filter(Post.nsfw == False)
             content_filters = user_filters_posts(current_user.id)
+
+            domains_ids = blocked_domains(current_user.id)
+            if domains_ids:
+                posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
 
         # sorting
         if sort == '' or sort == 'hot':
