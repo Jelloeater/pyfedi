@@ -14,6 +14,7 @@ from app.models import Post, Community, CommunityMember, User, PostReply, PostVo
     Instance, Report, UserBlock, CommunityBan, CommunityJoinRequest, CommunityBlock, Filter
 from app.user import bp
 from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportUserForm, FilterEditForm
+from app.user.utils import purge_user_then_delete
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
     is_image_url, ensure_directory_exists, gibberish, file_get_contents, community_membership, user_filters_home, \
     user_filters_posts, user_filters_replies, moderating_communities, joined_communities
@@ -449,14 +450,19 @@ def ban_purge_profile(actor):
             flash(_('You cannot purge yourself.'), 'error')
         else:
             user.banned = True
-            user.deleted = True
-            db.session.commit()
-
-            user.purge_content()
+            # user.deleted = True # DO NOT set user.deleted until the deletion of their posts has been federated
             db.session.commit()
 
             # todo: empty relevant caches
-            # todo: federate deletion
+
+            # federate deletion
+            if user.is_local():
+                purge_user_then_delete(user.id)
+            else:
+                user.deleted = True
+                user.delete_dependencies()
+                user.purge_content()
+                db.session.commit()
 
             flash(f'{actor} has been banned, deleted and all their content deleted.')
     else:
