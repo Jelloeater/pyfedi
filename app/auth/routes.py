@@ -10,7 +10,7 @@ from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.auth.util import random_token, normalize_utf
 from app.email import send_verification_email, send_password_reset_email
-from app.models import User, utcnow, IpBan, UserRegistration
+from app.models import User, utcnow, IpBan, UserRegistration, Notification, Site
 from app.utils import render_template, ip_address, user_ip_banned, user_cookie_banned, banned_ip_addresses, \
     finalize_user_setup
 
@@ -116,6 +116,12 @@ def register():
                 if g.site.registration_mode == 'RequireApplication':
                     application = UserRegistration(user_id=user.id, answer=form.question.data)
                     db.session.add(application)
+                    for admin in Site.admins():
+                        notify = Notification(title='New registration', url='/admin/approve_registrations', user_id=admin.id,
+                                          author_id=user.id)
+                        admin.unread_notifications += 1
+                        db.session.add(notify)
+                        # todo: notify everyone with the "approve registrations" permission, instead of just all admins
                     db.session.commit()
                     return redirect(url_for('auth.please_wait'))
                 else:

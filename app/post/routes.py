@@ -752,6 +752,7 @@ def post_report(post_id: int):
             if admin.id not in already_notified:
                 notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=current_user.id)
                 db.session.add(notify)
+                admin.unread_notifications += 1
         db.session.commit()
 
         # todo: federate report to originating instance
@@ -853,6 +854,7 @@ def post_reply_report(post_id: int, comment_id: int):
             if admin.id not in already_notified:
                 notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=current_user.id)
                 db.session.add(notify)
+                admin.unread_notifications += 1
         db.session.commit()
 
         # todo: federate report to originating instance

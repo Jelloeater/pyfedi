@@ -484,6 +484,7 @@ def post_json_to_model(post_json, user, community) -> Post:
                     if admin.id not in already_notified:
                         notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=user.id)
                         db.session.add(notify)
+                        admin.unread_notifications += 1
             if domain.banned:
                 post = None
             if not domain.banned:
