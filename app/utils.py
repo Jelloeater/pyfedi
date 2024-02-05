@@ -655,7 +655,7 @@ def parse_page(page_url, tags_to_search = KNOWN_OPENGRAPH_TAGS, fallback_tags = 
     # read the html from the page
     response = get_request(page_url)
 
-    if response.status_code is not 200:
+    if response.status_code != 200:
         return False
 
     # set up beautiful soup
