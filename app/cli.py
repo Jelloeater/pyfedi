@@ -126,8 +126,7 @@ def register(app):
             admin_user = User(user_name=user_name, email=email, verification_token=verification_token)
             admin_user.set_password(password)
             admin_user.roles.append(admin_role)
-            send_verification_email(admin_user)
-            print("Check your email inbox for a verification link.")
+            admin_user.verified = True
 
             db.session.commit()
             print("Initial setup is finished.")
