@@ -129,22 +129,8 @@ Database Setup
 Inside api dir
     source venv/bin/activate   (to set up virtual env if necessary)
     flask db upgrade
-    flask drop-constraint file file_user_id_fkey
     flask init-db
-    flask init-intentions
-    flask init-interests
-    flask init-ages
-    flask init-locations
-    flask init-roles
-    flask init-topics
-    flask init-topics2
-    flask topic-files
-    flask init-activity
-    flask init-timezones
-    flask init-private-hangout-topics
-    flask tidy-private-hangout-topics
-    flask init-hosted
-    flask init-countries
+
 
 In future if you use git pull and notice some new files in migrations/versions/*, you need to do
 
