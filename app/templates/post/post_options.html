@@ -30,11 +30,11 @@
                                 <li><a href="{{ url_for('post.post_block_instance', post_id=post.id) }}" class="no-underline"><span class="fe fe-block"></span>
                                     {{ _("Hide every post from author's instance: %(name)s", name=post.instance.domain) }}</a></li>
                                 {% endif %}
-                                {% if post.ap_id %}
-                                    <li><a href="{{ post.ap_id }}" rel="nofollow" class="no-underline"><span class="fe fe-external"></span>
-                                        {{ _('View original on %(domain)s', domain=post.instance.domain) }}</a></li>
-                                {% endif %}
                             {% endif %}
+                        {% endif %}
+                        {% if post.ap_id %}
+                            <li><a href="{{ post.ap_id }}" rel="nofollow" class="no-underline"><span class="fe fe-external"></span>
+                                {{ _('View original on %(domain)s', domain=post.instance.domain) }}</a></li>
                         {% endif %}
                         <li><a href="{{ url_for('post.post_report', post_id=post.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-report"></span>
                                 {{ _('Report to moderators') }}</a></li>
