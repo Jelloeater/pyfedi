@@ -13,7 +13,7 @@
         </nav>
         <h1 class="mt-2">{{ domain.name }}</h1>
         <div class="post_list">
-            {% for post in posts %}
+            {% for post in posts.items %}
                 {% include 'post/_post_teaser.html' %}
             {% else %}
                 <p>{{ _('No posts in this domain yet.') }}</p>

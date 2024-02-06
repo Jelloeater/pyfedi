@@ -28,7 +28,7 @@
                <th>IP</th>
                <th>Actions</th>
             </tr>
-            {% for user in users %}
+            {% for user in users.items %}
                 <tr>
                     <td><img src="{{ user.avatar_thumbnail() }}" class="community_icon rounded-circle" loading="lazy" />
                         {{ user.display_name() }}</td>

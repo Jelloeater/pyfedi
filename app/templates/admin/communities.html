@@ -24,7 +24,7 @@
                <th>All</th>
                <th>Actions</th>
             </tr>
-            {% for community in communities %}
+            {% for community in communities.items %}
                 <tr>
                     <td>{{ community.name }}</td>
                     <td><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" />

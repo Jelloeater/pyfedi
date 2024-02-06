@@ -6,7 +6,7 @@
     <div class="col-12 col-md-8 position-relative main_pane">
         {% include "_home_nav.html" %}
         <div class="post_list">
-            {% for post in posts %}
+            {% for post in posts.items %}
                 {% include 'post/_post_teaser.html' %}
             {% else %}
                 <p>{{ _('No posts yet. Join some communities to see more.') }}</p>

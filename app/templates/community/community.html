@@ -66,7 +66,7 @@
         {% include "community/_community_nav.html" %}
         {% if post_layout == 'masonry' or post_layout == 'masonry_wide' %}
             <div class="post_list_{{ post_layout }}">
-                {% for post in posts %}
+                {% for post in posts.items %}
                     {% include 'post/_post_teaser_masonry.html' %}
                 {% else %}
                     <p>{{ _('No posts in this community yet.') }}</p>
@@ -74,7 +74,7 @@
             </div>
         {% else %}
             <div class="post_list">
-                {% for post in posts %}
+                {% for post in posts.items %}
                     {% include 'post/_post_teaser.html' %}
                 {% else %}
                     <p>{{ _('No posts in this community yet.') }}</p>

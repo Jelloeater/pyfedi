@@ -56,7 +56,7 @@
         {% if posts %}
             <h2 class="mt-4">Posts</h2>
             <div class="post_list">
-                {% for post in posts %}
+                {% for post in posts.items %}
                     {% include 'post/_post_teaser.html' %}
                 {% endfor %}
             </div>
@@ -79,7 +79,7 @@
         {% if post_replies %}
             <h2 class="mt-4" id="comments">Comments</h2>
             <div class="post_list">
-                {% for post_reply in post_replies %}
+                {% for post_reply in post_replies.items %}
                     {% include 'post/_post_reply_teaser.html' %}
                 {% endfor %}
             </div>

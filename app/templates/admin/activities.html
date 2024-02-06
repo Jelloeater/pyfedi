@@ -20,7 +20,7 @@
                <th>Message</th>
                <th>JSON</th>
             </tr>
-            {% for activity in activities %}
+            {% for activity in activities.items %}
                 <tr>
                     <td>{{ moment(activity.created_at).fromNow() }}</td>
                     <td>{{ activity.direction }}</td>

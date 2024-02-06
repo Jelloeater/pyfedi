@@ -130,7 +130,7 @@ def post_to_activity(post: Post, community: Community):
                     "mediaType": "text/markdown"
                 },
                 "attachment": [],
-                "commentsEnabled": True,
+                "commentsEnabled": post.comments_enabled,
                 "sensitive": post.nsfw or post.nsfl,
                 "published": ap_datetime(post.created_at),
                 "audience": f"https://{current_app.config['SERVER_NAME']}/c/{community.name}"
