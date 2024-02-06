@@ -127,6 +127,7 @@ def register(app):
             admin_user.set_password(password)
             admin_user.roles.append(admin_role)
             admin_user.verified = True
+            db.session.add(admin_user)
 
             db.session.commit()
             print("Initial setup is finished.")
