@@ -128,6 +128,7 @@ Database Setup
 ---
 Inside api dir
     source venv/bin/activate   (to set up virtual env if necessary)
+    export FLASK_APP=pyfedi.py
     flask db upgrade
     flask init-db
 
