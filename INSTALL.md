@@ -171,6 +171,16 @@ run migrations
 
     flask db upgrade
 
+Keeping your local instance up to date
+---
+In a development environment, all you need to do is
+
+    git pull
+    flask db upgrade
+
+In production, celery and flask run as background services so they need to be restarted manually. Run the `./deploy.sh` script
+to easily restart services at the same time as pulling down changes from git, etc.
+
 Federation during development
 ---
 
@@ -182,4 +192,110 @@ My way around this is to use ngrok.com, which is a quick and simple way to creat
 
 Once you have ngrok working, edit the .env file and change the SERVER_NAME variable to your new domain name. 
 
+Running PieFed in production
+---
 
+Copy celery_worker.default.py to celery_worker.py. Edit DATABASE_URL and SERVER_NAME to have the same values as in .env.
+
+Edit gunicorn.conf.py and change worker_tmp_dir if needed.
+
+You will want to [tune PostgreSQL](https://pgtune.leopard.in.ua/). If you have more than 4 GB of RAM, consider [turning on 'huge pages'](https://www.percona.com/blog/why-linux-hugepages-are-super-important-for-database-servers-a-case-with-postgresql/).
+
+(PgBouncer)[https://www.pgbouncer.org] can be helpful in a high traffic situation.
+
+Gunicorn and Celery need to run as background services:
+
+### Gunicorn
+
+Create a new file:
+
+    sudo nano /etc/systemd/system/pyfedi.service
+
+Add the following to the new file, altering paths as appropriate for your install location
+
+    [Unit]
+    Description=Gunicorn instance to serve PieFed application
+    After=network.target
+    
+    [Service]
+    User=rimu
+    Group=rimu
+    WorkingDirectory=/home/rimu/pyfedi/
+    Environment="PATH=/home/rimu/pyfedi/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+    ExecStart=/home/rimu/pyfedi/venv/bin/gunicorn --config gunicorn.conf.py --preload pyfedi:app
+    ExecReload=/bin/kill -HUP $MAINPID
+    Restart=always
+    
+    
+    [Install]
+    WantedBy=multi-user.target
+
+### Celery
+
+Create another file:
+
+    sudo nano /etc/systemd/system/celery.service
+
+Add the following, altering as appropriate
+
+    [Unit]
+    Description=Celery Service
+    After=network.target
+    
+    [Service]
+    Type=forking
+    User=rimu
+    Group=rimu
+    EnvironmentFile=/etc/default/celeryd
+    WorkingDirectory=/home/rimu/pyfedi
+    ExecStart=/bin/sh -c '${CELERY_BIN} multi start -A ${CELERY_APP} ${CELERYD_NODES} --pidfile=${CELERYD_PID_FILE} \
+      --logfile=${CELERYD_LOG_FILE} ${CELERYD_OPTS}'
+    ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} --pidfile=${CELERYD_PID_FILE}'
+    ExecReload=/bin/sh -c '${CELERY_BIN} multi restart -A ${CELERY_APP} ${CELERYD_NODES} --pidfile=${CELERYD_PID_FILE} \
+      --logfile=${CELERYD_LOG_FILE} ${CELERYD_OPTS}'
+    
+    [Install]
+    WantedBy=multi-user.target
+
+Create another file:
+
+    sudo nano /etc/default/celeryd
+
+Contents (change paths to suit):
+
+    # The names of the workers. This example creates one workers
+    CELERYD_NODES="worker1"
+    
+    # The name of the Celery App, should be the same as the python file
+    # where the Celery tasks are defined
+    CELERY_APP="celery_worker.celery"
+    
+    # Log and PID directories
+    CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
+    CELERYD_PID_FILE="/dev/shm/celery/%n.pid"
+    
+    # Log level
+    CELERYD_LOG_LEVEL=INFO
+    
+    # Path to celery binary, that is in your virtual environment
+    CELERY_BIN=/home/rimu/pyfedi/venv/bin/celery
+    CELERYD_OPTS="--autoscale=5,1"
+
+### Finally
+
+    sudo systemctl enable pyfedi.service
+    sudo systemctl enable celery.service
+
+    sudo systemctl start pyfedi.service
+    sudo systemctl start celery.service
+
+Check status of services:
+
+    sudo systemctl status pyfedi.service
+    sudo systemctl status celery.service
+
+Inspect log files at:
+
+    /var/log/celery/*
+    /var/log/nginx/*
+    /your_piefed_installation/logs/pyfedi.log
