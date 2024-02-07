@@ -30,7 +30,7 @@ Linux
 ---
 install these additional packages
 
-```sudo apt install python3-psycopg2 libpq-dev python3-dev```
+```sudo apt install python3-psycopg2 libpq-dev python3-dev redis-server```
 
 
 Pip Package Management:
@@ -73,7 +73,7 @@ Install Python 3, pip, and venv
 
     sudo apt-get update
     sudo apt-get upgrade
-    sudo apt-get install python3 python3-pip ipython3 libpq-dev python3-psycopg2 python3-dev build-essential
+    sudo apt-get install python3 python3-pip ipython3 libpq-dev python3-psycopg2 python3-dev build-essential redis-server
     sudo apt-get install python3-venv
 
 Setup venv first before installing other packages
@@ -99,21 +99,24 @@ Continue with the .env setup and "Run API" sections below.
 
 .env setup
 ---
-add something like this to .env
+Copy env.sample to .env
+
+Edit .env to suit your server. Set the database connection up, something like this
     
-    DATABASE_URL=postgresql+psycopg2://rimu:password@localhost/buddytree
+    DATABASE_URL=postgresql+psycopg2://username:password@localhost/database_name
 
-other environment variables include:
+Also change SECRET_KEY to some random sequence of numbers and letters.
 
-    API_KEY - used to control access. Set this to the same on both the frontend and backend
-    MAIL_SERVER=email-smtp.us-east-2.amazonaws.com
-    MAIL_PORT
-    MAIL_USERNAME=
-    MAIL_PASSWORD
-    MAIL_USE_TLS = False
-    MAIL_USE_SSL = False
-    EMAIL_FROM
-    EMAIL_FROM_NAME=BuddyTree
+SERVER_NAME should be the domain of the site/instance. Use 127.0.0.1:5000 during development unless using ngrok.
+
+RECAPTCHA_PUBLIC_KEY and RECAPTCHA_PRIVATE_KEY can be generated at https://www.google.com/recaptcha/admin/create.
+
+CACHE_TYPE can be 'FileSystemCache' or 'RedisCache'. FileSystemCache is fine during development (set CACHE_DIR to /tmp/piefed or /dev/shm/piefed)
+while RedisCache should be used in production. If using RedisCache, set CACHE_REDIS_URL to redis://localhost:6379/1
+
+CELERY_BROKER_URL is similar to CACHE_REDIS_URL but with a different number on the end: 'redis://localhost:6379/0'
+
+
 
 
 Virtual Env setup (inside the api root directory)
