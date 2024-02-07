@@ -18,7 +18,7 @@ from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
-    joined_communities, moderating_communities, parse_page
+    joined_communities, moderating_communities, parse_page, theme_list
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
 from PIL import Image
 import pytesseract
@@ -249,8 +249,9 @@ def keyboard_shortcuts():
 @bp.route('/test')
 def test():
 
-    x = parse_page('https://slate.com/technology/2024/02/quora-what-happened-ai-decline.html')
-    return str(x)
+    themes = theme_list()
+
+    return str(themes)
 
     return current_app.config['SERVER_NAME']
 

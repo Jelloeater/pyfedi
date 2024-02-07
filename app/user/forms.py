@@ -45,9 +45,7 @@ class SettingsForm(FlaskForm):
                       ('active', _l('Active')),
                       ]
     default_sort = SelectField(_l('By default, sort posts by'), choices=sorts, validators=[DataRequired()], coerce=str)
-    themes = [('', _l('PieFed')),
-              ('high_contrast', _l('High contrast'))]
-    theme = SelectField(_l('Theme'), choices=themes, coerce=str)
+    theme = SelectField(_l('Theme'), coerce=str)
     submit = SubmitField(_l('Save settings'))
 
 

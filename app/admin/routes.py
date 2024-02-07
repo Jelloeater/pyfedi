@@ -17,7 +17,7 @@ from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
     User, Instance, File, Report, Topic, UserRegistration
 from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html, \
-    moderating_communities, joined_communities, finalize_user_setup
+    moderating_communities, joined_communities, finalize_user_setup, theme_list
 from app.admin import bp
 
 
@@ -68,6 +68,7 @@ def admin_misc():
     site = Site.query.get(1)
     if site is None:
         site = Site()
+    form.default_theme.choices = theme_list()
     if form.validate_on_submit():
         site.enable_downvotes = form.enable_downvotes.data
         site.allow_local_image_posts = form.allow_local_image_posts.data

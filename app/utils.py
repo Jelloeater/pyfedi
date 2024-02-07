@@ -675,6 +675,7 @@ def parse_page(page_url, tags_to_search = KNOWN_OPENGRAPH_TAGS, fallback_tags = 
 
 
 def current_theme():
+    """ The theme the current user has set, falling back to the site default if none specified or user is not logged in """
     if current_user.is_authenticated:
         if current_user.theme is not None and current_user.theme != '':
             return current_user.theme
@@ -682,3 +683,14 @@ def current_theme():
             return g.site.default_theme if g.site.default_theme is not None else ''
     else:
         return g.site.default_theme if g.site.default_theme is not None else ''
+
+
+def theme_list():
+    """ All the themes available, by looking in the templates/themes directory """
+    result = [('', 'PieFed')]
+    for root, dirs, files in os.walk('app/templates/themes'):
+        for dir in dirs:
+            if os.path.exists(f'app/templates/themes/{dir}/{dir}.json'):
+                theme_settings = json.loads(file_get_contents(f'app/templates/themes/{dir}/{dir}.json'))
+                result.append((dir, theme_settings['name']))
+    return result

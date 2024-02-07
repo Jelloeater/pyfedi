@@ -17,7 +17,7 @@ from app.user.forms import ProfileForm, SettingsForm, DeleteAccountForm, ReportU
 from app.user.utils import purge_user_then_delete
 from app.utils import get_setting, render_template, markdown_to_html, user_access, markdown_to_text, shorten_string, \
     is_image_url, ensure_directory_exists, gibberish, file_get_contents, community_membership, user_filters_home, \
-    user_filters_posts, user_filters_replies, moderating_communities, joined_communities
+    user_filters_posts, user_filters_replies, moderating_communities, joined_communities, theme_list
 from sqlalchemy import desc, or_, text
 import os
 
@@ -152,6 +152,7 @@ def change_settings():
     if user is None:
         abort(404)
     form = SettingsForm()
+    form.theme.choices = theme_list()
     if form.validate_on_submit():
         current_user.newsletter = form.newsletter.data
         current_user.ignore_bots = form.ignore_bots.data
