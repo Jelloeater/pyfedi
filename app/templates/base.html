@@ -43,7 +43,7 @@
             {% if markdown_editor %}
                 <link href="{{ url_for('static', filename='js/markdown/downarea.css') }}" type="text/css" rel="stylesheet" />
             {% endif %}
-            {% if theme() %}
+            {% if theme() and file_exists('app/templates/themes/' + theme() + '/styles.css') %}
                 <link href="{{ url_for('static', filename='themes/' + theme() + '/styles.css') }}" type="text/css" rel="stylesheet" />
             {% endif %}
         {% endblock %}
@@ -235,6 +235,9 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
     {% if markdown_editor and not low_bandwidth %}
         <script type="text/javascript" src="{{ url_for('static', filename='js/markdown/downarea.js') }}"></script>
+    {% endif %}
+    {% if theme() and file_exists('app/templates/themes/' + theme() + '/scripts.js') %}
+        <script src="{{ url_for('static', filename='themes/' + theme() + '/scripts.js') }}" />
     {% endif %}
     {% block end_scripts %}
 
