@@ -167,3 +167,13 @@ create a migration based on recent changes to app/models.py:
 run migrations
 
     flask db upgrade
+
+Federation during development
+---
+
+Federation doesn't work without SSL, without a domain name or without your server being accessible from outside your network. So, when running on http://127.0.0.1:5000 you have none of those.
+
+The site will still run without federation. You can create local communities and post in them...
+
+My way around this is to use ngrok.com, which is a quick and simple way to create a temporary VPN with a domain and SSL. On the free plan your domain changes often, which will break federation every time you reconnect. $10 per month will get you https://yourwhatever.ngrok.app which won't change.
+
