@@ -199,7 +199,9 @@ Copy celery_worker.default.py to celery_worker.py. Edit DATABASE_URL and SERVER_
 
 Edit gunicorn.conf.py and change worker_tmp_dir if needed.
 
-You will want to [tune PostgreSQL](https://pgtune.leopard.in.ua/). If you have more than 4 GB of RAM, consider [turning on 'huge pages'](https://www.percona.com/blog/why-linux-hugepages-are-super-important-for-database-servers-a-case-with-postgresql/).
+You will want to [tune PostgreSQL](https://pgtune.leopard.in.ua/). [More on this](https://www.enterprisedb.com/postgres-tutorials/how-tune-postgresql-memory).
+If you have more than 4 GB of RAM, consider [turning on 'huge pages'](https://www.percona.com/blog/why-linux-hugepages-are-super-important-for-database-servers-a-case-with-postgresql/)
+also [see this](https://pganalyze.com/blog/5mins-postgres-tuning-huge-pages).
 
 (PgBouncer)[https://www.pgbouncer.org] can be helpful in a high traffic situation.
 
@@ -281,7 +283,7 @@ Contents (change paths to suit):
     CELERY_BIN=/home/rimu/pyfedi/venv/bin/celery
     CELERYD_OPTS="--autoscale=5,1"
 
-### Finally
+### Enable and start background services
 
     sudo systemctl enable pyfedi.service
     sudo systemctl enable celery.service
