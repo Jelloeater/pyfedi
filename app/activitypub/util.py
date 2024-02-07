@@ -60,11 +60,11 @@ def active_month():
 
 
 def local_posts():
-    return db.session.execute(text('SELECT COUNT(id) as c FROM "post" WHERE ap_id is null')).scalar()
+    return db.session.execute(text('SELECT COUNT(id) as c FROM "post" WHERE instance_id = 1')).scalar()
 
 
 def local_comments():
-    return db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE ap_id is null')).scalar()
+    return db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE instance_id = 1')).scalar()
 
 
 def send_activity(sender: User, host: str, content: str):

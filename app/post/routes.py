@@ -415,7 +415,7 @@ def add_reply(post_id: int, comment_id: int):
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
-                          notify_author=form.notify_author.data)
+                          notify_author=form.notify_author.data, instance_id=1)
         db.session.add(reply)
         if in_reply_to.notify_author and current_user.id != in_reply_to.user_id and in_reply_to.author.ap_id is None:    # todo: check if replier is blocked
             notification = Notification(title=_('Reply from %(name)s', name=current_user.display_name()), user_id=in_reply_to.user_id,
