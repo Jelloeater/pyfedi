@@ -29,8 +29,8 @@ from app.models import Settings, Domain, Instance, BannedInstances, User, Commun
 
 # Flask's render_template function, with support for themes added
 def render_template(template_name: str, **context) -> Response:
-    theme = get_setting('theme', '')
-    if theme != '':
+    theme = current_theme()
+    if theme != '' and os.path.exists(f'app/templates/themes/{theme}/{template_name}'):
         content = flask.render_template(f'themes/{theme}/{template_name}', **context)
     else:
         content = flask.render_template(template_name, **context)
@@ -672,3 +672,13 @@ def parse_page(page_url, tags_to_search = KNOWN_OPENGRAPH_TAGS, fallback_tags = 
             found_tags[og_tag] = soup.find(fallback_tags[og_tag]).text
 
     return found_tags
+
+
+def current_theme():
+    if current_user.is_authenticated:
+        if current_user.theme is not None and current_user.theme != '':
+            return current_user.theme
+        else:
+            return g.site.default_theme if g.site.default_theme is not None else ''
+    else:
+        return g.site.default_theme if g.site.default_theme is not None else ''

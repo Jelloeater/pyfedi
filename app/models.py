@@ -352,6 +352,7 @@ class User(UserMixin, db.Model):
     instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
     reports = db.Column(db.Integer, default=0)  # how many times this user has been reported.
     default_sort = db.Column(db.String(25), default='hot')
+    theme = db.Column(db.String(20), default='')
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
@@ -1021,6 +1022,7 @@ class Site(db.Model):
     updated = db.Column(db.DateTime, default=utcnow)
     last_active = db.Column(db.DateTime, default=utcnow)
     log_activitypub_json = db.Column(db.Boolean, default=False)
+    default_theme = db.Column(db.String(20), default='')
 
     @staticmethod
     def admins() -> List[User]:

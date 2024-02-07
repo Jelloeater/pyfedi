@@ -1,4 +1,8 @@
-{% extends "base.html" %}
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
 {% from 'bootstrap/form.html' import render_field %}
 
 {% block app_content %}

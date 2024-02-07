@@ -1,4 +1,8 @@
-{% extends "base.html" %}
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
 {% from 'bootstrap/form.html' import render_field %}
 
 {% block app_content %}
@@ -22,6 +26,7 @@
                 {{ render_field(form.indexable) }}
                 {{ render_field(form.default_sort) }}
                 {{ render_field(form.import_file) }}
+                {{ render_field(form.theme) }}
                 {{ render_field(form.submit) }}
                 &nbsp;&nbsp;<a href="{{ url_for('user.user_settings_filters') }}">{{ _('Manage content filters') }}</a>
             </form>

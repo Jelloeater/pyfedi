@@ -43,6 +43,9 @@
             {% if markdown_editor %}
                 <link href="{{ url_for('static', filename='js/markdown/downarea.css') }}" type="text/css" rel="stylesheet" />
             {% endif %}
+            {% if theme() %}
+                <link href="{{ url_for('static', filename='themes/' + theme() + '/styles.css') }}" type="text/css" rel="stylesheet" />
+            {% endif %}
         {% endblock %}
         <title>{% if title %}{{ title }}{% else %}{{ _('PieFed') }}{% endif %}</title>
         <link rel="apple-touch-icon" sizes="152x152" href="/static/images/apple-touch-icon.png">
