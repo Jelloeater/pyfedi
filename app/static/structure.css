@@ -1164,6 +1164,11 @@ fieldset legend {
   top: 0;
 }
 
+#choose_communities_in_topic_card {
+  max-width: inherit;
+  overflow: hidden;
+}
+
 #choose_community table th {
   white-space: nowrap;
   overflow: hidden;

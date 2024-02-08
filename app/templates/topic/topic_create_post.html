@@ -4,8 +4,8 @@
 {% block app_content %}
     <div class="row">
         <div class="col col-login mx-auto">
-            <div class="card mt-5">
-                <div class="card-body p-6" id="choose_topics_card">
+            <div class="card mt-5" id="choose_communities_in_topic_card">
+                <div class="card-body p-6">
                     <div class="card-title text-center">{{ _('Which community within %(topic)s to post in?', topic=topic.name) }}</div>
                     <form method="post" id="choose_community">
                         <input type="hidden" name="community_id" id="community_id" />
