@@ -849,3 +849,13 @@ fieldset {
 .skip-link:focus {
   top: 0;
 }
+
+#choose_community {
+  table th {
+    white-space: nowrap;
+    overflow: hidden;
+    img {
+      vertical-align: middle;
+    }
+  }
+}

@@ -14,7 +14,7 @@ from app.topic import bp
 from app import db, celery, cache
 from app.topic.forms import ChooseTopicsForm
 from app.utils import render_template, user_filters_posts, moderating_communities, joined_communities, \
-    community_membership, blocked_domains
+    community_membership, blocked_domains, validation_required
 
 
 @bp.route('/topic/<topic_name>', methods=['GET'])
@@ -107,6 +107,22 @@ def choose_topics():
                                moderating_communities=moderating_communities(current_user.get_id()),
                                joined_communities=joined_communities(current_user.get_id()),
                                )
+
+
+@bp.route('/topic/<topic_name>/submit', methods=['GET', 'POST'])
+@login_required
+@validation_required
+def topic_create_post(topic_name):
+    topic = Topic.query.filter(Topic.machine_name == topic_name.strip().lower()).first()
+    if not topic:
+        abort(404)
+    communities = Community.query.filter_by(topic_id=topic.id, banned=False).order_by(Community.title).all()
+    if request.form.get('community_id', '') != '':
+        community = Community.query.get_or_404(int(request.form.get('community_id')))
+        return redirect(url_for('community.join_then_add', actor=community.link()))
+    return render_template('topic/topic_create_post.html', communities=communities, topic=topic,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()))
 
 
 def topics_for_form():

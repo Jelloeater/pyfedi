@@ -52,6 +52,18 @@
     </div>
 
     <aside id="side_pane" class="col-12 col-md-4 side_pane" role="complementary">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <a class="w-100 btn btn-primary" href="{{ url_for('topic.topic_create_post', topic_name=topic.machine_name) }}" rel="nofollow">{{ _('Create post') }}</a>
+                    </div>
+                    <div class="col-6">
+
+                    </div>
+                </div>
+            </div>
+        </div>
         {% if topic_communities %}
         <div class="card mt-3">
             <div class="card-header">

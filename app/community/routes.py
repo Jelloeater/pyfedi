@@ -352,6 +352,36 @@ def unsubscribe(actor):
         abort(404)
 
 
+@bp.route('/<actor>/join_then_add', methods=['GET', 'POST'])
+@login_required
+@validation_required
+def join_then_add(actor):
+    community = actor_to_community(actor)
+    if not current_user.subscribed(community.id):
+        if not community.is_local():
+            # send ActivityPub message to remote community, asking to follow. Accept message will be sent to our shared inbox
+            join_request = CommunityJoinRequest(user_id=current_user.id, community_id=community.id)
+            db.session.add(join_request)
+            db.session.commit()
+            follow = {
+                "actor": f"https://{current_app.config['SERVER_NAME']}/u/{current_user.user_name}",
+                "to": [community.ap_profile_id],
+                "object": community.ap_profile_id,
+                "type": "Follow",
+                "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{join_request.id}"
+            }
+            success = post_request(community.ap_inbox_url, follow, current_user.private_key,
+                                   current_user.profile_id() + '#main-key')
+        member = CommunityMember(user_id=current_user.id, community_id=community.id)
+        db.session.add(member)
+        db.session.commit()
+        flash('You joined ' + community.title)
+    if not community.user_is_banned(current_user):
+        return redirect(url_for('community.add_post', actor=community.link()))
+    else:
+        abort(401)
+
+
 @bp.route('/<actor>/submit', methods=['GET', 'POST'])
 @login_required
 @validation_required

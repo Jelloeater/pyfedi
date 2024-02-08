@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+    <div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6" id="choose_topics_card">
+                    <div class="card-title text-center">{{ _('Which community within %(topic)s to post in?', topic=topic.name) }}</div>
+                    <form method="post" id="choose_community">
+                        <input type="hidden" name="community_id" id="community_id" />
+                        <table class="communities_table table table-hover w-100">
+                            <tbody>
+                                {% for community in communities %}
+                                    {% if not community.user_is_banned(current_user) %}
+                                        <tr>
+                                            <th class="pl-2"><a class="choose_topic_for_post" data-id="{{ community.id }}" href="/community/{{ community.link() }}/submit" rel="nofollow" aria-label="{{ _('Post in %(name)s', name=community.display_name()) }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" alt="" />
+                                            {{ community.display_name() }}</a></th>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

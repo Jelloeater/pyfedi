@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupMobileNav();
     setupLightDark();
     setupKeyboardShortcuts();
+    setupTopicChooser();
 });
 
 
@@ -482,6 +483,26 @@ function setupKeyboardShortcuts() {
             if(showCurrentPost) {
                 //var elementToRemoveClass = document.querySelector('.post_teaser.current_post');
                 //elementToRemoveClass.classList.remove('current_post');
+            }
+        });
+    });
+}
+
+function setupTopicChooser() {
+    // at /topic/news/submit, clicking on an anchor element needs to save the clicked community id to a hidden field and then submit the form
+    var chooseTopicLinks = document.querySelectorAll('a.choose_topic_for_post');
+    chooseTopicLinks.forEach(function(link) {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            var communityIdInput = document.getElementById('community_id');
+            var communityForm = document.getElementById('choose_community');
+
+            // Set the value of the hidden input field
+            if (communityIdInput) {
+                communityIdInput.value = this.getAttribute('data-id');
+            }
+            if (communityForm) {
+                communityForm.submit();
             }
         });
     });

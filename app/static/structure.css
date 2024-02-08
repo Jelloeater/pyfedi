@@ -1164,4 +1164,12 @@ fieldset legend {
   top: 0;
 }
 
+#choose_community table th {
+  white-space: nowrap;
+  overflow: hidden;
+}
+#choose_community table th img {
+  vertical-align: middle;
+}
+
 /*# sourceMappingURL=structure.css.map */

@@ -105,7 +105,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-6">
-                        <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/submit">{{ _('Create a post') }}</a>
+                        <a class="w-100 btn btn-primary" href="/community/{{ community.link() }}/submit" rel="nofollow">{{ _('Create post') }}</a>
                     </div>
                     <div class="col-6">
                         {% if current_user.is_authenticated and community_membership(current_user, community) in [SUBSCRIPTION_MEMBER, SUBSCRIPTION_MODERATOR, SUBSCRIPTION_OWNER] %}
