@@ -32,6 +32,7 @@ div.navbar {
 }
 
 .navbar-brand {
+  line-height: 46px;
   img {
     margin-right: 20px;
   }
@@ -43,7 +44,6 @@ div.navbar {
 .navbar-toggler {
   border: none;
   height: 48px;
-  margin-top: 5px;
 }
 
 .navbar-light .navbar-toggler-icon {
