@@ -599,6 +599,9 @@ class User(UserMixin, db.Model):
             post.delete_dependencies()
             post.flush_cache()
             db.session.delete(post)
+        post_replies = PostReply.query.filter_by(user_id=self.id).all()
+        for reply in post_replies:
+            reply.body = reply.body_html = reply.body_html_safe = ''
         db.session.commit()
 
 
