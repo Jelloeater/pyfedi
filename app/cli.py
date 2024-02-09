@@ -179,7 +179,7 @@ def register(app):
                 else:
                     f = File.query.filter(File.file_path == file_path).first()
                 if f is None:
-                    print(file_path)
+                    os.unlink(file_path)
 
 def parse_communities(interests_source, segment):
     lines = interests_source.split("\n")
