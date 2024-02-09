@@ -20,7 +20,7 @@ from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
     joined_communities, moderating_communities, parse_page, theme_list
-from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic
+from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File
 from PIL import Image
 import pytesseract
 
@@ -247,8 +247,16 @@ def keyboard_shortcuts():
     return render_template('keyboard_shortcuts.html')
 
 
+def list_files(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            yield os.path.join(root, file)
+
+
 @bp.route('/test')
 def test():
+
+    return ''
     retval = ''
     for user in User.query.all():
         filesize = user.filesize()

@@ -12,7 +12,7 @@ from app.activitypub.signature import RsaKeys
 from app.auth.util import random_token
 from app.email import send_verification_email
 from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain, ActivityPubLog, \
-    utcnow, Site, Instance
+    utcnow, Site, Instance, File
 from app.utils import file_get_contents, retrieve_block_list
 
 
@@ -164,6 +164,22 @@ def register(app):
                             file.file_path = ''
                             db.session.commit()
 
+    def list_files(directory):
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                yield os.path.join(root, file)
+
+    @app.cli.command("findorphanfiles")
+    def findorphanfiles():
+        with app.app_context():
+            for file_path in list_files('app/static/media/users'):
+
+                if 'thumbnail' in file_path:
+                    f = File.query.filter(File.thumbnail_path == file_path).first()
+                else:
+                    f = File.query.filter(File.file_path == file_path).first()
+                if f is None:
+                    print(file_path)
 
 def parse_communities(interests_source, segment):
     lines = interests_source.split("\n")
