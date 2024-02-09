@@ -188,7 +188,7 @@ Federation doesn't work without SSL, without a domain name or without your serve
 
 The site will still run without federation. You can create local communities and post in them...
 
-My way around this is to use ngrok.com, which is a quick and simple way to create a temporary VPN with a domain and SSL. On the free plan your domain changes often, which will break federation every time you reconnect. $10 per month will get you https://yourwhatever.ngrok.app which won't change. 
+My way around this is to use ngrok.com, which is a quick and simple way to create a temporary VPN with a domain and SSL. On the free plan your domain changes every few days, which will break federation. $10 per month will get you https://yourwhatever.ngrok.app which won't change. 
 
 Once you have ngrok working, edit the .env file and change the SERVER_NAME variable to your new domain name. 
 
