@@ -711,7 +711,7 @@ class PostReply(db.Model):
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), index=True)
     domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), index=True)
     image_id = db.Column(db.Integer, db.ForeignKey('file.id'), index=True)
-    parent_id = db.Column(db.Integer)
+    parent_id = db.Column(db.Integer, index=True)
     root_id = db.Column(db.Integer)
     depth = db.Column(db.Integer, default=0)
     instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), index=True)
