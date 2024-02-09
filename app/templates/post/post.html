@@ -74,7 +74,7 @@
                                 {% else %}
                                     {% if comment['comment'].author.avatar_id and comment['comment'].score > -10 and not low_bandwidth %}
                                     <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.ap_id }}">
-                                        <img src="{{ comment['comment'].author.avatar_image() }}" alt="Avatar" /></a>
+                                        <img src="{{ comment['comment'].author.avatar_image() }}" alt="Avatar" loading="lazy" /></a>
                                     {% endif %}
                                     <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}">
                                             {{ comment['comment'].author.display_name() }}</a>
