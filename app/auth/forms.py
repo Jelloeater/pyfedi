@@ -3,6 +3,7 @@ from wtforms import StringField, PasswordField, SubmitField, HiddenField, Boolea
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length
 from flask_babel import _, lazy_gettext as _l
 from app.models import User, Community
+from sqlalchemy import func
 
 
 class LoginForm(FlaskForm):
@@ -26,18 +27,18 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField(_l('Register'))
 
     def validate_real_email(self, email):
-        user = User.query.filter(User.email.ilike(email.data.strip())).first()
+        user = User.query.filter(func.lower(User.email) == func.lower(email.data.strip())).first()
         if user is not None:
             raise ValidationError(_l('An account with this email address already exists.'))
 
     def validate_user_name(self, user_name):
-        user = User.query.filter(User.user_name.ilike(user_name.data.strip())).filter_by(ap_id=None).first()
+        user = User.query.filter(func.lower(User.user_name) == func.lower(user_name.data.strip())).filter_by(ap_id=None).first()
         if user is not None:
             if user.deleted:
                 raise ValidationError(_l('This username was used in the past and cannot be reused.'))
             else:
                 raise ValidationError(_l('An account with this user name already exists.'))
-        community = Community.query.filter(Community.name.ilike(user_name.data.strip())).first()
+        community = Community.query.filter(func.lower(Community.name) == func.lower(user_name.data.strip())).first()
         if community is not None:
             raise ValidationError(_l('A community with this name exists so it cannot be used for a user.'))
         

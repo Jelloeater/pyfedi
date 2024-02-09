@@ -16,7 +16,7 @@ from app.models import Community, File, BannedInstances, PostReply, PostVote, Po
     Instance, Notification, User
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, allowlist_html, \
     html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string, parse_page
-from sqlalchemy import desc, text
+from sqlalchemy import func
 import os
 
 
@@ -116,7 +116,7 @@ def retrieve_mods_and_backfill(community_id: int):
 
 
 def community_url_exists(url) -> bool:
-    community = Community.query.filter(Community.ap_profile_id.ilike(url)).first()
+    community = Community.query.filter(func.lower(Community.ap_profile_id) == func.lower(url)).first()
     return community is not None
 
 
@@ -125,7 +125,7 @@ def actor_to_community(actor) -> Community:
     if '@' in actor:
         community = Community.query.filter_by(banned=False, ap_id=actor).first()
     else:
-        community = Community.query.filter(Community.name.ilike(actor)).filter_by(banned=False, ap_id=None).first()
+        community = Community.query.filter(func.lower(Community.name) == func.lower(actor)).filter_by(banned=False, ap_id=None).first()
     return community
 
 
