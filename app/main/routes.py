@@ -259,8 +259,9 @@ def test():
                         os.unlink(file.file_path)
                         deleted += 1
                     file.file_path = ''
+                    db.session.commit()
 
-    db.session.commit()
+
 
     return str(deleted) + ' done'
 
