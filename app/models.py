@@ -118,6 +118,14 @@ class File(db.Model):
         if self.thumbnail_path and os.path.isfile(self.thumbnail_path):
             os.unlink(self.thumbnail_path)
 
+    def filesize(self):
+        size = 0
+        if self.file_path and os.path.exists(self.file_path):
+            size += os.path.getsize(self.file_path)
+        if self.thumbnail_path and os.path.exists(self.thumbnail_path):
+            size += os.path.getsize(self.thumbnail_path)
+        return size
+
 
 class Topic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -444,6 +452,20 @@ class User(UserMixin, db.Model):
                 else:
                     return self.cover.source_url
         return ''
+
+    def filesize(self):
+        size = 0
+        if self.avatar_id:
+            size += self.avatar.filesize()
+        if self.cover_id:
+            size += self.cover.filesize()
+        return size
+
+    def num_content(self):
+        content = 0
+        content += db.session.execute(text('SELECT COUNT(id) as c FROM "post" WHERE user_id = ' + str(self.id))).scalar()
+        content += db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE user_id = ' + str(self.id))).scalar()
+        return content
 
     def is_local(self):
         return self.ap_id is None or self.ap_profile_id.startswith('https://' + current_app.config['SERVER_NAME'])

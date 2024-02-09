@@ -249,6 +249,15 @@ def keyboard_shortcuts():
 
 @bp.route('/test')
 def test():
+    retval = ''
+    for user in User.query.all():
+        filesize = user.filesize()
+        num_content = user.num_content()
+        if filesize > 0 and num_content > 0:
+            retval += f'{user.id},"{user.ap_id}",{filesize},{num_content}\n'
+    return retval
+
+    return ''
     deleted = 0
     for user in User.query.all():
         if not user.is_local():
