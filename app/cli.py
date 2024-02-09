@@ -150,6 +150,20 @@ def register(app):
                 if filesize > 0 and num_content > 0:
                     print(f'{user.id},"{user.ap_id}",{filesize},{num_content}')
 
+    @app.cli.command("cleanupcovers")
+    def cleanupcovers():
+        with app.app_context():
+            for user in User.query.all():
+                if not user.is_local():
+                    if user.cover_id:
+                        file = user.cover
+                        if file.file_path and file.thumbnail_path:
+                            if os.path.exists(file.file_path):
+                                os.unlink(file.file_path)
+                                print(file.file_path)
+                            file.file_path = ''
+                            db.session.commit()
+
 
 def parse_communities(interests_source, segment):
     lines = interests_source.split("\n")
