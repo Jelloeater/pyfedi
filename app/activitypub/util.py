@@ -374,7 +374,7 @@ def actor_json_to_model(activity_json, address, server):
         if user.avatar_id:
             make_image_sizes(user.avatar_id, 40, 250, 'users')
         if user.cover_id:
-            make_image_sizes(user.cover_id, 700, 1600, 'users')
+            make_image_sizes(user.cover_id, 878, None, 'users')
         return user
     elif activity_json['type'] == 'Group':
         if 'attributedTo' in activity_json:  # lemmy and mbin

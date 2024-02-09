@@ -433,11 +433,11 @@ class User(UserMixin, db.Model):
 
     def cover_image(self) -> str:
         if self.cover_id is not None:
-            if self.cover.file_path is not None:
-                if self.cover.file_path.startswith('app/'):
-                    return self.cover.file_path.replace('app/', '/')
+            if self.cover.thumbnail_path is not None:
+                if self.cover.thumbnail_path.startswith('app/'):
+                    return self.cover.thumbnail_path.replace('app/', '/')
                 else:
-                    return self.cover.file_path
+                    return self.cover.thumbnail_path
             if self.cover.source_url is not None:
                 if self.cover.source_url.startswith('app/'):
                     return self.cover.source_url.replace('app/', '/')

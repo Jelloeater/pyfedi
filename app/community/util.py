@@ -366,13 +366,14 @@ def save_banner_file(banner_file, directory='communities') -> File:
             img_height = img.height
 
         # save a second, smaller, version as a thumbnail
-        img.thumbnail((700, 500))
+        img.thumbnail((878, 500))
         img.save(final_place_thumbnail, format="WebP", quality=93)
         thumbnail_width = img.width
         thumbnail_height = img.height
 
         file = File(file_path=final_place, file_name=new_filename + file_ext, alt_text=f'{directory} banner',
-                    width=img_width, height=img_height, thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
+                    width=img_width, height=img_height, thumbnail_path=final_place_thumbnail,
+                    thumbnail_width=thumbnail_width, thumbnail_height=thumbnail_height)
         db.session.add(file)
         return file
     else:

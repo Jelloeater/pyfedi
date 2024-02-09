@@ -1,3 +1,4 @@
+import os.path
 from datetime import datetime, timedelta
 from math import log
 from random import randint
@@ -248,10 +249,20 @@ def keyboard_shortcuts():
 
 @bp.route('/test')
 def test():
+    deleted = 0
+    for user in User.query.all():
+        if not user.is_local():
+            if user.cover_id:
+                file = user.cover
+                if file.file_path and file.thumbnail_path:
+                    if os.path.exists(file.file_path):
+                        os.unlink(file.file_path)
+                        deleted += 1
+                    file.file_path = ''
 
-    themes = theme_list()
+    db.session.commit()
 
-    return str(themes)
+    return str(deleted) + ' done'
 
     return current_app.config['SERVER_NAME']
 
