@@ -141,6 +141,15 @@ def register(app):
                 ActivityPubLog.created_at < utcnow() - timedelta(days=3)).delete()
             db.session.commit()
 
+    @app.cli.command("spaceusage")
+    def spaceusage():
+        with app.app_context():
+            for user in User.query.all():
+                filesize = user.filesize()
+                num_content = user.num_content()
+                if filesize > 0 and num_content > 0:
+                    print(f'{user.id},"{user.ap_id}",{filesize},{num_content}')
+
 
 def parse_communities(interests_source, segment):
     lines = interests_source.split("\n")
