@@ -801,7 +801,7 @@ def process_delete_request(request_json, activitypublog_id, ip_address):
     with current_app.app_context():
         activity_log = ActivityPubLog.query.get(activitypublog_id)
         if 'type' in request_json and request_json['type'] == 'Delete':
-            actor_to_delete = request_json['object']
+            actor_to_delete = request_json['object'].lower()
             user = User.query.filter_by(ap_profile_id=actor_to_delete).first()
             if user:
                 # check that the user really has been deleted, to avoid spoofing attacks

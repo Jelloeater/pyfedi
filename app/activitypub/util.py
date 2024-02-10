@@ -183,16 +183,16 @@ def instance_allowed(host: str) -> bool:
 
 
 def find_actor_or_create(actor: str) -> Union[User, Community, None]:
-    actor = actor.strip()
+    actor = actor.strip().lower()
     user = None
     # actor parameter must be formatted as https://server/u/actor or https://server/c/actor
 
     # Initially, check if the user exists in the local DB already
     if current_app.config['SERVER_NAME'] + '/c/' in actor:
-        return Community.query.filter(func.lower(Community.ap_profile_id) == func.lower(actor)).first()  # finds communities formatted like https://localhost/c/*
+        return Community.query.filter(Community.ap_profile_id == actor).first()  # finds communities formatted like https://localhost/c/*
 
     if current_app.config['SERVER_NAME'] + '/u/' in actor:
-        user = User.query.filter(func.lower(User.user_name) == func.lower(actor.split('/')[-1])).filter_by(ap_id=None, banned=False).first()  # finds local users
+        user = User.query.filter(func.lower(User.user_name) == actor.split('/')[-1]).filter_by(ap_id=None, banned=False).first()  # finds local users
         if user is None:
             return None
     elif actor.startswith('https://'):
@@ -203,11 +203,11 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
         else:
             if instance_blocked(server):
                 return None
-        user = User.query.filter(func.lower(User.ap_profile_id) == func.lower(actor)).first()  # finds users formatted like https://kbin.social/u/tables
+        user = User.query.filter(User.ap_profile_id == actor).first()  # finds users formatted like https://kbin.social/u/tables
         if (user and user.banned) or (user and user.deleted) :
             return None
         if user is None:
-            user = Community.query.filter(func.lower(Community.ap_profile_id) == func.lower(actor)).first()
+            user = Community.query.filter(Community.ap_profile_id == actor).first()
 
     if user is not None:
         if not user.is_local() and user.ap_fetched_at < utcnow() - timedelta(days=7):
