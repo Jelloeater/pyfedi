@@ -984,8 +984,7 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
 
                 # send notification to the post/comment being replied to
                 if notification_target.notify_author and post_reply.user_id != notification_target.user_id and notification_target.author.ap_id is None:
-                    if isinstance(notification_target, PostReply):
-                        anchor = f"comment_{post_reply.id}"
+                    anchor = f"comment_{post_reply.id}"
                     notification = Notification(title=shorten_string(_('Reply from %(name)s on %(post_title)s',
                                                                        name=post_reply.author.display_name(),
                                                                        post_title=post.title), 50),
