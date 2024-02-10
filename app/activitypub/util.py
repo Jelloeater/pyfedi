@@ -6,6 +6,7 @@ from datetime import timedelta
 from random import randint
 from typing import Union, Tuple
 from flask import current_app, request, g, url_for
+from flask_babel import _
 from sqlalchemy import text, func
 from app import db, cache, constants, celery
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
@@ -985,7 +986,9 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
                 if notification_target.notify_author and post_reply.user_id != notification_target.user_id and notification_target.author.ap_id is None:
                     if isinstance(notification_target, PostReply):
                         anchor = f"comment_{post_reply.id}"
-                    notification = Notification(title='Reply from ' + post_reply.author.display_name(),
+                    notification = Notification(title=shorten_string(_('Reply from %(name)s on %(post_title)s',
+                                                                       name=post_reply.author.display_name(),
+                                                                       post_title=post.title), 50),
                                                 user_id=notification_target.user_id,
                                                 author_id=post_reply.user_id,
                                                 url=url_for('activitypub.post_ap', post_id=post.id, _anchor=anchor))
@@ -1098,7 +1101,7 @@ def notify_about_post(post: Post):
     people_to_notify = CommunityMember.query.filter_by(community_id=post.community_id, notify_new_posts=True, is_banned=False)
     for person in people_to_notify:
         if person.user_id != post.user_id:
-            new_notification = Notification(title=shorten_string(post.title, 25), url=f"/post/{post.id}", user_id=person.user_id, author_id=post.user_id)
+            new_notification = Notification(title=shorten_string(post.title, 50), url=f"/post/{post.id}", user_id=person.user_id, author_id=post.user_id)
             db.session.add(new_notification)
             user = User.query.get(person.user_id)  # todo: make this more efficient by doing a join with CommunityMember at the start of the function
             user.unread_notifications += 1

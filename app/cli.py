@@ -150,30 +150,16 @@ def register(app):
                 if filesize > 0 and num_content > 0:
                     print(f'{user.id},"{user.ap_id}",{filesize},{num_content}')
 
-    @app.cli.command("cleanupcovers")
-    def cleanupcovers():
-        with app.app_context():
-            for user in User.query.all():
-                if not user.is_local():
-                    if user.cover_id:
-                        file = user.cover
-                        if file.file_path and file.thumbnail_path:
-                            if os.path.exists(file.file_path):
-                                os.unlink(file.file_path)
-                                print(file.file_path)
-                            file.file_path = ''
-                            db.session.commit()
-
     def list_files(directory):
         for root, dirs, files in os.walk(directory):
             for file in files:
                 yield os.path.join(root, file)
 
-    @app.cli.command("findorphanfiles")
-    def findorphanfiles():
+    @app.cli.command("remove_orphan_files")
+    def remove_orphan_files():
+        """ Any user-uploaded file that does not have a corresponding entry in the File table should be deleted """
         with app.app_context():
             for file_path in list_files('app/static/media/users'):
-
                 if 'thumbnail' in file_path:
                     f = File.query.filter(File.thumbnail_path == file_path).first()
                 else:

@@ -78,7 +78,10 @@ def show_post(post_id: int):
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
                           notify_author=form.notify_author.data)
         if post.notify_author and current_user.id != post.user_id:
-            notification = Notification(title=_('Reply from %(name)s ', name=current_user.display_name()), user_id=post.user_id,
+            notification = Notification(title=shorten_string(_('Reply from %(name)s on %(post_title)s',
+                                                name=current_user.display_name(),
+                                                post_title=post.title), 50),
+                                        user_id=post.user_id,
                                         author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
             post.author.unread_notifications += 1
@@ -418,7 +421,10 @@ def add_reply(post_id: int, comment_id: int):
                           notify_author=form.notify_author.data, instance_id=1)
         db.session.add(reply)
         if in_reply_to.notify_author and current_user.id != in_reply_to.user_id and in_reply_to.author.ap_id is None:    # todo: check if replier is blocked
-            notification = Notification(title=_('Reply from %(name)s', name=current_user.display_name()), user_id=in_reply_to.user_id,
+            notification = Notification(title=shorten_string(_('Reply from %(name)s on %(post_title)s',
+                                                name=current_user.display_name(),
+                                                post_title=post.title), 50),
+                                        user_id=in_reply_to.user_id,
                                         author_id=current_user.id, url=url_for('activitypub.post_ap', post_id=post.id))
             db.session.add(notification)
             in_reply_to.author.unread_notifications += 1
