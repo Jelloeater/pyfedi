@@ -15,7 +15,7 @@
     ],
     "theme_color": "#007BBF",
     "background_color": "#ffffff",
-    "display": "minimal-ui",
+    "display": "browser",
     "start_url": "/",
     "scope": "/"
 }

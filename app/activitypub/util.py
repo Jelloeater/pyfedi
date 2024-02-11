@@ -124,7 +124,6 @@ def post_to_activity(post: Post, community: Community):
                 "name": post.title,
                 "cc": [],
                 "content": post.body_html,
-                "summary": markdown_to_text(post.body),
                 "mediaType": "text/html",
                 "source": {
                     "content": post.body,
@@ -134,6 +133,7 @@ def post_to_activity(post: Post, community: Community):
                 "commentsEnabled": post.comments_enabled,
                 "sensitive": post.nsfw or post.nsfl,
                 "published": ap_datetime(post.created_at),
+                "stickied": post.sticky,
                 "audience": f"https://{current_app.config['SERVER_NAME']}/c/{community.name}"
             },
             "cc": [

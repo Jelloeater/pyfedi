@@ -950,7 +950,6 @@ def comment_ap(comment_id):
                 reply.author.followers_url()
             ],
             'content': reply.body_html,
-            'summary': markdown_to_text(reply.body),
             'mediaType': 'text/html',
             'published': ap_datetime(reply.created_at),
             'distinguished': False,
