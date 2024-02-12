@@ -140,7 +140,8 @@ def opengraph_parse(url):
 
 
 def url_to_thumbnail_file(filename) -> File:
-    unused, file_extension = os.path.splitext(filename)
+    filename_for_extension = filename.split('?')[0] if '?' in filename else filename
+    unused, file_extension = os.path.splitext(filename_for_extension)
     response = requests.get(filename, timeout=5)
     if response.status_code == 200:
         new_filename = gibberish(15)
@@ -199,9 +200,8 @@ def save_post(form, post: Post):
                 opengraph = opengraph_parse(form.link_url.data)
                 if opengraph and (opengraph.get('og:image', '') != '' or opengraph.get('og:image:url', '') != ''):
                     filename = opengraph.get('og:image') or opengraph.get('og:image:url')
-                    if '?' in filename:
-                        filename = filename.split('?')[0]
-                    unused, file_extension = os.path.splitext(filename)
+                    filename_for_extension = filename.split('?')[0] if '?' in filename else filename
+                    unused, file_extension = os.path.splitext(filename_for_extension)
                     if file_extension.lower() in allowed_extensions:
                         file = url_to_thumbnail_file(filename)
                         if file:
