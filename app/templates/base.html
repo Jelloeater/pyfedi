@@ -37,7 +37,7 @@
         <meta name="HandheldFriendly" content="True">
         <meta name="MobileOptimized" content="320">
         {% block styles %}
-            {{ bootstrap.load_css() }}
+            <link href="{{ url_for('static', filename='bootstrap.css') }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='structure.css', changed=getmtime('structure.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='styles.css', changed=getmtime('styles.css')) }}" type="text/css" rel="stylesheet" />
             {% if markdown_editor %}
