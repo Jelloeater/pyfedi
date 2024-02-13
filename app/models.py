@@ -340,8 +340,8 @@ class User(UserMixin, db.Model):
     show_nsfl = db.Column(db.Boolean, default=False)
     created = db.Column(db.DateTime, default=utcnow)
     last_seen = db.Column(db.DateTime, default=utcnow, index=True)
-    avatar_id = db.Column(db.Integer, db.ForeignKey('file.id'))
-    cover_id = db.Column(db.Integer, db.ForeignKey('file.id'))
+    avatar_id = db.Column(db.Integer, db.ForeignKey('file.id'), index=True)
+    cover_id = db.Column(db.Integer, db.ForeignKey('file.id'), index=True)
     public_key = db.Column(db.Text)
     private_key = db.Column(db.Text)
     newsletter = db.Column(db.Boolean, default=True)
@@ -654,19 +654,19 @@ class Post(db.Model):
     has_embed = db.Column(db.Boolean, default=False)
     reply_count = db.Column(db.Integer, default=0)
     score = db.Column(db.Integer, default=0, index=True)                # used for 'top' ranking
-    nsfw = db.Column(db.Boolean, default=False)
-    nsfl = db.Column(db.Boolean, default=False)
+    nsfw = db.Column(db.Boolean, default=False, index=True)
+    nsfl = db.Column(db.Boolean, default=False, index=True)
     sticky = db.Column(db.Boolean, default=False)
     notify_author = db.Column(db.Boolean, default=True)
     indexable = db.Column(db.Boolean, default=False)
-    from_bot = db.Column(db.Boolean, default=False)
+    from_bot = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, index=True, default=utcnow)    # this is when the content arrived here
     posted_at = db.Column(db.DateTime, index=True, default=utcnow)     # this is when the original server created it
     last_active = db.Column(db.DateTime, index=True, default=utcnow)
     ip = db.Column(db.String(50))
     up_votes = db.Column(db.Integer, default=0)
     down_votes = db.Column(db.Integer, default=0)
-    ranking = db.Column(db.Integer, default=0)                          # used for 'hot' ranking
+    ranking = db.Column(db.Integer, default=0, index=True)                          # used for 'hot' ranking
     language = db.Column(db.String(10))
     edited_at = db.Column(db.DateTime)
     reports = db.Column(db.Integer, default=0)                          # how many times this post has been reported. Set to -1 to ignore reports
@@ -855,7 +855,7 @@ class CommunityMember(db.Model):
     community_id = db.Column(db.Integer, db.ForeignKey('community.id'), primary_key=True)
     is_moderator = db.Column(db.Boolean, default=False)
     is_owner = db.Column(db.Boolean, default=False)
-    is_banned = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, default=False, index=True)
     notify_new_posts = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
 
