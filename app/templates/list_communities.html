@@ -18,23 +18,21 @@
             <a href="/communities/subscribed" class="btn {{ 'btn-primary' if request.path == '/communities/subscribed' else 'btn-outline-secondary' }}">
                 {{ _('Joined') }}
             </a>
-            {% if topics %}
-                <span class="mt-1 pl-4">
-                    <form method="get">Topic:
-                        <select name="topic_id" class="form-control-sm submit_on_change" aria-label="{{ _('Choose a topic to filter communities by') }}">
-                            <option value="0">All</option>
-                            {% for topic in topics %}
-                                <option value="{{ topic.id }}" {{ 'selected' if topic.id == topic_id }}>{{ topic.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </form>
-                </span>
-            {% endif %}
-            <span class="mt-1 pl-4">
-                <form method="get"><input type="search" name="search" placeholder="{{ _('Search') }}" value="{{ search }}"></form>
-            </span>
-        </div>
 
+        </div>
+    </div>
+    <div class="col-auto">
+        {% if topics %}
+                <form method="get" style="display:inline;">Topic:
+                    <select name="topic_id" class="form-control-sm submit_on_change" aria-label="{{ _('Choose a topic to filter communities by') }}">
+                        <option value="0">All</option>
+                        {% for topic in topics %}
+                            <option value="{{ topic.id }}" {{ 'selected' if topic.id == topic_id }}>{{ topic.name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+        {% endif %}
+        <form method="get" style="display:inline;"><input type="search" name="search" placeholder="{{ _('Search') }}" value="{{ search }}"></form>
     </div>
     <div class="col-auto">
         <div class="btn-group">
