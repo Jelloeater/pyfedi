@@ -60,6 +60,7 @@ def home_page(type, sort):
         return return_304(current_etag)
 
     page = request.args.get('page', 1, type=int)
+    low_bandwidth = request.cookies.get('low_bandwidth', '0') == '1'
 
     if current_user.is_anonymous:
         flash(_('Create an account to tailor this feed to your interests.'))
@@ -110,7 +111,7 @@ def home_page(type, sort):
         posts = posts.order_by(desc(Post.last_active))
 
     # Pagination
-    posts = posts.paginate(page=page, per_page=100, error_out=False)
+    posts = posts.paginate(page=page, per_page=100 if current_user.is_authenticated and not low_bandwidth else 50, error_out=False)
     if type == 'home':
         next_url = url_for('main.index', page=posts.next_num, sort=sort) if posts.has_next else None
         prev_url = url_for('main.index', page=posts.prev_num, sort=sort) if posts.has_prev and page != 1 else None
@@ -125,7 +126,7 @@ def home_page(type, sort):
 
     return render_template('index.html', posts=posts, active_communities=active_communities, show_post_community=True,
                            POST_TYPE_IMAGE=POST_TYPE_IMAGE, POST_TYPE_LINK=POST_TYPE_LINK,
-                           low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           low_bandwidth=low_bandwidth,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"{type}_{sort}_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
                            rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",

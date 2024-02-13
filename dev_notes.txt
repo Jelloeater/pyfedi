@@ -10,3 +10,9 @@ sudo systemctl restart celeryd or sudo service celeryd restart
 
 *** check for celery-related problems by looking in /var/log/celery ***
 
+for profiling:
+use
+python profile_app.py
+instead of
+flask run
+
