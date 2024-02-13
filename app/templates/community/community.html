@@ -17,7 +17,7 @@
                       <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
                       <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                     {% endif %}
-                    <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
+                    <li class="breadcrumb-item active">{{ (community.title + '@' + community.ap_domain)|shorten }}</li>
                   </ol>
                 </nav>
             </div>
@@ -36,7 +36,7 @@
                       <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
                       <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                     {% endif %}
-                    <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
+                    <li class="breadcrumb-item active">{{ (community.title + '@' + community.ap_domain)|shorten }}</li>
                   </ol>
                 </nav>
                 <div class="col-2">
@@ -58,7 +58,7 @@
                   <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
                   <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                 {% endif %}
-                <li class="breadcrumb-item active">{{ community.title|shorten }}</li>
+                <li class="breadcrumb-item active">{{ (community.title + '@' + community.ap_domain)|shorten }}</li>
               </ol>
             </nav>
             <h1 class="mt-2">{{ community.title }}

@@ -8,7 +8,7 @@
                   <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
                   <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                 {% endif %}
-                <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}</a></li>
+                <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}" title="{{ post.community.ap_domain }}">{{ post.community.title }}@{{ post.community.ap_domain }}</a></li>
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
             </nav>
@@ -55,7 +55,7 @@
                   <li class="breadcrumb-item"><a href="/topics">{{ _('Topics') }}</a></li>
                   <li class="breadcrumb-item"><a href="/topic/{{ community.topic.machine_name }}" rel="nofollow">{{ community.topic.name }}</a></li>
                 {% endif %}
-                <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}</a></li>
+                <li class="breadcrumb-item"><a href="/c/{{ post.community.link() }}">{{ post.community.title }}@{{ post.community.ap_domain }}</a></li>
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
             </nav>
