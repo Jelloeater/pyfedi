@@ -6,7 +6,7 @@ from random import randint
 from sqlalchemy.sql.operators import or_
 
 from app import db, cache
-from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile
+from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
     SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
 from app.inoculation import inoculation
@@ -19,8 +19,8 @@ from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
-    joined_communities, moderating_communities, parse_page, theme_list
-from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File
+    joined_communities, moderating_communities, parse_page, theme_list, get_request
+from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File, Instance, InstanceRole
 from PIL import Image
 import pytesseract
 
@@ -256,6 +256,42 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
+
+    instance = Instance.query.get(3)
+    if instance.updated_at < utcnow() - timedelta(days=7):
+        try:
+            response = get_request(f'https://{instance.domain}/api/v3/site')
+        except:
+            response = None
+
+        if response and response.status_code == 200:
+            try:
+                instance_data = response.json()
+            except:
+                instance_data = None
+            finally:
+                response.close()
+
+            if instance_data:
+                if 'admins' in instance_data:
+                    admin_profile_ids = []
+                    for admin in instance_data['admins']:
+                        admin_profile_ids.append(admin['person']['actor_id'].lower())
+                        user = find_actor_or_create(admin['person']['actor_id'])
+                        if user and not instance.user_is_admin(user.id):
+                            new_instance_role = InstanceRole(instance_id=instance.id, user_id=user.id, role='admin')
+                            db.session.add(new_instance_role)
+                            db.session.commit()
+                    # remove any InstanceRoles that are no longer part of instance-data['admins']
+                    for instance_admin in InstanceRole.query.filter_by(instance_id=instance.id):
+                        if instance_admin.user.profile_id() not in admin_profile_ids:
+                            db.session.query(InstanceRole).filter(
+                                InstanceRole.user_id == instance_admin.user.id,
+                                InstanceRole.instance_id == instance.id,
+                                InstanceRole.role == 'admin').delete()
+                            db.session.commit()
+
+    return 'Ok'
 
     return ''
     retval = ''

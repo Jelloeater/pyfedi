@@ -69,6 +69,18 @@ class Instance(db.Model):
     def online(self):
         return not self.dormant and not self.gone_forever
 
+    def user_is_admin(self, user_id):
+        role = InstanceRole.query.filter_by(instance_id=self.id, user_id=user_id).first()
+        return role and role.role == 'admin'
+
+
+class InstanceRole(db.Model):
+    instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    role = db.Column(db.String(50), default='admin')
+
+    user = db.relationship('User', lazy='joined')
+
 
 class InstanceBlock(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -268,6 +280,15 @@ class Community(db.Model):
             return any(moderator.user_id == current_user.id and moderator.is_owner for moderator in self.moderators())
         else:
             return any(moderator.user_id == user.id and moderator.is_owner for moderator in self.moderators())
+
+    def is_instance_admin(self, user):
+        if self.instance_id:
+            instance_role = InstanceRole.query.filter(InstanceRole.instance_id == self.instance_id,
+                                                      InstanceRole.user_id == user.id,
+                                                      InstanceRole.role == 'admin').first()
+            return instance_role is not None
+        else:
+            return False
 
     def user_is_banned(self, user):
         membership = CommunityMember.query.filter(CommunityMember.community_id == self.id, CommunityMember.user_id == user.id).first()

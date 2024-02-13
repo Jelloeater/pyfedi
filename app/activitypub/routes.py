@@ -124,7 +124,7 @@ def lemmy_site():
 @bp.route('/api/v3/federated_instances')
 @cache.cached(timeout=600)
 def lemmy_federated_instances():
-    instances = Instance.query.all()
+    instances = Instance.query.filter(Instance.id != 1).all()
     linked = []
     allowed = []
     blocked = []

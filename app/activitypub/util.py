@@ -10,7 +10,7 @@ from flask_babel import _
 from sqlalchemy import text, func
 from app import db, cache, constants, celery
 from app.models import User, Post, Community, BannedInstances, File, PostReply, AllowedInstances, Instance, utcnow, \
-    PostVote, PostReplyVote, ActivityPubLog, Notification, Site, CommunityMember
+    PostVote, PostReplyVote, ActivityPubLog, Notification, Site, CommunityMember, InstanceRole
 import time
 import base64
 import requests
@@ -211,14 +211,18 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
             user = Community.query.filter(Community.ap_profile_id == actor).first()
 
     if user is not None:
-        if not user.is_local() and user.ap_fetched_at < utcnow() - timedelta(days=7):
+        if not user.is_local() and (user.ap_fetched_at is None or user.ap_fetched_at < utcnow() - timedelta(days=7)):
             # To reduce load on remote servers, refreshing the user profile happens after a delay of 1 to 10 seconds. Meanwhile, subsequent calls to
             # find_actor_or_create() which happen to be for the same actor might queue up refreshes of the same user. To avoid this, set a flag to
             # indicate that user is currently being refreshed.
             refresh_in_progress = cache.get(f'refreshing_{user.id}')
             if not refresh_in_progress:
                 cache.set(f'refreshing_{user.id}', True, timeout=300)
-                refresh_user_profile(user.id)
+                if isinstance(user, User):
+                    refresh_user_profile(user.id)
+                elif isinstance(user, Community):
+                    # todo: refresh community profile also, not just instance_profile
+                    refresh_instance_profile(user.instance_id)
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
         if actor.startswith('https://'):
@@ -687,41 +691,76 @@ def find_instance_id(server):
 
 
 def refresh_instance_profile(instance_id: int):
-    if current_app.debug:
-        refresh_instance_profile_task(instance_id)
-    else:
-        refresh_instance_profile_task.apply_async(args=(instance_id,), countdown=randint(1, 10))
+    if instance_id:
+        if current_app.debug:
+            refresh_instance_profile_task(instance_id)
+        else:
+            refresh_instance_profile_task.apply_async(args=(instance_id,), countdown=randint(1, 10))
 
 
 @celery.task
 def refresh_instance_profile_task(instance_id: int):
     instance = Instance.query.get(instance_id)
-    try:
-        instance_data = get_request(f"https://{instance.domain}", headers={'Accept': 'application/activity+json'})
-    except:
-        return
-    if instance_data.status_code == 200:
+    if instance.updated_at < utcnow() - timedelta(days=7):
         try:
-            instance_json = instance_data.json()
-            instance_data.close()
-        except requests.exceptions.JSONDecodeError as ex:
-            instance_json = {}
-        if 'type' in instance_json and instance_json['type'] == 'Application':
-            if instance_json['name'].lower() == 'kbin':
-                software = 'Kbin'
-            elif instance_json['name'].lower() == 'mbin':
-                software = 'Mbin'
-            else:
-                software = 'Lemmy'
-            instance.inbox = instance_json['inbox']
-            instance.outbox = instance_json['outbox']
-            instance.software = software
-            if instance.inbox.endswith('/site_inbox'):      # Lemmy provides a /site_inbox but it always returns 400 when trying to POST to it. wtf.
-                instance.inbox = instance.inbox.replace('/site_inbox', '/inbox')
-        else:   # it's pretty much always /inbox so just assume that it is for whatever this instance is running (mostly likely Mastodon)
-            instance.inbox = f"https://{instance.domain}/inbox"
-        instance.updated_at = utcnow()
-        db.session.commit()
+            instance_data = get_request(f"https://{instance.domain}", headers={'Accept': 'application/activity+json'})
+        except:
+            return
+        if instance_data.status_code == 200:
+            try:
+                instance_json = instance_data.json()
+                instance_data.close()
+            except requests.exceptions.JSONDecodeError as ex:
+                instance_json = {}
+            if 'type' in instance_json and instance_json['type'] == 'Application':
+                if instance_json['name'].lower() == 'kbin':
+                    software = 'Kbin'
+                elif instance_json['name'].lower() == 'mbin':
+                    software = 'Mbin'
+                else:
+                    software = 'Lemmy'
+                instance.inbox = instance_json['inbox']
+                instance.outbox = instance_json['outbox']
+                instance.software = software
+                if instance.inbox.endswith('/site_inbox'):      # Lemmy provides a /site_inbox but it always returns 400 when trying to POST to it. wtf.
+                    instance.inbox = instance.inbox.replace('/site_inbox', '/inbox')
+            else:   # it's pretty much always /inbox so just assume that it is for whatever this instance is running (mostly likely Mastodon)
+                instance.inbox = f"https://{instance.domain}/inbox"
+            instance.updated_at = utcnow()
+            db.session.commit()
+
+            # retrieve list of Admins from /api/v3/site, update InstanceRole
+            try:
+                response = get_request(f'https://{instance.domain}/api/v3/site')
+            except:
+                response = None
+
+            if response and response.status_code == 200:
+                try:
+                    instance_data = response.json()
+                except:
+                    instance_data = None
+                finally:
+                    response.close()
+
+                if instance_data:
+                    if 'admins' in instance_data:
+                        admin_profile_ids = []
+                        for admin in instance_data['admins']:
+                            admin_profile_ids.append(admin['person']['actor_id'].lower())
+                            user = find_actor_or_create(admin['person']['actor_id'])
+                            if user and not instance.user_is_admin(user.id):
+                                new_instance_role = InstanceRole(instance_id=instance.id, user_id=user.id, role='admin')
+                                db.session.add(new_instance_role)
+                                db.session.commit()
+                        # remove any InstanceRoles that are no longer part of instance-data['admins']
+                        for instance_admin in InstanceRole.query.filter_by(instance_id=instance.id):
+                            if instance_admin.user.profile_id() not in admin_profile_ids:
+                                db.session.query(InstanceRole).filter(
+                                    InstanceRole.user_id == instance_admin.user.id,
+                                    InstanceRole.instance_id == instance.id,
+                                    InstanceRole.role == 'admin').delete()
+                                db.session.commit()
 
 
 # alter the effect of upvotes based on their instance. Default to 1.0
@@ -897,7 +936,7 @@ def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id
     to_delete = find_liked_object(to_be_deleted_ap_id)
 
     if deletor and community and to_delete:
-        if deletor.is_admin() or community.is_moderator(deletor) or to_delete.author.id == deletor.id:
+        if deletor.is_admin() or community.is_moderator(deletor) or community.is_instance_admin(deletor) or to_delete.author.id == deletor.id:
             if isinstance(to_delete, Post):
                 to_delete.delete_dependencies()
                 to_delete.flush_cache()
