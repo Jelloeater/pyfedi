@@ -2,7 +2,7 @@ from flask_login import current_user
 
 from app import db, constants, cache, celery
 from app.activitypub import bp
-from flask import request, current_app, abort, jsonify, json, g, url_for, redirect
+from flask import request, current_app, abort, jsonify, json, g, url_for, redirect, make_response
 
 from app.activitypub.signature import HttpSignature, post_request
 from app.community.routes import show_community
@@ -77,6 +77,14 @@ def nodeinfo():
     nodeinfo_data = {"links": [{"rel": "http://nodeinfo.diaspora.software/ns/schema/2.0",
                                 "href": f"https://{current_app.config['SERVER_NAME']}/nodeinfo/2.0"}]}
     return jsonify(nodeinfo_data)
+
+
+@bp.route('/.well-known/host-meta')
+@cache.cached(timeout=600)
+def host_meta():
+    resp = make_response(f'<?xml version="1.0" encoding="UTF-8"?>\n<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">\n<Link rel="lrdd" template="https://{current_app.config["SERVER_NAME"]}/.well-known/webfinger?resource={uri}"/>\n</XRD>')
+    resp.content_type = 'application/xrd+xml; charset=utf-8'
+    return resp
 
 
 @bp.route('/nodeinfo/2.0')
