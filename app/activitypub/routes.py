@@ -116,7 +116,7 @@ def nodeinfo2():
 
 
 @bp.route('/api/v3/site')
-@cache.cached(timeout=600)
+#@cache.cached(timeout=600)
 def lemmy_site():
     return jsonify(lemmy_site_data())
 

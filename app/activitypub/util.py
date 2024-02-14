@@ -60,12 +60,25 @@ def active_month():
         "SELECT COUNT(id) as c FROM \"user\" WHERE last_seen >= CURRENT_DATE - INTERVAL '1 month' AND ap_id is null AND verified is true AND banned is false AND deleted is false")).scalar()
 
 
+def active_week():
+    return db.session.execute(text(
+        "SELECT COUNT(id) as c FROM \"user\" WHERE last_seen >= CURRENT_DATE - INTERVAL '1 week' AND ap_id is null AND verified is true AND banned is false AND deleted is false")).scalar()
+
+
+def active_day():
+    return db.session.execute(text(
+        "SELECT COUNT(id) as c FROM \"user\" WHERE last_seen >= CURRENT_DATE - INTERVAL '1 day' AND ap_id is null AND verified is true AND banned is false AND deleted is false")).scalar()
+
+
 def local_posts():
     return db.session.execute(text('SELECT COUNT(id) as c FROM "post" WHERE instance_id = 1')).scalar()
 
 
 def local_comments():
     return db.session.execute(text('SELECT COUNT(id) as c FROM "post_reply" WHERE instance_id = 1')).scalar()
+
+def local_communities():
+    return db.session.execute(text('SELECT COUNT(id) as c FROM "community" WHERE instance_id = 1')).scalar()
 
 
 def send_activity(sender: User, host: str, content: str):
@@ -1316,65 +1329,17 @@ def lemmy_site_data():
         "counts": {
           "id": 1,
           "site_id": 1,
-          "users": 816,
-          "posts": 3017,
-          "comments": 19693,
-          "communities": 7,
-          "users_active_day": 21,
-          "users_active_week": 49,
-          "users_active_month": 85,
-          "users_active_half_year": 312
+          "users": users_total(),
+          "posts": local_posts(),
+          "comments": local_comments(),
+          "communities": local_communities(),
+          "users_active_day": active_day(),
+          "users_active_week": active_week(),
+          "users_active_month": active_month(),
+          "users_active_half_year": active_half_year()
         }
       },
-      "admins": [
-        {
-          "person": {
-            "id": 2,
-            "name": "Dave",
-            "avatar": "https://lemmy.nz/pictrs/image/5eb39c6b-a1f0-4cba-9832-40a5d8ffb76a.png",
-            "banned": False,
-            "published": "2023-06-02T09:46:20.302035",
-            "actor_id": "https://lemmy.nz/u/Dave",
-            "local": True,
-            "deleted": False,
-            "matrix_user_id": "@bechorin:matrix.org",
-            "admin": True,
-            "bot_account": False,
-            "instance_id": 1
-          },
-          "counts": {
-            "id": 1,
-            "person_id": 2,
-            "post_count": 165,
-            "post_score": 1442,
-            "comment_count": 2624,
-            "comment_score": 10207
-          }
-        },
-        {
-          "person": {
-            "id": 15059,
-            "name": "idanoo",
-            "banned": False,
-            "published": "2023-06-08T22:13:43.366681",
-            "actor_id": "https://lemmy.nz/u/idanoo",
-            "local": True,
-            "deleted": False,
-            "matrix_user_id": "@idanoo:mtrx.nz",
-            "admin": True,
-            "bot_account": False,
-            "instance_id": 1
-          },
-          "counts": {
-            "id": 6544,
-            "person_id": 15059,
-            "post_count": 0,
-            "post_score": 0,
-            "comment_count": 5,
-            "comment_score": 10
-          }
-        }
-      ],
+      "admins": [],
       "version": "1.0.0",
       "all_languages": [
         {
@@ -2302,14 +2267,31 @@ def lemmy_site_data():
         0,
         37
       ],
-      "taglines": [
-        {
-          "id": 19,
-          "local_site_id": 1,
-          "content": "Welcome to Lemmy NZ! [Don't be a dick](https://lemmy.nz/post/63098) ~ [FAQ](https://lemmy.nz/post/31318) ~ [NZ Community List ](https://lemmy.nz/post/63156) ~ [Join Matrix chatroom](https://lemmy.nz/post/169187)\n\n",
-          "published": "2023-06-28T09:53:58.605042"
-        }
-      ],
+      "taglines": [],
       "custom_emojis": []
     }
+    for admin in Site.admins():
+        person = {
+            "id": admin.id,
+            "name": admin.display_name(),
+            "avatar": 'https://' + current_app.config['SERVER_NAME'] + admin.avatar_thumbnail(),
+            "banned": admin.banned,
+            "published": admin.created.isoformat(),
+            "actor_id": admin.profile_id(),
+            "local": True,
+            "deleted": admin.deleted,
+            "matrix_user_id": admin.matrix_user_id,
+            "admin": True,
+            "bot_account": admin.bot,
+            "instance_id": 1
+        }
+        counts = {
+            "id": admin.id,
+            "person_id": admin.id,
+            "post_count": 0,
+            "post_score": 0,
+            "comment_count": 0,
+            "comment_score": 0
+        }
+        data['admins'].append({'person': person, 'counts': counts})
     return data

@@ -76,7 +76,7 @@ def show_post(post_id: int):
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
                           from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
-                          notify_author=form.notify_author.data)
+                          notify_author=form.notify_author.data, instance_id=1)
         if post.notify_author and current_user.id != post.user_id:
             notification = Notification(title=shorten_string(_('Reply from %(name)s on %(post_title)s',
                                                 name=current_user.display_name(),
