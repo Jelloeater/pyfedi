@@ -17,7 +17,7 @@
                 </div>
             </div>
         </div>
-        {% if new_community %}
+        {% if new_community and not new_community.banned %}
             <div class="row">
                 <div class="col mx-auto">
                     <div class="card mt-5">
