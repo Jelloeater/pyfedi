@@ -1177,4 +1177,32 @@ fieldset legend {
   vertical-align: middle;
 }
 
+.warning_badge {
+  font-size: 12px;
+  border-radius: 2px;
+  margin-right: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: text-bottom;
+  line-height: 20px;
+  padding: 0 4px;
+}
+.warning_badge.nsfw {
+  border: 1px solid #FF585B;
+  color: #FF585B;
+}
+.warning_badge.nsfl {
+  border: 1px solid black;
+  color: black;
+}
+
+[data-bs-theme=dark] .warning_badge.nsfl {
+  border: 1px solid white;
+  color: white;
+}
+
+.post_title .warning_badge {
+  line-height: 32px;
+}
+
 /*# sourceMappingURL=structure.css.map */

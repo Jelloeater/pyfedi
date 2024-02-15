@@ -45,6 +45,8 @@
                                 {% endif %}
                                 <span class="domain_link" aria-hidden="true">(<a href="/d/{{ post.domain_id }}" aria-label="{{ _('All posts about this domain') }}">{{ post.domain.name }}</a>)</span>
                             {% endif %}
+                            {% if post.nsfw %}<span class="warning_badge nsfw" title="{{ _('Not safe for work') }}">nsfw</span>{% endif %}
+                            {% if post.nsfl %}<span class="warning_badge nsfl" title="{{ _('Potentially emotionally scarring content') }}">nsfl</span>{% endif %}
                             {% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
                                 <span class="red fe fe-report" title="{{ _('Reported. Check post for issues.') }}"></span>
                             {% endif %}

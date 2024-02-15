@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, g
 from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField, HiddenField, SelectField, FileField
@@ -6,6 +6,7 @@ from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Le
 from flask_babel import _, lazy_gettext as _l
 
 from app import db
+from app.models import Community
 from app.utils import domain_from_url, MultiCheckboxField
 from PIL import Image, ImageOps
 from io import BytesIO
@@ -57,7 +58,7 @@ class CreatePostForm(FlaskForm):
     image_file = FileField(_('Image'))
     # flair = SelectField(_l('Flair'), coerce=int)
     nsfw = BooleanField(_l('NSFW'))
-    nsfl = BooleanField(_l('Content warning'))
+    nsfl = BooleanField(_l('Gore/gross'))
     notify_author = BooleanField(_l('Notify about replies'))
     submit = SubmitField(_l('Save'))
 
@@ -102,6 +103,9 @@ class CreatePostForm(FlaskForm):
                     current_user.reputation -= 1
                     db.session.commit()
                     return False
+            community = Community.query.get(self.communities.data).first()
+            if community.is_local() and g.site.allow_local_image_posts is False:
+                self.communities.errors.append(_('Images cannot be posted to local communities.'))
         elif self.post_type.data == 'poll':
             self.discussion_title.errors.append(_('Poll not implemented yet.'))
             return False

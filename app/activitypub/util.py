@@ -1180,6 +1180,10 @@ def update_post_from_activity(post: Post, request_json: dict):
         post.body = html_to_markdown(post.body_html)
     if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
         post.url = request_json['object']['attachment']['href']
+    post.nsfw = request_json['object']['sensitive']
+    if 'nsfl' in request_json['object']:
+        post.nsfl = request_json['object']['nsfl']
+    post.comments_enabled = request_json['object']['commentsEnabled']
     post.edited_at = utcnow()
     db.session.commit()
 

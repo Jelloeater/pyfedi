@@ -19,6 +19,8 @@
                 {% if current_user.is_authenticated and post.user_id == current_user.id %}
                     {% include 'post/_post_notification_toggle.html' %}
                 {% endif %}
+                {% if post.nsfw %}<span class="warning_badge nsfw" title="{{ _('Not safe for work') }}">nsfw</span>{% endif %}
+                {% if post.nsfl %}<span class="warning_badge nsfl" title="{{ _('Potentially emotionally scarring content') }}">nsfl</span>{% endif %}
             </h1>
             {% if post.url %}
                 <p><a href="{{ post.url }}" rel="nofollow ugc" target="_blank">{{ post.url|shorten_url }}
@@ -66,6 +68,8 @@
                 {% if current_user.is_authenticated and post.user_id == current_user.id %}
                     {% include 'post/_post_notification_toggle.html' %}
                 {% endif %}
+                {% if post.nsfw %}<span class="warning_badge nsfw" title="{{ _('Not safe for work') }}">nsfw</span>{% endif %}
+                {% if post.nsfl %}<span class="warning_badge nsfl" title="{{ _('Potentially emotionally scarring content') }}">nsfl</span>{% endif %}
             </h1>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">

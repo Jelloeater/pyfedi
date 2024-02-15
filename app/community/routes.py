@@ -392,8 +392,6 @@ def join_then_add(actor):
 def add_post(actor):
     community = actor_to_community(actor)
     form = CreatePostForm()
-    if g.site.enable_nsfw is False:
-        form.nsfw.render_kw = {'disabled': True}
     if g.site.enable_nsfl is False:
         form.nsfl.render_kw = {'disabled': True}
     if community.nsfw:
@@ -402,7 +400,6 @@ def add_post(actor):
     if community.nsfl:
         form.nsfl.data = True
         form.nsfw.render_kw = {'disabled': True}
-    images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''    # bug: this will disable posting of images to *remote* hosts too
 
     form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
@@ -515,7 +512,7 @@ def add_post(actor):
         form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
-                           images_disabled=images_disabled, markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.id),
                            inoculation=inoculation[randint(0, len(inoculation) - 1)]
