@@ -559,11 +559,14 @@ def post_edit(post_id: int):
     post = Post.query.get_or_404(post_id)
     form = CreatePostForm()
     if post.user_id == current_user.id or post.community.is_moderator():
-        if get_setting('allow_nsfw', False) is False:
-            form.nsfw.render_kw = {'disabled': True}
-        if get_setting('allow_nsfl', False) is False:
+        if g.site.enable_nsfl is False:
             form.nsfl.render_kw = {'disabled': True}
-        images_disabled = 'disabled' if not get_setting('allow_local_image_posts', True) else ''
+        if post.community.nsfw:
+            form.nsfw.data = True
+            form.nsfw.render_kw = {'disabled': True}
+        if post.community.nsfl:
+            form.nsfl.data = True
+            form.nsfw.render_kw = {'disabled': True}
 
         form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
@@ -669,7 +672,7 @@ def post_edit(post_id: int):
                 form.image_alt_text.data = post.image.alt_text
             form.notify_author.data = post.notify_author
             return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
-                                   images_disabled=images_disabled, markdown_editor=True,
+                                   markdown_editor=True,
                                    moderating_communities=moderating_communities(current_user.get_id()),
                                    joined_communities=joined_communities(current_user.get_id()),
                                    inoculation=inoculation[randint(0, len(inoculation) - 1)]
