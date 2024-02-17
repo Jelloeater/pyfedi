@@ -58,6 +58,7 @@
                                 </div>
                             {% endfor %}
                             {{ render_form(form) }}
+                            <a class="conversation_options btn btn-outline-secondary" href="{{ url_for('chat.chat_options', sender_id=other_party.id) }}" class="btn btn-outline-secondary">{{ _('Options') }}</a>
                         </div>
                     {% endif %}
                 </div>

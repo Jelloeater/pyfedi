@@ -1205,6 +1205,9 @@ fieldset legend {
   line-height: 32px;
 }
 
+.conversation {
+  position: relative;
+}
 .conversation .message {
   width: 90%;
   max-width: 100%;
@@ -1227,6 +1230,11 @@ fieldset legend {
 }
 .conversation form .form-control-label {
   display: none;
+}
+.conversation .conversation_options {
+  position: absolute;
+  bottom: 0;
+  right: 0;
 }
 
 /*# sourceMappingURL=structure.css.map */

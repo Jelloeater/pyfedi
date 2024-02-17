@@ -9,7 +9,8 @@ from app import db, celery
 from app.activitypub.signature import post_request
 from app.chat.forms import AddReply
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
-    User, Instance, File, Report, Topic, UserRegistration, ChatMessage, Notification
+    User, Instance, File, Report, Topic, UserRegistration, ChatMessage, Notification, InstanceBlock
+from app.user.forms import ReportUserForm
 from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html, \
     moderating_communities, joined_communities, finalize_user_setup, theme_list, allowlist_html, shorten_string
 from app.chat import bp
@@ -96,8 +97,98 @@ def chat_home(sender_id=None):
             current_user.unread_notifications = Notification.query.filter_by(user_id=current_user.id, read=False).count()
             db.session.commit()
 
-        return render_template('chat/home.html', title=_('Chat'), senders=senders, messages=messages, other_party=other_party,
-                               form=form,
+        return render_template('chat/home.html', title=_('Chat with %(name)s', name=other_party.display_name()) if other_party else _('Chat'),
+                               senders=senders, messages=messages, other_party=other_party, form=form,
                                moderating_communities=moderating_communities(current_user.get_id()),
                                joined_communities=joined_communities(current_user.get_id()),
                                site=g.site)
+
+
+@bp.route('/chat/<int:to>/new', methods=['GET', 'POST'])
+@login_required
+def new_message(to):
+    recipient = User.query.get_or_404(to)
+    existing_conversation = ChatMessage.query.filter(or_(
+                   and_(ChatMessage.recipient_id == current_user.id, ChatMessage.sender_id == recipient.id),
+                   and_(ChatMessage.recipient_id == recipient.id,   ChatMessage.sender_id == current_user.id))
+            ).first()
+    if existing_conversation:
+        return redirect(url_for('chat.home', sender_id=recipient.id, _anchor='submit'))
+    form = AddReply()
+    if form.validate_on_submit():
+        flash(_('Message sent'))
+        return redirect(url_for('chat.home', sender_id=recipient.id))
+
+
+@bp.route('/chat/<int:sender_id>/options', methods=['GET', 'POST'])
+@login_required
+def chat_options(sender_id):
+    sender = User.query.get_or_404(sender_id)
+    return render_template('chat/chat_options.html', sender=sender,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()),
+                           site=g.site
+                           )
+
+
+@bp.route('/chat/<int:sender_id>/delete', methods=['GET', 'POST'])
+@login_required
+def chat_delete(sender_id):
+    sender = User.query.get_or_404(sender_id)
+    ChatMessage.query.filter(or_(
+        and_(ChatMessage.recipient_id == current_user.id, ChatMessage.sender_id == sender.id),
+        and_(ChatMessage.recipient_id == sender.id, ChatMessage.sender_id == current_user.id))
+    ).delete()
+    db.session.commit()
+    flash(_('Conversation deleted'))
+    return redirect(url_for('chat.chat_home'))
+
+
+@bp.route('/chat/<int:sender_id>/block_instance', methods=['GET', 'POST'])
+@login_required
+def block_instance(sender_id):
+    sender = User.query.get_or_404(sender_id)
+    existing = InstanceBlock.query.filter_by(user_id=current_user.id, instance_id=sender.instance_id).first()
+    if not existing:
+        db.session.add(InstanceBlock(user_id=current_user.id, instance_id=sender.instance_id))
+        db.session.commit()
+    flash(_('Instance blocked.'))
+    return redirect(url_for('chat.chat_home'))
+
+
+@bp.route('/chat/<int:sender_id>/report', methods=['GET', 'POST'])
+@login_required
+def chat_report(sender_id):
+    sender = User.query.get_or_404(sender_id)
+    form = ReportUserForm()
+    if not sender.banned:
+        if form.validate_on_submit():
+            report = Report(reasons=form.reasons_to_string(form.reasons.data), description=form.description.data,
+                            type=0, reporter_id=current_user.id, suspect_user_id=sender.id)
+            db.session.add(report)
+
+            # Notify site admin
+            already_notified = set()
+            for admin in Site.admins():
+                if admin.id not in already_notified:
+                    notify = Notification(title='Reported conversation with user', url='/admin/reports', user_id=admin.id,
+                                          author_id=current_user.id)
+                    db.session.add(notify)
+                    admin.unread_notifications += 1
+            sender.reports += 1
+            db.session.commit()
+
+            # todo: federate report to originating instance
+            if not sender.is_local() and form.report_remote.data:
+                ...
+
+            flash(_('%(user_name)s has been reported, thank you!', user_name=sender.link()))
+            goto = request.args.get('redirect') if 'redirect' in request.args else f'/u/{sender.link()}'
+            return redirect(goto)
+        elif request.method == 'GET':
+            form.report_remote.data = True
+
+    return render_template('user/user_report.html', title=_('Report user'), form=form, user=sender,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id())
+                           )

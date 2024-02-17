@@ -896,6 +896,7 @@ fieldset {
 }
 
 .conversation {
+  position: relative;
   .message {
     width: 90%;
     @include breakpoint(tablet) {
@@ -917,5 +918,10 @@ fieldset {
   }
   form .form-control-label {
     display: none;
+  }
+  .conversation_options {
+    position: absolute;
+    bottom: 0;
+    right: 0;
   }
 }

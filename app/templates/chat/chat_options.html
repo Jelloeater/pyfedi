@@ -1,0 +1,31 @@
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+        <div class="col col-login mx-auto">
+            <div class="card mt-5">
+                <div class="card-body p-6">
+                    <div class="card-title">{{ _('Options for conversation with "%(sender)s"', sender=sender.link()) }}</div>
+                    <ul class="option_list">
+                        <li><a href="{{ url_for('chat.chat_delete', sender_id=sender.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span>
+                            {{ _('Delete conversation') }}</a></li>
+                        <li><a href="{{ url_for('user.block_profile', actor=sender.link()) }}" class="no-underline"><span class="fe fe-block"></span>
+                            {{ _('Block @%(author_name)s', author_name=sender.display_name()) }}</a></li>
+                        {% if sender.instance_id and sender.instance_id != 1 %}
+                        <li><a href="{{ url_for('chat.block_instance', sender_id=sender.id) }}" class="no-underline"><span class="fe fe-block"></span>
+                            {{ _("Block everything from instance: %(name)s", name=sender.instance.domain) }}</a></li>
+                        {% endif %}
+                        <li><a href="{{ url_for('chat.chat_report', sender_id=sender.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-report"></span>
+                                {{ _('Report to moderators') }}</a></li>
+                    </ul>
+                    <p>{{ _('If you are reporting abuse then do not delete the conversation - moderators will not be able to read it if you delete it.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
