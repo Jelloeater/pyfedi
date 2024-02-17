@@ -671,6 +671,8 @@ def post_edit(post_id: int):
                 form.image_body.data = post.body
                 form.image_alt_text.data = post.image.alt_text
             form.notify_author.data = post.notify_author
+            form.nsfw.data = post.nsfw
+            form.nsfl.data = post.nsfl
             return render_template('post/post_edit.html', title=_('Edit post'), form=form, post=post,
                                    markdown_editor=True,
                                    moderating_communities=moderating_communities(current_user.get_id()),

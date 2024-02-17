@@ -41,11 +41,12 @@
         {% endif %}
         {% if current_user.is_authenticated %}
             <div class="profile_action_buttons">
-                {% if not current_user.is_new() and current_user.reputation > 10 %}
+                {% if not current_user.created_recently() and current_user.reputation > 10 %}
                     <a class="btn btn-primary" href="{{ url_for('chat.new_message', to=user.id) }}" rel="nofollow" aria-label="{{ _('Send message') }}">{{ _('Send message') }}</a>
                     {% if user.matrix_user_id %}
                         <a class="btn btn-primary" href="https://matrix.to/#/{{ user.matrix_user_id }}" rel="nofollow" aria-label="{{ _('Send message with matrix chat') }}">{{ _('Send message using Matrix') }}</a>
                     {% endif %}
+                {% endif %}
                 {% if current_user.id != user.id %}
                     {% if current_user.has_blocked_user(user.id) %}
                         <a class="btn btn-primary" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow">{{ _('Unblock user') }}</a>
