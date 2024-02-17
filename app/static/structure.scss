@@ -895,3 +895,27 @@ fieldset {
   }
 }
 
+.conversation {
+  .message {
+    width: 90%;
+    @include breakpoint(tablet) {
+      width: 70%;
+    }
+    max-width: 100%;
+    margin-bottom: 15px;
+    clear: both;
+
+    &.from_other_party {
+      float: right;
+    }
+    &.from_me {
+      float: left;
+    }
+  }
+  .message_created_at {
+    float: right;
+  }
+  form .form-control-label {
+    display: none;
+  }
+}

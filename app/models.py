@@ -959,6 +959,20 @@ class PostReplyVote(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
 
 
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    reported = db.Column(db.Boolean, default=False)
+    read = db.Column(db.Boolean, default=False)
+    encrypted = db.Column(db.String(15))
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    sender = db.relationship('User', foreign_keys=[sender_id])
+
+
 # save every activity to a log, to aid debugging
 class ActivityPubLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1064,6 +1078,7 @@ class Site(db.Model):
     allow_or_block_list = db.Column(db.Integer, default=2)  # 1 = allow list, 2 = block list
     allowlist = db.Column(db.Text, default='')
     blocklist = db.Column(db.Text, default='')
+    auto_decline_referrers = db.Column(db.Text, default='rdrama.net')
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
     last_active = db.Column(db.DateTime, default=utcnow)

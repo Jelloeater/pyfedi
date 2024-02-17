@@ -1205,4 +1205,28 @@ fieldset legend {
   line-height: 32px;
 }
 
+.conversation .message {
+  width: 90%;
+  max-width: 100%;
+  margin-bottom: 15px;
+  clear: both;
+}
+@media (min-width: 992px) {
+  .conversation .message {
+    width: 70%;
+  }
+}
+.conversation .message.from_other_party {
+  float: right;
+}
+.conversation .message.from_me {
+  float: left;
+}
+.conversation .message_created_at {
+  float: right;
+}
+.conversation form .form-control-label {
+  display: none;
+}
+
 /*# sourceMappingURL=structure.css.map */

@@ -1,0 +1,68 @@
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="row">
+        <div class="col main_pane">
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Chat') }}</li>
+              </ol>
+            </nav>
+            <h1 class="mt-2">{{ _('Chat') }}</h1>
+            <div class="row">
+                <div class="col col-md-2 d-none d-md-block sender_list">
+                    <h3>{{ _('People') }}</h3>
+                    <ul class="list-group list-group-flush">
+                    {% for sender in senders %}
+                        <li class="list-group-item">
+                            {% if other_party %}
+                                {% if other_party.id != sender.id %}
+                                    <a href="{{ url_for('chat.chat_home', sender_id=sender.id) }}">{% if sender.avatar_image() %}<img src="{{ sender.avatar_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />{% endif %}
+                                        {{ sender.link() }}
+                                    </a>
+                                {% else %}
+                                        {% if sender.avatar_image() %}<img src="{{ sender.avatar_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />{% endif %}
+                                        {{ sender.link() }}
+                                {% endif %}
+                            {% else %}
+                                <a href="{{ url_for('chat.chat_home', sender_id=sender.id) }}">{% if sender.avatar_image() %}<img src="{{ sender.avatar_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />{% endif %}
+                                    {{ sender.link() }}
+                                </a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                <div class="col col-md-10">
+                    {% if other_party %}
+                        <h3 class="d-none d-md-inline">{{ _('Messages with %(name)s', name=other_party.display_name()) }}</h3>
+                        <h3 class="d-md-none">{{ _('Messages with: ') }}
+                            <select id="changeSender">{% for sender in senders %}
+                                        <option value="{{ sender.id }}" {{ 'selected' if sender.id == other_party.id }}>{{ sender.link() }}</option>
+                                    {% endfor %}
+                            </select></h3>
+                        <div class="conversation">
+                            {% for message in messages %}
+                                <div id="message_{{ message.id }}" class="card message {{ 'from_other_party' if message.sender_id != current_user.id else 'from_me' }}">
+                                    <div class="message_body">
+                                        <span class="message_created_at text-muted small">{{ moment(message.created_at).fromNow(refresh=True) }}</span>
+                                        <span class="message_sender">{{ message.sender.display_name() }}</span>: {{ message.body_html|safe }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            {{ render_form(form) }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

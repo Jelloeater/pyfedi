@@ -759,7 +759,7 @@ def post_report(post_id: int):
         # todo: only notify admins for certain types of report
         for admin in Site.admins():
             if admin.id not in already_notified:
-                notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=current_user.id)
+                notify = Notification(title='Suspicious content', url='/admin/reports', user_id=admin.id, author_id=current_user.id)
                 db.session.add(notify)
                 admin.unread_notifications += 1
         db.session.commit()
@@ -861,7 +861,7 @@ def post_reply_report(post_id: int, comment_id: int):
         # todo: only notify admins for certain types of report
         for admin in Site.admins():
             if admin.id not in already_notified:
-                notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=current_user.id)
+                notify = Notification(title='Suspicious content', url='/admin/reports', user_id=admin.id, author_id=current_user.id)
                 db.session.add(notify)
                 admin.unread_notifications += 1
         db.session.commit()

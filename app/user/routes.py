@@ -325,7 +325,7 @@ def report_profile(actor):
             already_notified = set()
             for admin in Site.admins():
                 if admin.id not in already_notified:
-                    notify = Notification(title='Reported user', url=user.ap_id, user_id=admin.id, author_id=current_user.id)
+                    notify = Notification(title='Reported user', url='/admin/reports', user_id=admin.id, author_id=current_user.id)
                     db.session.add(notify)
                     admin.unread_notifications += 1
             user.reports += 1

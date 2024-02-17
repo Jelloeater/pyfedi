@@ -77,6 +77,9 @@ def create_app(config_class=Config):
     from app.topic import bp as topic_bp
     app.register_blueprint(topic_bp)
 
+    from app.chat import bp as chat_bp
+    app.register_blueprint(chat_bp)
+
     def get_resource_as_string(name, charset='utf-8'):
         with app.open_resource(name) as f:
             return f.read().decode(charset)

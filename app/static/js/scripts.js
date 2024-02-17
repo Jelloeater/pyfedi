@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupLightDark();
     setupKeyboardShortcuts();
     setupTopicChooser();
+    setupConversationChooser();
 });
 
 
@@ -506,6 +507,16 @@ function setupTopicChooser() {
             }
         });
     });
+}
+
+function setupConversationChooser() {
+    const changeSender = document.getElementById('changeSender');
+    if(changeSender) {
+        changeSender.addEventListener('change', function() {
+            const user_id = changeSender.options[changeSender.selectedIndex].value;
+            location.href = '/chat/' + user_id;
+        });
+    }
 }
 
 function formatTime(seconds) {

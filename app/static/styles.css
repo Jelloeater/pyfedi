@@ -693,6 +693,24 @@ div.navbar {
   }
 }
 
+.sender_list {
+  border-right: solid 1px #ddd;
+}
+
+.message {
+  border: solid 1px #ddd;
+  border-radius: 5px;
+  padding: 8px 15px 0 15px;
+}
+.message.from_other_party {
+  float: right;
+}
+.message.from_me {
+  color: var(--bs-card-cap-color);
+  background-color: var(--bs-card-cap-bg);
+}
+
+/* high contrast */
 @media (prefers-contrast: more) {
   :root {
     --bs-link-color: black;

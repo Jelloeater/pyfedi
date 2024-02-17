@@ -11,7 +11,8 @@ from app.post.routes import continue_discussion, show_post
 from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, SUBSCRIPTION_MEMBER
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
-    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow, Site, Notification
+    PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow, Site, Notification, \
+    ChatMessage
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
@@ -20,7 +21,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address, can_downvote, \
-    can_upvote, can_create, awaken_dormant_instance
+    can_upvote, can_create, awaken_dormant_instance, shorten_string
 import werkzeug.exceptions
 
 
@@ -373,46 +374,73 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                 if request_json['type'] == 'Create':
                     activity_log.activity_type = 'Create'
                     user_ap_id = request_json['object']['attributedTo']
-                    try:
-                        community_ap_id = request_json['to'][0]
-                        if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public':  # kbin does this when posting a reply
-                            if 'to' in request_json['object'] and request_json['object']['to']:
-                                community_ap_id = request_json['object']['to'][0]
-                                if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public' and 'cc' in \
-                                        request_json['object'] and request_json['object']['cc']:
-                                    community_ap_id = request_json['object']['cc'][0]
-                            elif 'cc' in request_json['object'] and request_json['object']['cc']:
-                                community_ap_id = request_json['object']['cc'][0]
-                            if community_ap_id.endswith('/followers'):  # mastodon
-                                if 'inReplyTo' in request_json['object']:
-                                    post_being_replied_to = Post.query.filter_by(ap_id=request_json['object']['inReplyTo']).first()
-                                    if post_being_replied_to:
-                                        community_ap_id = post_being_replied_to.community.ap_profile_id
-                    except:
-                        activity_log.activity_type = 'exception'
-                        db.session.commit()
-                        return
-                    community = find_actor_or_create(community_ap_id)
-                    user = find_actor_or_create(user_ap_id)
-                    if (user and not user.is_local()) and community:
-                        user.last_seen = community.last_active = site.last_active = utcnow()
-
-                        object_type = request_json['object']['type']
-                        new_content_types = ['Page', 'Article', 'Link', 'Note']
-                        if object_type in new_content_types:  # create a new post
-                            in_reply_to = request_json['object']['inReplyTo'] if 'inReplyTo' in request_json['object'] else None
-                            if not in_reply_to:
-                                post = create_post(activity_log, community, request_json, user)
+                    if request_json['object']['type'] == 'ChatMessage':
+                        activity_log.activity_type = 'Create ChatMessage'
+                        sender = find_actor_or_create(user_ap_id)
+                        recipient_ap_id = request_json['object']['to'][0]
+                        recipient = find_actor_or_create(recipient_ap_id)
+                        if sender and recipient and recipient.is_local():
+                            if recipient.has_blocked_user(sender.id) or recipient.has_blocked_instance(sender.instance_id):
+                                activity_log.exception_message = "Sender blocked by recipient"
                             else:
-                                post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
-                        else:
-                            activity_log.exception_message = 'Unacceptable type (create): ' + object_type
+                                # Save ChatMessage to DB
+                                encrypted = request_json['object']['encrypted'] if 'encrypted' in request_json['object'] else None
+                                new_message = ChatMessage(sender_id=sender.id, recipient_id=recipient.id,
+                                                          body=request_json['object']['source']['content'],
+                                                          body_html=allowlist_html(markdown_to_html(request_json['object']['source']['content'])),
+                                                          encrypted=encrypted)
+                                db.session.add(new_message)
+                                db.session.commit()
+
+                                # Notify recipient
+                                notify = Notification(title=shorten_string('New message from ' + sender.display_name()),
+                                                      url=f'/chat/{new_message.id}', user_id=recipient.id,
+                                                      author_id=sender.id)
+                                db.session.add(notify)
+                                recipient.unread_notifications += 1
+                                db.session.commit()
+                                activity_log.result = 'success'
                     else:
-                        if user is None or community is None:
-                            activity_log.exception_message = 'Blocked or unfound user or community'
-                        if user and user.is_local():
-                            activity_log.exception_message = 'Activity about local content which is already present'
-                            activity_log.result = 'ignored'
+                        try:
+                            community_ap_id = request_json['to'][0]
+                            if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public':  # kbin does this when posting a reply
+                                if 'to' in request_json['object'] and request_json['object']['to']:
+                                    community_ap_id = request_json['object']['to'][0]
+                                    if community_ap_id == 'https://www.w3.org/ns/activitystreams#Public' and 'cc' in \
+                                            request_json['object'] and request_json['object']['cc']:
+                                        community_ap_id = request_json['object']['cc'][0]
+                                elif 'cc' in request_json['object'] and request_json['object']['cc']:
+                                    community_ap_id = request_json['object']['cc'][0]
+                                if community_ap_id.endswith('/followers'):  # mastodon
+                                    if 'inReplyTo' in request_json['object']:
+                                        post_being_replied_to = Post.query.filter_by(ap_id=request_json['object']['inReplyTo']).first()
+                                        if post_being_replied_to:
+                                            community_ap_id = post_being_replied_to.community.ap_profile_id
+                        except:
+                            activity_log.activity_type = 'exception'
+                            db.session.commit()
+                            return
+                        community = find_actor_or_create(community_ap_id)
+                        user = find_actor_or_create(user_ap_id)
+                        if (user and not user.is_local()) and community:
+                            user.last_seen = community.last_active = site.last_active = utcnow()
+
+                            object_type = request_json['object']['type']
+                            new_content_types = ['Page', 'Article', 'Link', 'Note']
+                            if object_type in new_content_types:  # create a new post
+                                in_reply_to = request_json['object']['inReplyTo'] if 'inReplyTo' in request_json['object'] else None
+                                if not in_reply_to:
+                                    post = create_post(activity_log, community, request_json, user)
+                                else:
+                                    post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
+                            else:
+                                activity_log.exception_message = 'Unacceptable type (create): ' + object_type
+                        else:
+                            if user is None or community is None:
+                                activity_log.exception_message = 'Blocked or unfound user or community'
+                            if user and user.is_local():
+                                activity_log.exception_message = 'Activity about local content which is already present'
+                                activity_log.result = 'ignored'
 
                 # Announce is new content and votes that happened on a remote server.
                 if request_json['type'] == 'Announce':
