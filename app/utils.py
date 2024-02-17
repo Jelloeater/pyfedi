@@ -193,6 +193,9 @@ def allowlist_html(html: str) -> str:
             if tag.name == 'a':
                 tag.attrs['rel'] = 'nofollow ugc'
                 tag.attrs['target'] = '_blank'
+            # Add loading=lazy to images
+            if tag.name == 'img':
+                tag.attrs['loading'] = 'lazy'
 
     return str(soup)
 
