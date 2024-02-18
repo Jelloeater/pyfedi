@@ -1133,10 +1133,7 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
         db.session.commit()
 
         if post.image_id:
-            if post.type == POST_TYPE_IMAGE:
-                make_image_sizes(post.image_id, 266, 512, 'posts')  # the 512 sized image is for masonry view
-            else:
-                make_image_sizes(post.image_id, 266, None, 'posts')
+            make_image_sizes(post.image_id, 150, 512, 'posts')  # the 512 sized image is for masonry view
 
         notify_about_post(post)
 
