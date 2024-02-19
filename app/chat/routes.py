@@ -58,7 +58,7 @@ def chat_home(conversation_id=None):
 @login_required
 def new_message(to):
     recipient = User.query.get_or_404(to)
-    if current_user.created_recently() or current_user.reputation < 10 or current_user.banned or not current_user.verified:
+    if current_user.created_recently() or current_user.reputation <= -10 or current_user.banned or not current_user.verified:
         return redirect(url_for('chat.denied'))
     if recipient.has_blocked_user(current_user.id) or current_user.has_blocked_user(recipient.id):
         return redirect(url_for('chat.blocked'))
