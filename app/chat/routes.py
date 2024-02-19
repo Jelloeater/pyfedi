@@ -25,7 +25,10 @@ def chat_home(conversation_id=None):
                                                 conversation_member.c.conversation_id == Conversation.id). \
             filter(conversation_member.c.user_id == current_user.id).order_by(desc(Conversation.updated_at)).limit(50).all()
         if conversation_id is None:
-            return redirect(url_for('chat.chat_home', conversation_id=conversations[0].id))
+            if conversations:
+                return redirect(url_for('chat.chat_home', conversation_id=conversations[0].id))
+            else:
+                return redirect(url_for('chat.empty'))
         else:
             conversation = Conversation.query.get_or_404(conversation_id)
             conversation.read = True
@@ -33,16 +36,8 @@ def chat_home(conversation_id=None):
                 abort(400)
             if conversations:
                 messages = conversation.messages.order_by(ChatMessage.created_at).all()
-                if messages:
-                    if messages[0].sender_id == current_user.id:
-                        other_party = User.query.get(messages[0].recipient_id)
-                    else:
-                        other_party = User.query.get(messages[0].sender_id)
-                else:
-                    other_party = None
             else:
                 messages = []
-                other_party = None
 
             sql = f"UPDATE notification SET read = true WHERE url = '/chat/{conversation_id}' AND user_id = {current_user.id}"
             db.session.execute(text(sql))
@@ -50,7 +45,8 @@ def chat_home(conversation_id=None):
             current_user.unread_notifications = Notification.query.filter_by(user_id=current_user.id, read=False).count()
             db.session.commit()
 
-            return render_template('chat/conversation.html', title=_('Chat with %(name)s', name=other_party.display_name()) if other_party else _('Chat'),
+            return render_template('chat/conversation.html',
+                                   title=_('Chat with %(name)s', name=conversation.member_names(current_user.id)),
                                    conversations=conversations, messages=messages, form=form,
                                    current_conversation=conversation_id, conversation=conversation,
                                    moderating_communities=moderating_communities(current_user.get_id()),
@@ -97,6 +93,12 @@ def denied():
 @login_required
 def blocked():
     return render_template('chat/blocked.html')
+
+
+@bp.route('/chat/empty', methods=['GET'])
+@login_required
+def empty():
+    return render_template('chat/empty.html')
 
 
 @bp.route('/chat/<int:conversation_id>/options', methods=['GET', 'POST'])
