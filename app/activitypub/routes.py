@@ -83,7 +83,7 @@ def nodeinfo():
 @bp.route('/.well-known/host-meta')
 @cache.cached(timeout=600)
 def host_meta():
-    resp = make_response(f'<?xml version="1.0" encoding="UTF-8"?>\n<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">\n<Link rel="lrdd" template="https://{current_app.config["SERVER_NAME"]}/.well-known/webfinger?resource={uri}"/>\n</XRD>')
+    resp = make_response('<?xml version="1.0" encoding="UTF-8"?>\n<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">\n<Link rel="lrdd" template="https://' + current_app.config["SERVER_NAME"] + '/.well-known/webfinger?resource={uri}"/>\n</XRD>')
     resp.content_type = 'application/xrd+xml; charset=utf-8'
     return resp
 
@@ -380,7 +380,9 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         recipient_ap_id = request_json['object']['to'][0]
                         recipient = find_actor_or_create(recipient_ap_id)
                         if sender and recipient and recipient.is_local():
-                            if recipient.has_blocked_user(sender.id) or recipient.has_blocked_instance(sender.instance_id):
+                            if sender.created_recently() or sender.reputation < 10:
+                                activity_log.exception_message = "Sender not eligible to send"
+                            elif recipient.has_blocked_user(sender.id) or recipient.has_blocked_instance(sender.instance_id):
                                 activity_log.exception_message = "Sender blocked by recipient"
                             else:
                                 # Save ChatMessage to DB

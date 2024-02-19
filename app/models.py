@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, date, timezone
 from time import time
 from typing import List
 
-from flask import current_app, escape, url_for
+from flask import current_app, escape, url_for, render_template_string
 from flask_login import UserMixin, current_user
 from sqlalchemy import or_, text
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -86,6 +86,62 @@ class InstanceBlock(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     instance_id = db.Column(db.Integer, db.ForeignKey('instance.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=utcnow)
+
+
+class Conversation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    reported = db.Column(db.Boolean, default=False)
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow)
+
+    initiator = db.relationship('User', backref=db.backref('conversations_initiated', lazy='dynamic'),
+                                foreign_keys=[user_id])
+    messages = db.relationship('ChatMessage', backref=db.backref('conversation'), cascade='all,delete',
+                               lazy='dynamic')
+
+    def member_names(self, user_id):
+        retval = []
+        for member in self.members:
+            if member.id != user_id:
+                retval.append(member.display_name())
+        return ', '.join(retval)
+
+    def is_member(self, user):
+        for member in self.members:
+            if member.id == user.id:
+                return True
+        return False
+    
+    def instances(self):
+        retval = []
+        for member in self.members:
+            if member.instance.id != 1 and member.instance not in retval:
+                retval.append(member.instance)
+        return retval
+
+
+conversation_member = db.Table('conversation_member',
+                               db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+                               db.Column('conversation_id', db.Integer, db.ForeignKey('conversation.id')),
+                               db.PrimaryKeyConstraint('user_id', 'conversation_id')
+                               )
+
+
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), index=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    reported = db.Column(db.Boolean, default=False)
+    read = db.Column(db.Boolean, default=False)
+    encrypted = db.Column(db.String(15))
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    sender = db.relationship('User', foreign_keys=[sender_id])
 
 
 class File(db.Model):
@@ -386,6 +442,7 @@ class User(UserMixin, db.Model):
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")
     instance = db.relationship('Instance', lazy='joined', foreign_keys=[instance_id])
+    conversations = db.relationship('Conversation', lazy='dynamic', secondary=conversation_member, backref=db.backref('members', lazy='joined'))
 
     ap_id = db.Column(db.String(255), index=True)           # e.g. username@server
     ap_profile_id = db.Column(db.String(255), index=True)   # e.g. https://server/u/username
@@ -959,20 +1016,6 @@ class PostReplyVote(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
 
 
-class ChatMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
-    body = db.Column(db.Text)
-    body_html = db.Column(db.Text)
-    reported = db.Column(db.Boolean, default=False)
-    read = db.Column(db.Boolean, default=False)
-    encrypted = db.Column(db.String(15))
-    created_at = db.Column(db.DateTime, default=utcnow)
-
-    sender = db.relationship('User', foreign_keys=[sender_id])
-
-
 # save every activity to a log, to aid debugging
 class ActivityPubLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1029,18 +1072,19 @@ class Report(db.Model):
     reasons = db.Column(db.String(256))
     description = db.Column(db.String(256))
     status = db.Column(db.Integer, default=0)
-    type = db.Column(db.Integer, default=0)     # 0 = user, 1 = post, 2 = reply, 3 = community
+    type = db.Column(db.Integer, default=0)     # 0 = user, 1 = post, 2 = reply, 3 = community, 4 = conversation
     reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     suspect_community_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     suspect_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     suspect_post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     suspect_post_reply_id = db.Column(db.Integer, db.ForeignKey('post_reply.id'))
+    suspect_conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'))
     created_at = db.Column(db.DateTime, default=utcnow)
     updated = db.Column(db.DateTime, default=utcnow)
 
     # textual representation of self.type
     def type_text(self):
-        types = ('User', 'Post', 'Comment', 'Community')
+        types = ('User', 'Post', 'Comment', 'Community', 'Conversation')
         if self.type is None:
             return ''
         else:

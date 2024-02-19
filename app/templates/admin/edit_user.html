@@ -18,6 +18,7 @@
         <form method="post" enctype="multipart/form-data" id="add_local_user_form">
             {{ form.csrf_token() }}
             {{ render_field(form.about) }}
+            {{ render_field(form.email) }}
             {{ render_field(form.matrix_user_id) }}
             {% if user.avatar_id %}
                 <img class="user_icon_big rounded-circle" src="{{ user.avatar_image() }}" width="120" height="120" />
@@ -30,6 +31,8 @@
             {{ render_field(form.banner_file) }}
             <small class="field_hint">Provide a wide image - letterbox orientation.</small>
             {{ render_field(form.bot) }}
+            {{ render_field(form.verified) }}
+            {{ render_field(form.banned) }}
             {{ render_field(form.newsletter) }}
             {{ render_field(form.nsfw) }}
             {{ render_field(form.nsfl) }}

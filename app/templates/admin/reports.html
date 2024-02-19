@@ -35,9 +35,11 @@
                     <td>{{ report.reasons }}</td>
                     <td>{{ report.description }}</td>
                     <td>{{ report.type_text() }}</td>
-                    <td>{{ report.created_at }}</td>
+                    <td>{{ moment(report.created_at).fromNow() }}</td>
                     <td>
-                        {% if report.suspect_post_reply_id %}
+                        {% if report.suspect_conversation_id %}
+                            <a href="/chat/{{ report.suspect_conversation_id }}#message">View</a>
+                        {% elif report.suspect_post_reply_id %}
                             <a href="/post/{{ report.suspect_post_id }}#comment_{{ report.suspect_post_reply_id }}">View</a>
                         {% elif report.suspect_post_id %}
                             <a href="/post/{{ report.suspect_post_id }}">View</a>

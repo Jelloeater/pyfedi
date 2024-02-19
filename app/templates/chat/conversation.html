@@ -5,6 +5,22 @@
 {% endif %} %}
 {% from 'bootstrap/form.html' import render_form %}
 
+{% macro conversation_members(conversation) %}
+    {% if len(conversation.members) == 2 %}
+        {% for member in conversation.members %}
+            {% if member.id != current_user.id %}
+                <img src="{{ member.avatar_thumbnail() }}" loading="lazy" /> {{ member.display_name() }}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for member in conversation.members %}
+            {% if member.id != current_user.id %}
+                {{ member.display_name() }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+
 {% block app_content %}
 <div class="row">
     <div class="row">
@@ -15,25 +31,17 @@
                 <li class="breadcrumb-item active">{{ _('Chat') }}</li>
               </ol>
             </nav>
-            <h1 class="mt-2">{{ _('Chat') }}</h1>
-            <div class="row">
+            <div class="row mt-3">
                 <div class="col col-md-2 d-none d-md-block sender_list">
                     <h3>{{ _('People') }}</h3>
                     <ul class="list-group list-group-flush">
-                    {% for sender in senders %}
+                    {% for conversation in conversations %}
                         <li class="list-group-item">
-                            {% if other_party %}
-                                {% if other_party.id != sender.id %}
-                                    <a href="{{ url_for('chat.chat_home', sender_id=sender.id) }}">{% if sender.avatar_image() %}<img src="{{ sender.avatar_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />{% endif %}
-                                        {{ sender.link() }}
-                                    </a>
-                                {% else %}
-                                        {% if sender.avatar_image() %}<img src="{{ sender.avatar_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />{% endif %}
-                                        {{ sender.link() }}
-                                {% endif %}
+                            {% if conversation.id == current_conversation %}
+                                {{ conversation_members(conversation) }}
                             {% else %}
-                                <a href="{{ url_for('chat.chat_home', sender_id=sender.id) }}">{% if sender.avatar_image() %}<img src="{{ sender.avatar_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />{% endif %}
-                                    {{ sender.link() }}
+                                <a href="{{ url_for('chat.chat_home', conversation_id=conversation.id) }}">
+                                    {{ conversation_members(conversation) }}
                                 </a>
                             {% endif %}
                         </li>
@@ -41,24 +49,24 @@
                     </ul>
                 </div>
                 <div class="col col-md-10">
-                    {% if other_party %}
-                        <h3 class="d-none d-md-inline">{{ _('Messages with %(name)s', name=other_party.display_name()) }}</h3>
+                    {% if messages %}
+                        <h3 class="d-none d-md-inline">{{ _('Messages with %(name)s', name=conversation.member_names(current_user.id)) }}</h3>
                         <h3 class="d-md-none">{{ _('Messages with: ') }}
-                            <select id="changeSender">{% for sender in senders %}
-                                        <option value="{{ sender.id }}" {{ 'selected' if sender.id == other_party.id }}>{{ sender.link() }}</option>
+                            <select id="changeSender">{% for conversation in conversations %}
+                                        <option value="{{ conversation.id }}" {{ 'selected' if conversation.id == current_conversation }}>{{ conversation.member_names(current_user.id) }}</option>
                                     {% endfor %}
                             </select></h3>
-                        <div class="conversation">
+                        <div class="conversation mt-3">
                             {% for message in messages %}
                                 <div id="message_{{ message.id }}" class="card message {{ 'from_other_party' if message.sender_id != current_user.id else 'from_me' }}">
                                     <div class="message_body">
                                         <span class="message_created_at text-muted small">{{ moment(message.created_at).fromNow(refresh=True) }}</span>
-                                        <span class="message_sender">{{ message.sender.display_name() }}</span>: {{ message.body_html|safe }}
+                                        <span class="message_sender"><a href="/u/{{ message.sender.link() }}">{{ message.sender.display_name() }}</a></span>: {{ message.body_html|safe }}
                                     </div>
                                 </div>
                             {% endfor %}
                             {{ render_form(form) }}
-                            <a class="conversation_options btn btn-outline-secondary" href="{{ url_for('chat.chat_options', sender_id=other_party.id) }}" class="btn btn-outline-secondary">{{ _('Options') }}</a>
+                            <a class="conversation_options btn btn-outline-secondary" href="{{ url_for('chat.chat_options', conversation_id=current_conversation) }}" class="btn btn-outline-secondary">{{ _('Options') }}</a>
                         </div>
                     {% endif %}
                 </div>

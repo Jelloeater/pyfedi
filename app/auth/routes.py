@@ -38,7 +38,7 @@ def login():
                 return redirect(url_for('auth.login'))
             flash(_('Invalid password'))
             return redirect(url_for('auth.login'))
-        if user.banned or user_ip_banned() or user_cookie_banned():
+        if user.id != 1 and (user.banned or user_ip_banned() or user_cookie_banned()):
             flash(_('You have been banned.'), 'error')
 
             response = make_response(redirect(url_for('auth.login')))

@@ -10,17 +10,21 @@
         <div class="col col-login mx-auto">
             <div class="card mt-5">
                 <div class="card-body p-6">
-                    <div class="card-title">{{ _('Options for conversation with "%(sender)s"', sender=sender.link()) }}</div>
+                    <div class="card-title">{{ _('Options for conversation with "%(member_names)s"', member_names=conversation.member_names(current_user.id)) }}</div>
                     <ul class="option_list">
-                        <li><a href="{{ url_for('chat.chat_delete', sender_id=sender.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span>
+                        <li><a href="{{ url_for('chat.chat_delete', conversation_id=conversation.id) }}" class="no-underline confirm_first" rel="nofollow"><span class="fe fe-delete"></span>
                             {{ _('Delete conversation') }}</a></li>
-                        <li><a href="{{ url_for('user.block_profile', actor=sender.link()) }}" class="no-underline"><span class="fe fe-block"></span>
-                            {{ _('Block @%(author_name)s', author_name=sender.display_name()) }}</a></li>
-                        {% if sender.instance_id and sender.instance_id != 1 %}
-                        <li><a href="{{ url_for('chat.block_instance', sender_id=sender.id) }}" class="no-underline"><span class="fe fe-block"></span>
-                            {{ _("Block everything from instance: %(name)s", name=sender.instance.domain) }}</a></li>
-                        {% endif %}
-                        <li><a href="{{ url_for('chat.chat_report', sender_id=sender.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-report"></span>
+                        {% for member in conversation.members %}
+                            {% if member.id != current_user.id %}
+                                <li><a href="{{ url_for('user.block_profile', actor=member.link()) }}" class="no-underline"><span class="fe fe-block"></span>
+                                    {{ _('Block @%(author_name)s', author_name=member.display_name()) }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% for instance in conversation.instances() %}
+                            <li><a href="{{ url_for('chat.block_instance', instance_id=instance.id) }}" class="no-underline"><span class="fe fe-block"></span>
+                                {{ _("Block chats and posts from instance: %(name)s", name=instance.domain) }}</a></li>
+                        {% endfor %}
+                        <li><a href="{{ url_for('chat.chat_report', conversation_id=conversation.id) }}" class="no-underline" rel="nofollow"><span class="fe fe-report"></span>
                                 {{ _('Report to moderators') }}</a></li>
                     </ul>
                     <p>{{ _('If you are reporting abuse then do not delete the conversation - moderators will not be able to read it if you delete it.') }}</p>

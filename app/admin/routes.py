@@ -484,9 +484,12 @@ def admin_user_edit(user_id):
     user = User.query.get_or_404(user_id)
     if form.validate_on_submit():
         user.about = form.about.data
+        user.email = form.email.data
         user.about_html = markdown_to_html(form.about.data)
         user.matrix_user_id = form.matrix_user_id.data
         user.bot = form.bot.data
+        user.verified = form.verified.data
+        user.banned = form.banned.data
         profile_file = request.files['profile_file']
         if profile_file and profile_file.filename != '':
             # remove old avatar
@@ -528,9 +531,12 @@ def admin_user_edit(user_id):
         if not user.is_local():
             flash(_('This is a remote user - most settings here will be regularly overwritten with data from the original server.'), 'warning')
         form.about.data = user.about
+        form.email.data = user.email
         form.matrix_user_id.data = user.matrix_user_id
         form.newsletter.data = user.newsletter
         form.bot.data = user.bot
+        form.verified.data = user.verified
+        form.banned.data = user.banned
         form.ignore_bots.data = user.ignore_bots
         form.nsfw.data = user.show_nsfw
         form.nsfl.data = user.show_nsfl

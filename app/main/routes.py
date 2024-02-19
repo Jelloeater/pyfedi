@@ -256,75 +256,8 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-
-    instance = Instance.query.get(3)
-    if instance.updated_at < utcnow() - timedelta(days=7):
-        try:
-            response = get_request(f'https://{instance.domain}/api/v3/site')
-        except:
-            response = None
-
-        if response and response.status_code == 200:
-            try:
-                instance_data = response.json()
-            except:
-                instance_data = None
-            finally:
-                response.close()
-
-            if instance_data:
-                if 'admins' in instance_data:
-                    admin_profile_ids = []
-                    for admin in instance_data['admins']:
-                        admin_profile_ids.append(admin['person']['actor_id'].lower())
-                        user = find_actor_or_create(admin['person']['actor_id'])
-                        if user and not instance.user_is_admin(user.id):
-                            new_instance_role = InstanceRole(instance_id=instance.id, user_id=user.id, role='admin')
-                            db.session.add(new_instance_role)
-                            db.session.commit()
-                    # remove any InstanceRoles that are no longer part of instance-data['admins']
-                    for instance_admin in InstanceRole.query.filter_by(instance_id=instance.id):
-                        if instance_admin.user.profile_id() not in admin_profile_ids:
-                            db.session.query(InstanceRole).filter(
-                                InstanceRole.user_id == instance_admin.user.id,
-                                InstanceRole.instance_id == instance.id,
-                                InstanceRole.role == 'admin').delete()
-                            db.session.commit()
-
-    return 'Ok'
-
-    return ''
-    retval = ''
-    for user in User.query.all():
-        filesize = user.filesize()
-        num_content = user.num_content()
-        if filesize > 0 and num_content > 0:
-            retval += f'{user.id},"{user.ap_id}",{filesize},{num_content}\n'
-    return retval
-
-    return ''
-    deleted = 0
-    for user in User.query.all():
-        if not user.is_local():
-            if user.cover_id:
-                file = user.cover
-                if file.file_path and file.thumbnail_path:
-                    if os.path.exists(file.file_path):
-                        os.unlink(file.file_path)
-                        deleted += 1
-                    file.file_path = ''
-                    db.session.commit()
-
-
-
-    return str(deleted) + ' done'
-
-    return current_app.config['SERVER_NAME']
-
-    #ip = request.headers.get('X-Forwarded-For') or request.remote_addr
-    #if ',' in ip:  # Remove all but first ip addresses
-    #    ip = ip[:ip.index(',')].strip()
-    #return ip
+    u = User.query.get(1)
+    return 'ok'
 
 
 def verification_warning():
