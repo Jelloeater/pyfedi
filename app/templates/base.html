@@ -140,9 +140,9 @@
                             <li class="nav-item dropdown{% if active_parent == 'home' %} active{% endif %}">
                                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/home" aria-haspopup="true" aria-expanded="false">{{ _('Home') }}</a>
                                 <ul class="dropdown-menu">
-                                  <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/home"><span class="fe fe-home"></span>{{ _('Home') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'home' %} active{% endif %}" href="/home"><span class="fe fe-home"></span>{{ _('Home') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'popular' %} active{% endif %}" href="/popular"><span class="fe fe-popular"></span>{{ _('Popular') }}</a></li>
-                                  <li><a class="dropdown-item{% if active_child == 'all_posts' %} active{% endif %}" href="/all"><span class="fe fe-all"></span>{{ _('All posts') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'all' %} active{% endif %}" href="/all"><span class="fe fe-all"></span>{{ _('All posts') }}</a></li>
                                 </ul>
                             <li class="nav-item dropdown{% if active_parent == 'communities' %} active{% endif %}">
                                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/topics"  aria-haspopup="true" aria-expanded="false">{{ _('Topics') }}</a>
@@ -151,14 +151,14 @@
                                   <li><a class="dropdown-item{% if active_child == 'list_topics' %} active{% endif %}" href="/communities">{{ _('All communities') }}</a></li>
                                   {% if moderating_communities %}
                                     <li><h6 class="dropdown-header">{{ _('Moderating') }}</h6></li>
-                                    {% for community in moderating_communities %}
-                                        <li class="pl-2"><a class="dropdown-item" href="/c/{{ community.link() }}">{{ community.title }}</a></li>
+                                    {% for community_menu_item in moderating_communities %}
+                                        <li class="pl-2"><a class="dropdown-item{% if community and community.id == community_menu_item.id%} active{% endif %}" href="/c/{{ community_menu_item.link() }}">{{ community_menu_item.title }}</a></li>
                                     {% endfor %}
                                   {% endif %}
                                   {% if joined_communities %}
                                     <li><h6 class="dropdown-header">{{ _('Joined communities') }}</h6></li>
-                                    {% for community in joined_communities %}
-                                        <li class="pl-2"><a class="dropdown-item" href="/c/{{ community.link() }}">{{ community.title }}</a></li>
+                                    {% for community_menu_item in joined_communities %}
+                                        <li class="pl-2"><a class="dropdown-item{% if community and community.id == community_menu_item.id%} active{% endif %}" href="/c/{{ community_menu_item.link() }}">{{ community_menu_item.title }}</a></li>
                                     {% endfor %}
                                   {% endif %}
                                 </ul>
@@ -168,6 +168,7 @@
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'view_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}">{{ _('View profile') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}/profile">{{ _('Edit profile') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'chats' %} active{% endif %}" href="/chat">{{ _('Chats') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'settings' %} active{% endif %}" href="/user/settings">{{ _('Settings') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'filters' %} active{% endif %}" href="/user/settings/filters">{{ _('Filters') }}</a></li>
                                 </ul>

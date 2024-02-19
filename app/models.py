@@ -121,6 +121,27 @@ class Conversation(db.Model):
                 retval.append(member.instance)
         return retval
 
+    @staticmethod
+    def find_existing_conversation(recipient, sender):
+        sql = """SELECT 
+                    c.id AS conversation_id, 
+                    c.created_at AS conversation_created_at, 
+                    c.updated_at AS conversation_updated_at, 
+                    cm1.user_id AS user1_id, 
+                    cm2.user_id AS user2_id 
+                FROM 
+                    public.conversation AS c 
+                JOIN 
+                    public.conversation_member AS cm1 ON c.id = cm1.conversation_id 
+                JOIN 
+                    public.conversation_member AS cm2 ON c.id = cm2.conversation_id 
+                WHERE 
+                    cm1.user_id = :user_id_1 AND 
+                    cm2.user_id = :user_id_2 AND 
+                    cm1.user_id <> cm2.user_id;"""
+        ec = db.session.execute(text(sql), {'user_id_1': recipient.id, 'user_id_2': sender.id}).fetchone()
+        return Conversation.query.get(ec[0]) if ec else None
+
 
 conversation_member = db.Table('conversation_member',
                                db.Column('user_id', db.Integer, db.ForeignKey('user.id')),

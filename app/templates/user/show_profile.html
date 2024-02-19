@@ -4,7 +4,9 @@
     {% extends "base.html" %}
 {% endif %} %}
 {% from 'bootstrap/form.html' import render_form %}
-
+{% if current_user.is_authenticated() and user.id == current_user.id %}
+    {% set active_child = 'view_profile' %}
+{% endif %}
 {% block app_content %}
 <div class="row">
     <div class="col-12 col-md-8 position-relative main_pane">

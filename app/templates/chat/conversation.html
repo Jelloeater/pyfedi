@@ -3,19 +3,25 @@
 {% else %}
     {% extends "base.html" %}
 {% endif %} %}
+{% set active_child = 'chats' %}
 {% from 'bootstrap/form.html' import render_form %}
 
 {% macro conversation_members(conversation) %}
     {% if len(conversation.members) == 2 %}
         {% for member in conversation.members %}
             {% if member.id != current_user.id %}
-                <img src="{{ member.avatar_thumbnail() }}" loading="lazy" /> {{ member.display_name() }}
+                <img src="{{ member.avatar_thumbnail() }}" loading="lazy" />
+                {% if not conversation.read %}<strong>{% endif %}
+                    {{ member.display_name() }}
+                {% if not conversation.read %}</strong>{% endif %}
             {% endif %}
         {% endfor %}
     {% else %}
         {% for member in conversation.members %}
             {% if member.id != current_user.id %}
-                {{ member.display_name() }}
+                {% if not conversation.read %}<strong>{% endif %}
+                    {{ member.display_name() }}
+                {% if not conversation.read %}</strong>{% endif %}
             {% endif %}
         {% endfor %}
     {% endif %}

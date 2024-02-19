@@ -13,7 +13,6 @@ import flask
 from bs4 import BeautifulSoup, NavigableString
 import requests
 import os
-import imghdr
 from flask import current_app, json, redirect, url_for, request, make_response, Response, g
 from flask_login import current_user
 from sqlalchemy import text, or_

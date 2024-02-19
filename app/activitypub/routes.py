@@ -12,7 +12,7 @@ from app.user.routes import show_profile
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, SUBSCRIPTION_MEMBER
 from app.models import User, Community, CommunityJoinRequest, CommunityMember, CommunityBan, ActivityPubLog, Post, \
     PostReply, Instance, PostVote, PostReplyVote, File, AllowedInstances, BannedInstances, utcnow, Site, Notification, \
-    ChatMessage
+    ChatMessage, Conversation
 from app.activitypub.util import public_key, users_total, active_half_year, active_month, local_posts, local_comments, \
     post_to_activity, find_actor_or_create, default_context, instance_blocked, find_reply_parent, find_liked_object, \
     lemmy_site_data, instance_weight, is_activitypub_request, downvote_post_reply, downvote_post, upvote_post_reply, \
@@ -380,14 +380,22 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         recipient_ap_id = request_json['object']['to'][0]
                         recipient = find_actor_or_create(recipient_ap_id)
                         if sender and recipient and recipient.is_local():
-                            if sender.created_recently() or sender.reputation < 10:
+                            if sender.created_recently() or sender.reputation <= -10:
                                 activity_log.exception_message = "Sender not eligible to send"
                             elif recipient.has_blocked_user(sender.id) or recipient.has_blocked_instance(sender.instance_id):
                                 activity_log.exception_message = "Sender blocked by recipient"
                             else:
+                                # Find existing conversation to add to
+                                existing_conversation = Conversation.find_existing_conversation(recipient=recipient, sender=sender)
+                                if not existing_conversation:
+                                    existing_conversation = Conversation(user_id=sender.id)
+                                    existing_conversation.members.append(recipient)
+                                    existing_conversation.members.append(sender)
+                                    db.session.add(existing_conversation)
+                                    db.session.commit()
                                 # Save ChatMessage to DB
                                 encrypted = request_json['object']['encrypted'] if 'encrypted' in request_json['object'] else None
-                                new_message = ChatMessage(sender_id=sender.id, recipient_id=recipient.id,
+                                new_message = ChatMessage(sender_id=sender.id, recipient_id=recipient.id, conversation_id=existing_conversation.id,
                                                           body=request_json['object']['source']['content'],
                                                           body_html=allowlist_html(markdown_to_html(request_json['object']['source']['content'])),
                                                           encrypted=encrypted)
@@ -396,10 +404,11 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
 
                                 # Notify recipient
                                 notify = Notification(title=shorten_string('New message from ' + sender.display_name()),
-                                                      url=f'/chat/{new_message.id}', user_id=recipient.id,
+                                                      url=f'/chat/{existing_conversation.id}', user_id=recipient.id,
                                                       author_id=sender.id)
                                 db.session.add(notify)
                                 recipient.unread_notifications += 1
+                                existing_conversation.read = False
                                 db.session.commit()
                                 activity_log.result = 'success'
                     else:

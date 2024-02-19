@@ -4,6 +4,7 @@
     {% extends "base.html" %}
 {% endif %} %}
 {% from 'bootstrap5/form.html' import render_form %}
+{% set active_child = 'list_topics' %}
 
 {% block app_content %}
 {% if len(topics) > 0 %}

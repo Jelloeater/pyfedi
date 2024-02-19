@@ -5,7 +5,7 @@ from sqlalchemy import desc, or_, and_, text
 
 from app import db, celery
 from app.chat.forms import AddReply, ReportConversationForm
-from app.chat.util import send_message, find_existing_conversation
+from app.chat.util import send_message
 from app.models import Site, User, Report, ChatMessage, Notification, InstanceBlock, Conversation, conversation_member
 from app.user.forms import ReportUserForm
 from app.utils import render_template, moderating_communities, joined_communities
@@ -28,6 +28,7 @@ def chat_home(conversation_id=None):
             return redirect(url_for('chat.chat_home', conversation_id=conversations[0].id))
         else:
             conversation = Conversation.query.get_or_404(conversation_id)
+            conversation.read = True
             if not current_user.is_admin() and not conversation.is_member(current_user):
                 abort(400)
             if conversations:
@@ -65,7 +66,7 @@ def new_message(to):
         return redirect(url_for('chat.denied'))
     if recipient.has_blocked_user(current_user.id) or current_user.has_blocked_user(recipient.id):
         return redirect(url_for('chat.blocked'))
-    existing_conversation = find_existing_conversation(recipient=recipient, sender=current_user)
+    existing_conversation = Conversation.find_existing_conversation(recipient=recipient, sender=current_user)
     if existing_conversation:
         return redirect(url_for('chat.chat_home', conversation_id=existing_conversation.id, _anchor='message'))
     form = AddReply()
