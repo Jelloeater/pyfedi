@@ -82,7 +82,9 @@ def post_request(uri: str, body: dict | None, private_key: str, key_id: str, con
         body['@context'] = default_context()
     type = body['type'] if 'type' in body else ''
     log = ActivityPubLog(direction='out', activity_json=json.dumps(body), activity_type=type,
-                                    result='success', activity_id=body['id'], exception_message='')
+                                    result='processing', activity_id=body['id'], exception_message='')
+    db.session.add(log)
+    db.session.commit()
     try:
         result = HttpSignature.signed_request(uri, body, private_key, key_id, content_type, method, timeout)
         if result.status_code != 200 and result.status_code != 202:
@@ -97,7 +99,8 @@ def post_request(uri: str, body: dict | None, private_key: str, key_id: str, con
         log.result = 'failure'
         log.exception_message='could not send:' + str(e)
         current_app.logger.error(f'Exception while sending post to {uri}')
-    db.session.add(log)
+    if log.result == 'processing':
+        log.result = 'success'
     db.session.commit()
 
     return log.result != 'failure'
