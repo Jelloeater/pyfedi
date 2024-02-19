@@ -4,7 +4,8 @@
     {% extends "base.html" %}
 {% endif %} %}
 {% from 'bootstrap/form.html' import render_form %}
-{% if current_user.is_authenticated() and user.id == current_user.id %}
+
+{% if current_user.is_authenticated and user.id == current_user.id %}
     {% set active_child = 'view_profile' %}
 {% endif %}
 {% block app_content %}
@@ -41,20 +42,18 @@
             </nav>
             <h1 class="mt-2">{{ user.display_name() if user.is_local() else user.display_name() + ', ' + user.ap_id }}</h1>
         {% endif %}
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated and current_user != user %}
             <div class="profile_action_buttons">
                 <a class="btn btn-primary" href="{{ url_for('chat.new_message', to=user.id) }}" rel="nofollow" aria-label="{{ _('Send message') }}">{{ _('Send message') }}</a>
                 {% if user.matrix_user_id %}
                     <a class="btn btn-primary" href="https://matrix.to/#/{{ user.matrix_user_id }}" rel="nofollow" aria-label="{{ _('Send message with matrix chat') }}">{{ _('Send message using Matrix') }}</a>
                 {% endif %}
-                {% if current_user.id != user.id %}
-                    {% if current_user.has_blocked_user(user.id) %}
-                        <a class="btn btn-primary" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow">{{ _('Unblock user') }}</a>
-                    {% else %}
-                        <a class="btn btn-primary confirm_first" href="{{ url_for('user.block_profile', actor=user.link()) }}" rel="nofollow">{{ _('Block user') }}</a>
-                    {% endif %}
-                    <a class="btn btn-primary" href="{{ url_for('user.report_profile', actor=user.link()) }}" rel="nofollow">{{ _('Report user') }}</a>
+                {% if current_user.has_blocked_user(user.id) %}
+                    <a class="btn btn-primary" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow">{{ _('Unblock user') }}</a>
+                {% else %}
+                    <a class="btn btn-primary confirm_first" href="{{ url_for('user.block_profile', actor=user.link()) }}" rel="nofollow">{{ _('Block user') }}</a>
                 {% endif %}
+                <a class="btn btn-primary" href="{{ url_for('user.report_profile', actor=user.link()) }}" rel="nofollow">{{ _('Report user') }}</a>
             </div>
         {% endif %}
         <p class="small">{{ _('Joined') }}: {{ moment(user.created).fromNow(refresh=True) }}<br />
