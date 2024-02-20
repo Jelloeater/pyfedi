@@ -91,7 +91,7 @@ def retrieve_mods_and_backfill(community_id: int):
 
         # download 50 old posts
         if community.ap_public_url:
-            outbox_request = get_request(community.ap_public_url + '/outbox', headers={'Accept': 'application/activity+json'})
+            outbox_request = get_request(community.ap_outbox_url, headers={'Accept': 'application/activity+json'})
             if outbox_request.status_code == 200:
                 outbox_data = outbox_request.json()
                 outbox_request.close()
