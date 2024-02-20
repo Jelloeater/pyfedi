@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import urllib
 from collections import defaultdict
 from datetime import datetime, timedelta, date
 from typing import List, Literal, Union
@@ -71,8 +72,12 @@ def get_request(uri, params=None, headers=None) -> requests.Response:
         headers = {'User-Agent': 'PieFed/1.0'}
     else:
         headers.update({'User-Agent': 'PieFed/1.0'})
+    if params and '/webfinger' in uri:
+        payload_str = urllib.parse.urlencode(params, safe=':@')
+    else:
+        payload_str = urllib.parse.urlencode(params) if params else None
     try:
-        response = requests.get(uri, params=params, headers=headers, timeout=5, allow_redirects=True)
+        response = requests.get(uri, params=payload_str, headers=headers, timeout=5, allow_redirects=True)
     except requests.exceptions.SSLError as invalid_cert:
         # Not our problem if the other end doesn't have proper SSL
         current_app.logger.info(f"{uri} {invalid_cert}")
