@@ -1,6 +1,9 @@
 # This file is part of pyfedi, which is licensed under the GNU General Public License (GPL) version 3.0.
 # You should have received a copy of the GPL along with this program. If not, see <http://www.gnu.org/licenses/>.
+from datetime import datetime
+
 from flask_babel import get_locale
+from flask_login import current_user
 
 from app import create_app, db, cli
 import os, click
@@ -50,6 +53,8 @@ def before_request():
     session['nonce'] = gibberish()
     g.locale = str(get_locale())
     g.site = Site.query.get(1)
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
 
 
 @app.after_request
