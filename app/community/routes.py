@@ -156,7 +156,7 @@ def show_community(community: Community):
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
 
     if sort == '' or sort == 'hot':
-        posts = posts.order_by(desc(Post.ranking))
+        posts = posts.order_by(desc(Post.ranking)).order_by(desc(Post.posted_at))
     elif sort == 'top':
         posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=7)).order_by(desc(Post.score))
     elif sort == 'new':
