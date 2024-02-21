@@ -20,7 +20,8 @@ from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
     joined_communities, moderating_communities, parse_page, theme_list, get_request
-from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File, Instance, InstanceRole
+from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File, Instance, \
+    InstanceRole, Notification
 from PIL import Image
 import pytesseract
 
@@ -102,7 +103,7 @@ def home_page(type, sort):
 
     # Sorting
     if sort == 'hot':
-        posts = posts.order_by(desc(Post.ranking))
+        posts = posts.order_by(desc(Post.ranking)).order_by(desc(Post.posted_at))
     elif sort == 'top':
         posts = posts.filter(Post.posted_at > utcnow() - timedelta(days=1)).order_by(desc(Post.score))
     elif sort == 'new':
@@ -256,7 +257,7 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-    u = User.query.get(1)
+    u = User.query.filter(User.email_unread == True).join(Notification, Notification.user_id == User.id).filter()
     return 'ok'
 
 
