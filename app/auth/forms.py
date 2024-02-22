@@ -32,6 +32,8 @@ class RegistrationForm(FlaskForm):
             raise ValidationError(_l('An account with this email address already exists.'))
 
     def validate_user_name(self, user_name):
+        if '@' in user_name.data:
+            raise ValidationError(_l('User names cannot contain @.'))
         user = User.query.filter(func.lower(User.user_name) == func.lower(user_name.data.strip())).filter_by(ap_id=None).first()
         if user is not None:
             if user.deleted:
