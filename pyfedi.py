@@ -7,7 +7,7 @@ from flask_login import current_user
 
 from app import create_app, db, cli
 import os, click
-from flask import session, g, json, request
+from flask import session, g, json, request, current_app
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
 from app.models import Site
 from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership, \
@@ -55,6 +55,12 @@ def before_request():
     g.site = Site.query.get(1)
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
+        current_user.email_unread_sent = False
+    else:
+        if session.get('Referer') is None and \
+                request.headers.get('Referer') is not None and \
+                current_app.config['SERVER_NAME'] not in request.headers.get('Referer'):
+            session['Referer'] = request.headers.get('Referer')
 
 
 @app.after_request

@@ -492,23 +492,24 @@ def post_json_to_model(post_json, user, community) -> Post:
             domain = domain_from_url(post.url)
             # notify about links to banned websites.
             already_notified = set()        # often admins and mods are the same people - avoid notifying them twice
-            if domain.notify_mods:
-                for community_member in post.community.moderators():
-                    notify = Notification(title='Suspicious content', url=post.ap_id, user_id=community_member.user_id, author_id=user.id)
-                    db.session.add(notify)
-                    already_notified.add(community_member.user_id)
-
-            if domain.notify_admins:
-                for admin in Site.admins():
-                    if admin.id not in already_notified:
-                        notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=user.id)
+            if domain:
+                if domain.notify_mods:
+                    for community_member in post.community.moderators():
+                        notify = Notification(title='Suspicious content', url=post.ap_id, user_id=community_member.user_id, author_id=user.id)
                         db.session.add(notify)
-                        admin.unread_notifications += 1
-            if domain.banned:
-                post = None
-            if not domain.banned:
-                domain.post_count += 1
-                post.domain = domain
+                        already_notified.add(community_member.user_id)
+
+                if domain.notify_admins:
+                    for admin in Site.admins():
+                        if admin.id not in already_notified:
+                            notify = Notification(title='Suspicious content', url=post.ap_id, user_id=admin.id, author_id=user.id)
+                            db.session.add(notify)
+                            admin.unread_notifications += 1
+                if domain.banned:
+                    post = None
+                if not domain.banned:
+                    domain.post_count += 1
+                    post.domain = domain
     if 'image' in post_json and post:
         image = File(source_url=post_json['image']['url'])
         db.session.add(image)
@@ -694,7 +695,7 @@ def find_instance_id(server):
     else:
         # Our instance does not know about {server} yet. Initially, create a sparse row in the 'instance' table and spawn a background
         # task to update the row with more details later
-        new_instance = Instance(domain=server, software='unknown', created_at=utcnow())
+        new_instance = Instance(domain=server, software='unknown', created_at=utcnow(), trusted=server == 'piefed.social')
         db.session.add(new_instance)
         db.session.commit()
 

@@ -27,6 +27,7 @@
                 <th>Answer</th>
                 <th>Applied</th>
                 <th>IP</th>
+                <th>Source</th>
                <th>Actions</th>
             </tr>
             {% for registration in registrations %}
@@ -38,6 +39,7 @@
                     <td>{{ registration.answer }}</td>
                     <td>{{ moment(registration.created_at).fromNow() }}</td>
                     <td>{{ registration.user.ip_address if registration.user.ip_address }} </td>
+                    <td>{{ registration.user.referrer if registration.user.referrer }} </td>
                     <td><a href="{{ url_for('admin.admin_approve_registrations_approve', user_id=registration.user.id) }}" class="btn btn-sm btn-primary">{{ _('Approve') }}</a>
                         <a href="/u/{{ registration.user.link() }}">{{ _('View') }}</a> |
                         <a href="{{ url_for('admin.admin_user_delete', user_id=registration.user.id) }}" class="confirm_first">{{ _('Delete') }}</a>

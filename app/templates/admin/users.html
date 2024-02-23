@@ -30,6 +30,7 @@
                <th>Banned</th>
                <th>Reports</th>
                <th>IP</th>
+               <th>Source</th>
                <th>Actions</th>
             </tr>
             {% for user in users.items %}
@@ -48,6 +49,7 @@
                     <td>{{ '<span class="red">Banned</span>'|safe if user.banned }} </td>
                     <td>{{ user.reports if user.reports > 0 }} </td>
                     <td>{{ user.ip_address if user.ip_address }} </td>
+                    <td>{{ user.referrer if user.referrer }} </td>
                     <td><a href="/u/{{ user.link() }}">View local</a> |
                         {% if not user.is_local() %}
                             <a href="{{ user.ap_profile_id }}">View remote</a> |

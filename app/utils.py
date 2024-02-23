@@ -254,12 +254,15 @@ def markdown_to_text(markdown_text) -> str:
 
 def domain_from_url(url: str, create=True) -> Domain:
     parsed_url = urlparse(url.lower().replace('www.', ''))
-    domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
-    if create and domain is None:
-        domain = Domain(name=parsed_url.hostname.lower())
-        db.session.add(domain)
-        db.session.commit()
-    return domain
+    if parsed_url and parsed_url.hostname:
+        domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
+        if create and domain is None:
+            domain = Domain(name=parsed_url.hostname.lower())
+            db.session.add(domain)
+            db.session.commit()
+        return domain
+    else:
+        return None
 
 
 def shorten_string(input_str, max_length=50):

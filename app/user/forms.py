@@ -32,6 +32,7 @@ class ProfileForm(FlaskForm):
 
 class SettingsForm(FlaskForm):
     newsletter = BooleanField(_l('Subscribe to email newsletter'))
+    email_unread = BooleanField(_l('Receive email about missed notifications'))
     ignore_bots = BooleanField(_l('Hide posts by bots'))
     nsfw = BooleanField(_l('Show NSFW posts'))
     nsfl = BooleanField(_l('Show NSFL posts'))

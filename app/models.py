@@ -61,6 +61,7 @@ class Instance(db.Model):
     start_trying_again = db.Column(db.DateTime)             # When to start trying again. Should grow exponentially with each failure.
     gone_forever = db.Column(db.Boolean, default=False)     # True once this instance is considered offline forever - never start trying again
     ip_address = db.Column(db.String(50))
+    trusted = db.Column(db.Boolean, default=False)
 
     posts = db.relationship('Post', backref='instance', lazy='dynamic')
     post_replies = db.relationship('PostReply', backref='instance', lazy='dynamic')
@@ -261,6 +262,7 @@ class Community(db.Model):
     ap_fetched_at = db.Column(db.DateTime)
     ap_deleted_at = db.Column(db.DateTime)
     ap_inbox_url = db.Column(db.String(255))
+    ap_outbox_url = db.Column(db.String(255))
     ap_moderators_url = db.Column(db.String(255))
     ap_domain = db.Column(db.String(255))
 
@@ -443,6 +445,9 @@ class User(UserMixin, db.Model):
     public_key = db.Column(db.Text)
     private_key = db.Column(db.Text)
     newsletter = db.Column(db.Boolean, default=True)
+    email_unread = db.Column(db.Boolean, default=True)          # True if they want to receive 'unread notifications' emails
+    email_unread_sent = db.Column(db.Boolean)                   # True after a 'unread notifications' email has been sent. None for remote users
+    receive_message_mode = db.Column(db.String(20), default='Closed')  # possible values: Open, TrustedOnly, Closed
     bounces = db.Column(db.SmallInteger, default=0)
     timezone = db.Column(db.String(20))
     reputation = db.Column(db.Float, default=0.0)
@@ -459,6 +464,7 @@ class User(UserMixin, db.Model):
     reports = db.Column(db.Integer, default=0)  # how many times this user has been reported.
     default_sort = db.Column(db.String(25), default='hot')
     theme = db.Column(db.String(20), default='')
+    referrer = db.Column(db.String(256))
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")

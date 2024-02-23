@@ -2,7 +2,10 @@
 # e.g. export FLASK_APP=pyfedi.py
 from datetime import datetime, timedelta
 
-from flask import json
+import flask
+from flask import json, current_app
+from flask_babel import _
+from sqlalchemy import or_, desc
 
 from app import db
 import click
@@ -10,10 +13,10 @@ import os
 
 from app.activitypub.signature import RsaKeys
 from app.auth.util import random_token
-from app.email import send_verification_email
+from app.email import send_verification_email, send_email
 from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain, ActivityPubLog, \
-    utcnow, Site, Instance, File
-from app.utils import file_get_contents, retrieve_block_list
+    utcnow, Site, Instance, File, Notification, Post, CommunityMember
+from app.utils import file_get_contents, retrieve_block_list, blocked_domains
 
 
 def register(app):
@@ -166,6 +169,51 @@ def register(app):
                     f = File.query.filter(File.file_path == file_path).first()
                 if f is None:
                     os.unlink(file_path)
+
+    @app.cli.command("send_missed_notifs")
+    def send_missed_notifs():
+        with app.app_context():
+            users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(
+                User.ap_id == None,
+                Notification.created_at > User.last_seen,
+                Notification.read == False,
+                User.email_unread_sent == False,  # they have not been emailed since last activity
+                User.email_unread == True  # they want to be emailed
+            ).all()
+
+            for user in users_to_notify:
+                notifications = Notification.query.filter(Notification.user_id == user.id, Notification.read == False,
+                                                          Notification.created_at > user.last_seen).all()
+                if notifications:
+                    # Also get the top 20 posts since their last login
+                    posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(
+                        CommunityMember.is_banned == False)
+                    posts = posts.filter(CommunityMember.user_id == user.id)
+                    if user.ignore_bots:
+                        posts = posts.filter(Post.from_bot == False)
+                    if user.show_nsfl is False:
+                        posts = posts.filter(Post.nsfl == False)
+                    if user.show_nsfw is False:
+                        posts = posts.filter(Post.nsfw == False)
+                    domains_ids = blocked_domains(user.id)
+                    if domains_ids:
+                        posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+                    posts = posts.filter(Post.posted_at > user.last_seen).order_by(desc(Post.score))
+                    posts = posts.limit(20).all()
+
+                    # Send email!
+                    send_email(_('You have unread notifications'),
+                               sender='PieFed <rimu@chorebuster.net>',
+                               recipients=[user.email],
+                               text_body=flask.render_template('email/unread_notifications.txt', user=user,
+                                                               notifications=notifications),
+                               html_body=flask.render_template('email/unread_notifications.html', user=user,
+                                                               notifications=notifications,
+                                                               posts=posts,
+                                                               domain=current_app.config['SERVER_NAME']))
+                    user.email_unread_sent = True
+                    db.session.commit()
+
 
 def parse_communities(interests_source, segment):
     lines = interests_source.split("\n")

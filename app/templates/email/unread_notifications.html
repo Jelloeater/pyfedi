@@ -1,0 +1,19 @@
+<p style="margin-bottom: 0;"><a href="https://{{ domain }}/"><img src="https://{{ domain }}/static/images/logo2.png" style="max-width: 100%;" width="50" height="50"></a></p>
+<p>Hi {{ user.display_name() }},</p>
+<p>Here's some notifications you've missed since your last visit:</p>
+<ul>
+    {% for notification in notifications %}
+        <li><p><a href="{{ url_for('user.notification_goto', notification_id=notification.id, _external=True) }}">{{ notification.title }}</a></p></li>
+    {% endfor %}
+</ul>
+<p><a href="{{ url_for('user.notifications_all_read', _external=True) }}" class="btn btn-primary btn-sm">Mark all as read</a></p>
+{% if posts %}
+<p>Also here's a few recent posts:</p>
+<ul>
+{% for post in posts %}
+    <li><p><a href="{{ url_for('activitypub.post_ap', post_id=post.id, _external=True) }}">{{ post.title }}</a></p></li>
+{% endfor %}
+</ul>
+{% endif %}
+<p><small><a href="{{ url_for('user.change_settings', _external=True) }}">Unsubscribe from these emails</a> by un-ticking the 'Receive email
+    about missed notifications' checkbox.</small></p>

@@ -20,6 +20,7 @@
             <form method='post' enctype="multipart/form-data" role="form">
                 {{ form.csrf_token() }}
                 {{ render_field(form.newsletter) }}
+                {{ render_field(form.email_unread) }}
                 {{ render_field(form.ignore_bots) }}
                 {{ render_field(form.nsfw) }}
                 {{ render_field(form.nsfl) }}

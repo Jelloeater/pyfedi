@@ -3,12 +3,14 @@ from datetime import datetime, timedelta
 from math import log
 from random import randint
 
-from sqlalchemy.sql.operators import or_
+import flask
+from sqlalchemy.sql.operators import or_, and_
 
 from app import db, cache
 from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
     SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
+from app.email import send_email
 from app.inoculation import inoculation
 from app.main import bp
 from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
@@ -257,7 +259,48 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-    u = User.query.filter(User.email_unread == True).join(Notification, Notification.user_id == User.id).filter()
+    return ''
+    users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(
+            User.ap_id == None,
+            Notification.created_at > User.last_seen,
+            Notification.read == False,
+            User.email_unread_sent == False,    # they have not been emailed since last activity
+            User.email_unread == True           # they want to be emailed
+    ).all()
+
+    for user in users_to_notify:
+        notifications = Notification.query.filter(Notification.user_id == user.id, Notification.read == False,
+                                                  Notification.created_at > user.last_seen).all()
+        if notifications:
+            # Also get the top 20 posts since their last login
+            posts = Post.query.join(CommunityMember, Post.community_id == CommunityMember.community_id).filter(
+                CommunityMember.is_banned == False)
+            posts = posts.filter(CommunityMember.user_id == user.id)
+            if user.ignore_bots:
+                posts = posts.filter(Post.from_bot == False)
+            if user.show_nsfl is False:
+                posts = posts.filter(Post.nsfl == False)
+            if user.show_nsfw is False:
+                posts = posts.filter(Post.nsfw == False)
+            domains_ids = blocked_domains(user.id)
+            if domains_ids:
+                posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+            posts = posts.filter(Post.posted_at > user.last_seen).order_by(desc(Post.score))
+            posts = posts.limit(20).all()
+
+            # Send email!
+            send_email(_('You have unread notifications'),
+                       sender='PieFed <rimu@chorebuster.net>',
+                       recipients=[user.email],
+                       text_body=flask.render_template('email/unread_notifications.txt', user=user, notifications=notifications),
+                       html_body=flask.render_template('email/unread_notifications.html', user=user,
+                                                 notifications=notifications,
+                                                 posts=posts,
+                                                 domain=current_app.config['SERVER_NAME']))
+            user.email_unread_sent = True
+            db.session.commit()
+
+
     return 'ok'
 
 

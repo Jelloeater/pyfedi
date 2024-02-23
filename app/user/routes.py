@@ -162,6 +162,7 @@ def change_settings():
         current_user.indexable = form.indexable.data
         current_user.default_sort = form.default_sort.data
         current_user.theme = form.theme.data
+        current_user.email_unread = form.email_unread.data
         import_file = request.files['import_file']
         if import_file and import_file.filename != '':
             file_ext = os.path.splitext(import_file.filename)[1]
@@ -186,6 +187,7 @@ def change_settings():
         return redirect(url_for('user.change_settings'))
     elif request.method == 'GET':
         form.newsletter.data = current_user.newsletter
+        form.email_unread.data = current_user.email_unread
         form.ignore_bots.data = current_user.ignore_bots
         form.nsfw.data = current_user.show_nsfw
         form.nsfl.data = current_user.show_nsfl
