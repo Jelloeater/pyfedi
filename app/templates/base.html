@@ -99,7 +99,7 @@
     <a href="#side_pane" class="skip-link" role="navigation" aria-label="Go to side pane" tabindex="">Go to side pane</a>
     <!-- Page content -->
     {% block navbar %}
-    <div class="navbar navbar-expand-lg">
+    <div class="navbar navbar-expand-lg sticky-md-top">
         <div class="{{ 'container-lg' if post_layout != 'masonry_wide' else 'container-fluid' }}" role="banner">
             <a class="navbar-brand" href="/">{% if not low_bandwidth %}<img src="/static/images/logo2.png" alt="Logo" width="50" height="50" />{% endif %}{{ g.site.name }}</a>
             {% if current_user.is_authenticated %}

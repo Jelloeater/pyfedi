@@ -420,6 +420,7 @@ a {
 div.navbar {
   border-bottom: 1px solid rgba(0, 40, 100, 0.12);
   min-height: 60px;
+  background-color: var(--bs-body-bg);
 }
 
 .navbar-brand {
