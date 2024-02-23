@@ -168,7 +168,7 @@ def post_to_activity(post: Post, community: Community):
     if post.type == POST_TYPE_LINK and post.url is not None:
         activity_data["object"]["object"]["attachment"] = {"href": post.url, "type": "Link"}
     if post.image_id is not None:
-        activity_data["object"]["object"]["image"] = {"href": post.image.view_url(), "type": "Image"}
+        activity_data["object"]["object"]["image"] = {"url": post.image.view_url(), "type": "Image"}
         if post.image.alt_text:
             activity_data["object"]["object"]["image"]['altText'] = post.image.alt_text
     return activity_data

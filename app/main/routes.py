@@ -197,10 +197,10 @@ def list_subscribed_communities():
     verification_warning()
     sort_by = text('community.' + request.args.get('sort_by') if request.args.get('sort_by') else 'community.post_reply_count desc')
     if current_user.is_authenticated:
-        communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id)
+        communities = Community.query.filter_by(banned=False).join(CommunityMember).filter(CommunityMember.user_id == current_user.id).order_by(sort_by).all()
     else:
         communities = []
-    return render_template('list_communities.html', communities=communities.order_by(sort_by).all(), title=_('Joined communities'),
+    return render_template('list_communities.html', communities=communities, title=_('Joined communities'),
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, sort_by=sort_by,
                            SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', moderating_communities=moderating_communities(current_user.get_id()),

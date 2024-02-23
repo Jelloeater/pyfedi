@@ -1013,7 +1013,7 @@ def comment_ap(comment_id):
         resp.content_type = 'application/activity+json'
         return resp
     else:
-        reply = PostReply.query.get(comment_id)
+        reply = PostReply.query.get_or_404(comment_id)
         return continue_discussion(reply.post.id, comment_id)
 
 

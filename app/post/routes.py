@@ -756,7 +756,7 @@ def post_report(post_id: int):
                                         url=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}",
                                         author_id=current_user.id)
             db.session.add(notification)
-            already_notified.add(mod.id)
+            already_notified.add(mod.user_id)
         post.reports += 1
         # todo: only notify admins for certain types of report
         for admin in Site.admins():
