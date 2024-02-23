@@ -11,7 +11,7 @@ from flask import session, g, json, request, current_app
 from app.constants import POST_TYPE_LINK, POST_TYPE_IMAGE, POST_TYPE_ARTICLE
 from app.models import Site
 from app.utils import getmtime, gibberish, shorten_string, shorten_url, digits, user_access, community_membership, \
-    can_create, can_upvote, can_downvote, shorten_number, ap_datetime, current_theme
+    can_create_post, can_upvote, can_downvote, shorten_number, ap_datetime, current_theme
 
 app = create_app()
 cli.register(app)
@@ -39,7 +39,7 @@ with app.app_context():
     app.jinja_env.globals['json_loads'] = json.loads
     app.jinja_env.globals['user_access'] = user_access
     app.jinja_env.globals['ap_datetime'] = ap_datetime
-    app.jinja_env.globals['can_create'] = can_create
+    app.jinja_env.globals['can_create'] = can_create_post
     app.jinja_env.globals['can_upvote'] = can_upvote
     app.jinja_env.globals['can_downvote'] = can_downvote
     app.jinja_env.globals['theme'] = current_theme

@@ -1057,6 +1057,7 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
             else:
                 activity_log.exception_message = 'Comments disabled, reply discarded'
                 activity_log.result = 'ignored'
+                return None
             return post
         else:
             activity_log.exception_message = 'Could not find parent post'

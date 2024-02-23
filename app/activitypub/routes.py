@@ -21,7 +21,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address, can_downvote, \
-    can_upvote, can_create, awaken_dormant_instance, shorten_string
+    can_upvote, can_create_post, awaken_dormant_instance, shorten_string, can_create_post_reply
 import werkzeug.exceptions
 
 
@@ -441,9 +441,15 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             if object_type in new_content_types:  # create a new post
                                 in_reply_to = request_json['object']['inReplyTo'] if 'inReplyTo' in request_json['object'] else None
                                 if not in_reply_to:
-                                    post = create_post(activity_log, community, request_json, user)
+                                    if can_create_post(user, community):
+                                        post = create_post(activity_log, community, request_json, user)
+                                    else:
+                                        post = None
                                 else:
-                                    post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
+                                    if can_create_post_reply(user, community):
+                                        post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
+                                    else:
+                                        post = None
                             else:
                                 activity_log.exception_message = 'Unacceptable type (create): ' + object_type
                         else:
@@ -476,11 +482,16 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             if object_type in new_content_types:  # create a new post
                                 in_reply_to = request_json['object']['object']['inReplyTo'] if 'inReplyTo' in \
                                                                                                request_json['object']['object'] else None
-                                if can_create(user, community):
-                                    if not in_reply_to:
+                                if not in_reply_to:
+                                    if can_create_post(user, community):
                                         post = create_post(activity_log, community, request_json['object'], user, announce_id=request_json['id'])
                                     else:
+                                        post = None
+                                else:
+                                    if can_create_post_reply(user, community):
                                         post = create_post_reply(activity_log, community, in_reply_to, request_json['object'], user, announce_id=request_json['id'])
+                                    else:
+                                        post = None
                             else:
                                 activity_log.exception_message = 'Unacceptable type: ' + object_type
                         else:

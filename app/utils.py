@@ -431,31 +431,31 @@ def can_upvote(user, community: Community) -> bool:
     return True
 
 
-def can_create(user, content: Union[Community, Post, PostReply]) -> bool:
+def can_create_post(user, content: Community) -> bool:
     if user is None or content is None or user.banned:
         return False
 
-    if isinstance(content, Community):
-        if content.is_moderator(user) or user.is_admin():
-            return True
+    if content.is_moderator(user) or user.is_admin():
+        return True
 
-        if content.restricted_to_mods:
-            return False
+    if content.restricted_to_mods:
+        return False
 
-        if content.local_only and not user.is_local():
-            return False
-    else:
-        if content.community.is_moderator(user) or user.is_admin():
-            return True
+    if content.local_only and not user.is_local():
+        return False
 
-        if content.community.restricted_to_mods and isinstance(content, Post):
-            return False
+    return True
 
-        if content.community.local_only and not user.is_local():
-            return False
 
-        if isinstance(content, PostReply) and content.post.comments_enabled is False:
-            return False
+def can_create_post_reply(user, content: Community) -> bool:
+    if user is None or content is None or user.banned:
+        return False
+
+    if content.is_moderator(user) or user.is_admin():
+        return True
+
+    if content.local_only and not user.is_local():
+        return False
 
     return True
 

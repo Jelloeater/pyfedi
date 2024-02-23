@@ -385,7 +385,7 @@ def add_reply(post_id: int, comment_id: int):
     post = Post.query.get_or_404(post_id)
 
     if not post.comments_enabled:
-        flash('The author of the post has changed their mind so comments have been disabled.', 'warning')
+        flash('Comments have been disabled.', 'warning')
         return redirect(url_for('activitypub.post_ap', post_id=post_id))
 
     in_reply_to = PostReply.query.get_or_404(comment_id)
