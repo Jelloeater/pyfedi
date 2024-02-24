@@ -14,4 +14,4 @@
 <p>Rimu Atkinson<br />
 Founder</p>
 <p>&nbsp;</p>
-<p><small><a href="https://piefed.social/members/unsubscribe/reminder/{{ user.id }}/0">Unsubscribe from PieFed newsletter</a></small></p>
+<p><small><a href="{{ url_for('user.user_newsletter_unsubscribe', user_id=user.id, token=user.verification_token, _external=True) }}">Unsubscribe from PieFed newsletter</a></small></p>

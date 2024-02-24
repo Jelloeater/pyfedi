@@ -41,10 +41,13 @@ def send_welcome_email(user, application_required):
 def send_async_email(subject, sender, recipients, text_body, html_body, reply_to):
     if 'ngrok.app' in sender:   # for local development
         sender = 'PieFed <noreply@piefed.social>'
+        return_path = 'bounces@piefed.social'
+    else:
+        return_path = 'bounces@' + current_app.config['SERVER_NAME']
+    # NB email will not be sent if you have not verified your domain name as an 'Identity' inside AWS SES
     if type(recipients) == str:
         recipients = [recipients]
     with current_app.app_context():
-        return_path = 'bounces@' + current_app.config['SERVER_NAME']
         try:
             # Create a new SES resource and specify a region.
             amazon_client = boto3.client('ses', region_name=AWS_REGION)
@@ -87,7 +90,6 @@ def send_async_email(subject, sender, recipients, text_body, html_body, reply_to
                     ReturnPath=return_path,
                     ReplyToAddresses=[reply_to])
                 # message.attach_alternative("...AMPHTML content...", "text/x-amp-html")
-
         except ClientError as e:
             current_app.logger.error('Failed to send email. ' + e.response['Error']['Message'])
             return e.response['Error']['Message']

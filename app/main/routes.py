@@ -10,7 +10,7 @@ from app import db, cache
 from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
     SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
-from app.email import send_email
+from app.email import send_email, send_welcome_email
 from app.inoculation import inoculation
 from app.main import bp
 from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
@@ -259,6 +259,9 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
+    u = User.query.get(1)
+    send_welcome_email(u, False)
+
     return ''
     users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(
             User.ap_id == None,

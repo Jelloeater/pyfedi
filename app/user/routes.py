@@ -692,3 +692,12 @@ def user_settings_filters_delete(filter_id):
     cache.delete_memoized(user_filters_replies, current_user.id)
     flash(_('Filter deleted.'))
     return redirect(url_for('user.user_settings_filters'))
+
+
+@bp.route('/user/newsletter/<int:user_id>/<token>/unsubscribe', methods=['GET', 'POST'])
+def user_newsletter_unsubscribe(user_id, token):
+    user = User.query.filter(User.id == user_id, User.verification_token == token).first()
+    if user:
+        user.newsletter = False
+        db.session.commit()
+    return render_template('user/newsletter_unsubscribed.html')
