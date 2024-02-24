@@ -5,6 +5,12 @@ nav, etc which are used site-wide */
 @import "scss/typography";
 @import "scss/controls";
 
+html {
+  @include breakpoint(phablet) {
+    scroll-padding-top: 80px;
+  }
+}
+
 .container {
   width: 100%;
   padding-right: 0.75rem;
