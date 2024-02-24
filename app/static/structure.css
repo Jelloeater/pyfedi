@@ -433,6 +433,13 @@ fieldset legend {
   }
 }
 
+@media (min-width: 992px) {
+  .navbar-expand-lg .navbar-nav .dropdown-menu {
+    overflow-y: auto;
+    max-height: 90vh;
+    overflow-x: hidden;
+  }
+}
 .low_bandwidth .dropdown-toggle::after {
   display: none;
 }
