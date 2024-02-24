@@ -11,8 +11,8 @@ from app.activitypub.routes import process_inbox_request, process_delete_request
 from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm, \
-    EditTopicForm
-from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community
+    EditTopicForm, SendNewsletterForm
+from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community, send_newsletter
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
     User, Instance, File, Report, Topic, UserRegistration
@@ -593,6 +593,23 @@ def admin_reports():
 
     return render_template('admin/reports.html', title=_('Reports'), next_url=next_url, prev_url=prev_url, reports=reports,
                            local_remote=local_remote, search=search,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()),
+                           site=g.site
+                           )
+
+
+@bp.route('/newsletter', methods=['GET', 'POST'])
+@login_required
+@permission_required('administer all users')
+def newsletter():
+    form = SendNewsletterForm()
+    if form.validate_on_submit():
+        send_newsletter(form)
+        flash('Newsletter sent')
+        return redirect(url_for('admin.newsletter'))
+
+    return render_template("admin/newsletter.html", form=form, title=_('Send newsletter'),
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()),
                            site=g.site

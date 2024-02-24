@@ -113,3 +113,11 @@ class EditUserForm(FlaskForm):
     indexable = BooleanField(_l('Allow search engines to index this profile'))
     manually_approves_followers = BooleanField(_l('Manually approve followers'))
     submit = SubmitField(_l('Save'))
+
+
+class SendNewsletterForm(FlaskForm):
+    subject = StringField(_l('Subject'), validators=[DataRequired()])
+    body_text = TextAreaField(_l('Body (text)'), render_kw={"rows": 10}, validators=[DataRequired()])
+    body_html = TextAreaField(_l('Body (html)'), render_kw={"rows": 20}, validators=[DataRequired()])
+    test = BooleanField(_l('Test mode'), render_kw={'checked': True})
+    submit = SubmitField(_l('Send newsletter'))

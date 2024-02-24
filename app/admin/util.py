@@ -1,4 +1,7 @@
-from flask import request, abort, g, current_app, json
+from flask import request, abort, g, current_app, json, flash, render_template
+from flask_login import current_user
+from sqlalchemy import text, desc
+
 from app import db, cache, celery
 from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
@@ -70,3 +73,31 @@ def unsubscribe_from_community(community, user):
     post_request(community.ap_inbox_url, undo, user.private_key, user.profile_id() + '#main-key')
     activity.result = 'success'
     db.session.commit()
+
+
+def send_newsletter(form):
+    recipients = User.query.filter(User.newsletter == True, User.banned == False, User.ap_id == None).order_by(desc(User.id)).limit(40000)
+
+    from app.email import send_email
+
+    if recipients.count() == 0:
+        flash('No recipients', 'error')
+
+    for recipient in recipients:
+        body_text = render_template('email/newsletter.txt',
+                                    recipient=recipient if not form.test.data else current_user,
+                                    content=form.body_text.data)
+        body_html = render_template('email/newsletter.html',
+                                    recipient=recipient if not form.test.data else current_user,
+                                    content=form.body_html.data,
+                                    domain=current_app.config['SERVER_NAME'])
+        if form.test.data:
+            to = current_user.email
+        else:
+            to = recipient.email
+
+        send_email(subject=form.subject.data, sender=f'{g.site.name} <noreply@{current_app.config["SERVER_NAME"]}>', recipients=[to],
+                   text_body=body_text, html_body=body_html)
+
+        if form.test.data:
+            break
