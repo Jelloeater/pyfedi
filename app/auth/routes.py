@@ -106,7 +106,7 @@ def register():
                     flash(_('Your username contained special letters so it was changed to %(name)s.', name=form.user_name.data), 'warning')
                 user = User(user_name=form.user_name.data, title=form.user_name.data, email=form.real_email.data,
                             verification_token=verification_token, instance_id=1, ip_address=ip_address(),
-                            banned=user_ip_banned() or user_cookie_banned(), email_unread_sent=False, email_messages_sent=False,
+                            banned=user_ip_banned() or user_cookie_banned(), email_unread_sent=False,
                             referrer=session.get('Referer'))
                 user.set_password(form.password.data)
                 db.session.add(user)

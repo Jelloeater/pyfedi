@@ -1,6 +1,6 @@
 Hello {{ user.display_name() }},
 
-To verify your email address:
+To verify your email address, please open this link:
 
 {{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}
 

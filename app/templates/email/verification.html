@@ -1,11 +1,6 @@
 <p><a href="https://piefed.social/"><img src="https://piefed.social/static/images/logo2.png" style="max-width: 100%; margin-bottom: 20px;" width="50" height="50" alt="PieFed logo" /></a></p>
 <p>Hi {{ user.display_name() }},</p>
-<p>
-    To verify your email address
-    <a href="{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}">
-        click here
-    </a>.
-</p>
+<p><a href="{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}">Please click this like to verify your email address</a>.</p>
 <p>Alternatively, you can paste the following link in your browser's address bar:</p>
 <p>{{ url_for('auth.verify_email', token=user.verification_token, _external=True) }}</p>
 <p>Thanks,</p>

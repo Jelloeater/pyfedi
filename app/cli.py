@@ -202,8 +202,8 @@ def register(app):
                     posts = posts.limit(20).all()
 
                     # Send email!
-                    send_email(_('You have unread notifications'),
-                               sender='PieFed <rimu@chorebuster.net>',
+                    send_email(_('[PieFed] You have unread notifications'),
+                               sender=f'PieFed <noreply@{current_app.config["SERVER_NAME"]}>',
                                recipients=[user.email],
                                text_body=flask.render_template('email/unread_notifications.txt', user=user,
                                                                notifications=notifications),

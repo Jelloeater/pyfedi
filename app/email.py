@@ -12,7 +12,7 @@ CHARSET = "UTF-8"
 def send_password_reset_email(user):
     token = user.get_reset_password_token()
     send_email(_('[PieFed] Reset Your Password'),
-               sender='PieFed <rimu@chorebuster.net>',
+               sender=f'PieFed <noreply@{current_app.config["SERVER_NAME"]}>',
                recipients=[user.email],
                text_body=render_template('email/reset_password.txt',
                                          user=user, token=token),
@@ -21,8 +21,8 @@ def send_password_reset_email(user):
 
 
 def send_verification_email(user):
-    send_email(_('Please verify your email address'),
-               sender='PieFed <rimu@chorebuster.net>',
+    send_email(_('[PieFed] Please verify your email address'),
+               sender=f'PieFed <noreply@{current_app.config["SERVER_NAME"]}>',
                recipients=[user.email],
                text_body=render_template('email/verification.txt', user=user),
                html_body=render_template('email/verification.html', user=user))
@@ -31,7 +31,7 @@ def send_verification_email(user):
 def send_welcome_email(user, application_required):
     subject = _('Your application has been approved - welcome to PieFed') if application_required else _('Welcome to PieFed')
     send_email(subject,
-               sender='PieFed <rimu@chorebuster.net>',
+               sender=f'PieFed <noreply@{current_app.config["SERVER_NAME"]}>',
                recipients=[user.email],
                text_body=render_template('email/welcome.txt', user=user, application_required=application_required),
                html_body=render_template('email/welcome.html', user=user, application_required=application_required))
@@ -39,9 +39,12 @@ def send_welcome_email(user, application_required):
 
 @celery.task
 def send_async_email(subject, sender, recipients, text_body, html_body, reply_to):
+    if 'ngrok.app' in sender:   # for local development
+        sender = 'PieFed <noreply@piefed.social>'
     if type(recipients) == str:
         recipients = [recipients]
     with current_app.app_context():
+        return_path = 'bounces@' + current_app.config['SERVER_NAME']
         try:
             # Create a new SES resource and specify a region.
             amazon_client = boto3.client('ses', region_name=AWS_REGION)
@@ -63,7 +66,7 @@ def send_async_email(subject, sender, recipients, text_body, html_body, reply_to
                         },
                     },
                     Source=sender,
-                    ReturnPath='bounces@chorebuster.net')
+                    ReturnPath=return_path)
             else:
                 response = amazon_client.send_email(
                     Destination={'ToAddresses': recipients},
@@ -81,7 +84,7 @@ def send_async_email(subject, sender, recipients, text_body, html_body, reply_to
                         },
                     },
                     Source=sender,
-                    ReturnPath='bounces@chorebuster.net',
+                    ReturnPath=return_path,
                     ReplyToAddresses=[reply_to])
                 # message.attach_alternative("...AMPHTML content...", "text/x-amp-html")
 
