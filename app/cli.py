@@ -1,5 +1,7 @@
 # if commands in this file are not working (e.g. 'flask translate') make sure you set the FLASK_APP environment variable.
 # e.g. export FLASK_APP=pyfedi.py
+import imaplib
+import re
 from datetime import datetime, timedelta
 
 import flask
@@ -212,6 +214,71 @@ def register(app):
                                                                posts=posts,
                                                                domain=current_app.config['SERVER_NAME']))
                     user.email_unread_sent = True
+                    db.session.commit()
+
+    @app.cli.command("process_email_bounces")
+    def process_email_bounces():
+        with app.app_context():
+            import email
+
+            imap_host = current_app.config['BOUNCE_HOST']
+            imap_user = current_app.config['BOUNCE_USERNAME']
+            imap_pass = current_app.config['BOUNCE_PASSWORD']
+            something_deleted = False
+
+            if imap_host:
+
+                # connect to host using SSL
+                imap = imaplib.IMAP4_SSL(imap_host, port=993)
+
+                ## login to server
+                imap.login(imap_user, imap_pass)
+
+                imap.select('Inbox')
+
+                tmp, data = imap.search(None, 'ALL')
+                rgx = r'[\w\.-]+@[\w\.-]+'
+
+                emails = set()
+
+                for num in data[0].split():
+                    tmp, data = imap.fetch(num, '(RFC822)')
+                    email_message = email.message_from_bytes(data[0][1])
+                    match = []
+                    if not isinstance(email_message._payload, str):
+                        if isinstance(email_message._payload[0]._payload, str):
+                            payload = email_message._payload[0]._payload.replace("\n", " ").replace("\r", " ")
+                            match = re.findall(rgx, payload)
+                        elif isinstance(email_message._payload[0]._payload, list):
+                            if isinstance(email_message._payload[0]._payload[0]._payload, str):
+                                payload = email_message._payload[0]._payload[0]._payload.replace("\n", " ").replace("\r", " ")
+                                match = re.findall(rgx, payload)
+
+                        for m in match:
+                            if current_app.config['SERVER_NAME'] not in m and current_app.config['SERVER_NAME'].upper() not in m:
+                                emails.add(m)
+                                print(str(num) + ' ' + m)
+
+                    imap.store(num, '+FLAGS', '\\Deleted')
+                    something_deleted = True
+
+                if something_deleted:
+                    imap.expunge()
+                    pass
+
+                imap.close()
+
+                # Keep track of how many times email to an account has bounced. After 2 bounces, disable email sending to them
+                for bounced_email in emails:
+                    bounced_accounts = User.query.filter_by(email=bounced_email).all()
+                    for account in bounced_accounts:
+                        if account.bounces is None:
+                            account.bounces = 0
+                        if account.bounces > 2:
+                            account.newsletter = False
+                            account.email_unread = False
+                        else:
+                            account.bounces += 1
                     db.session.commit()
 
 

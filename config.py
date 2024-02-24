@@ -32,3 +32,7 @@ class Config(object):
     SQLALCHEMY_ECHO = False     # set to true to see SQL in console
     WTF_CSRF_TIME_LIMIT = None  # a value of None ensures csrf token is valid for the lifetime of the session
 
+    BOUNCE_HOST = os.environ.get('BOUNCE_HOST')
+    BOUNCE_USERNAME = os.environ.get('BOUNCE_USERNAME')
+    BOUNCE_PASSWORD = os.environ.get('BOUNCE_PASSWORD')
+
