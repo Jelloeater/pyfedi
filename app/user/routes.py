@@ -701,3 +701,12 @@ def user_newsletter_unsubscribe(user_id, token):
         user.newsletter = False
         db.session.commit()
     return render_template('user/newsletter_unsubscribed.html')
+
+
+@bp.route('/user/email_notifs/<int:user_id>/<token>/unsubscribe', methods=['GET', 'POST'])
+def user_email_notifs_unsubscribe(user_id, token):
+    user = User.query.filter(User.id == user_id, User.verification_token == token).first()
+    if user:
+        user.email_unread = False
+        db.session.commit()
+    return render_template('user/email_notifs_unsubscribed.html')

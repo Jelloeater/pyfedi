@@ -15,5 +15,4 @@
 {% endfor %}
 </ul>
 {% endif %}
-<p><small><a href="{{ url_for('user.change_settings', _external=True) }}">Unsubscribe from these emails</a> by un-ticking the 'Receive email
-    about missed notifications' checkbox.</small></p>
+<p><small><a href="{{ url_for('user.user_email_notifs_unsubscribe', user_id=user.id, token=user.verification_token, _external=True) }}">Unsubscribe from these emails</a></small></p>
