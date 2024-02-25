@@ -86,6 +86,9 @@
             {% if post.type == POST_TYPE_LINK %}
                 <p><a href="{{ post.url }}" rel="nofollow ugc" target="_blank" class="post_link">{{ post.url|shorten_url }}
                 <span class="fe fe-external"></span></a></p>
+                {% if post.url.endswith('.mp3') %}
+                    <p><audio controls preload="{{ 'none' if low_bandwidth else 'metadata' }}" src="{{ post.url }}"></audio></p>
+                {% endif %}
                 {% if 'youtube.com' in post.url %}
                     <div style="padding-bottom: 56.25%; position: relative;"><iframe style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%;" src="https://www.youtube.com/embed/{{ post.youtube_embed() }}?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"  width="100%" height="100%" frameborder="0"></iframe></div>
                 {% endif %}

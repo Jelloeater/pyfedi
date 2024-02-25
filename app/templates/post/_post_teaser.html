@@ -42,6 +42,8 @@
                             {% if post.type == POST_TYPE_LINK and post.domain_id %}
                                 {% if post.url and 'youtube.com' in post.url %}
                                     <span class="fe fe-video" aria-hidden="true"></span>
+                                {% elif post.url.endswith('.mp3') %}
+                                    <span class="fe fe-audio" aria-hidden="true"></span>
                                 {% endif %}
                                 <span class="domain_link" aria-hidden="true">(<a href="/d/{{ post.domain_id }}" aria-label="{{ _('All posts about this domain') }}">{{ post.domain.name }}</a>)</span>
                             {% endif %}

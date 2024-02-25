@@ -291,6 +291,15 @@ h1 {
   }
 }
 
+.fe-audio {
+  position: relative;
+  top: 1px;
+  left: 0;
+  &:before {
+    content: "\e9fc";
+  }
+}
+
 .fe-poll {
   position: relative;
   top: 2px;
