@@ -162,3 +162,7 @@ cython_debug/
 app/static/*.css.map
 /app/static/media/
 celery_worker.py
+
+# sensitive data
+.env.docker
+.gunicorn.conf.py

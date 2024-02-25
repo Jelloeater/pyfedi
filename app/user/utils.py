@@ -82,8 +82,7 @@ def purge_user_then_delete_task(user_id):
             }
             for instance in instances:
                 if instance.inbox and instance.id != 1:
-                    post_request(instance.inbox, payload, site.private_key,
-                                 f"https://{current_app.config['SERVER_NAME']}#main-key")
+                    post_request(instance.inbox, payload, user.private_key, user.ap_profile_id + '#main-key')
 
         sleep(100)                                  # wait a while for any related activitypub traffic to die down.
         user.deleted = True

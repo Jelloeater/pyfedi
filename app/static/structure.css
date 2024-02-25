@@ -314,6 +314,15 @@ h1 .fe-bell, h1 .fe-no-bell {
   content: "\ea05";
 }
 
+.fe-audio {
+  position: relative;
+  top: 1px;
+  left: 0;
+}
+.fe-audio:before {
+  content: "\e9fc";
+}
+
 .fe-poll {
   position: relative;
   top: 2px;
@@ -398,6 +407,12 @@ fieldset legend {
   background-color: #d8e5ee;
 }
 
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 80px;
+  }
+}
+
 .container {
   width: 100%;
   padding-right: 0.75rem;
@@ -427,6 +442,13 @@ fieldset legend {
   }
 }
 
+@media (min-width: 992px) {
+  .navbar-expand-lg .navbar-nav .dropdown-menu {
+    overflow-y: auto;
+    max-height: 90vh;
+    overflow-x: hidden;
+  }
+}
 .low_bandwidth .dropdown-toggle::after {
   display: none;
 }

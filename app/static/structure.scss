@@ -5,6 +5,12 @@ nav, etc which are used site-wide */
 @import "scss/typography";
 @import "scss/controls";
 
+html {
+  @include breakpoint(phablet) {
+    scroll-padding-top: 80px;
+  }
+}
+
 .container {
   width: 100%;
   padding-right: 0.75rem;
@@ -26,6 +32,14 @@ nav, etc which are used site-wide */
   }
   @include breakpoint(bigbig) {
     max-width: 1880px;
+  }
+}
+
+@include breakpoint(tablet) {
+  .navbar-expand-lg .navbar-nav .dropdown-menu {
+    overflow-y: auto;
+    max-height: 90vh;
+    overflow-x: hidden;
   }
 }
 

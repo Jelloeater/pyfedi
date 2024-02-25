@@ -313,6 +313,15 @@ h1 .fe-bell, h1 .fe-no-bell {
   content: "\ea05";
 }
 
+.fe-audio {
+  position: relative;
+  top: 1px;
+  left: 0;
+}
+.fe-audio:before {
+  content: "\e9fc";
+}
+
 .fe-poll {
   position: relative;
   top: 2px;

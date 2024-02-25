@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import random
 import urllib
 from collections import defaultdict
@@ -705,3 +706,18 @@ def theme_list():
                 theme_settings = json.loads(file_get_contents(f'app/templates/themes/{dir}/{dir}.json'))
                 result.append((dir, theme_settings['name']))
     return result
+
+
+def sha256_digest(input_string):
+    """
+    Compute the SHA-256 hash digest of a given string.
+
+    Args:
+    - input_string: The string to compute the hash digest for.
+
+    Returns:
+    - A hexadecimal string representing the SHA-256 hash digest.
+    """
+    sha256_hash = hashlib.sha256()
+    sha256_hash.update(input_string.encode('utf-8'))
+    return sha256_hash.hexdigest()

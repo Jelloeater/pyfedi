@@ -21,7 +21,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address, can_downvote, \
-    can_upvote, can_create_post, awaken_dormant_instance, shorten_string, can_create_post_reply
+    can_upvote, can_create_post, awaken_dormant_instance, shorten_string, can_create_post_reply, sha256_digest
 import werkzeug.exceptions
 
 
@@ -114,6 +114,24 @@ def nodeinfo2():
                 "openRegistrations": g.site.registration_mode == 'Open'
             }
     return jsonify(nodeinfo_data)
+
+
+@bp.route('/api/v1/instance/domain_blocks')
+@cache.cached(timeout=600)
+def domain_blocks():
+    use_allowlist = get_setting('use_allowlist', False)
+    if use_allowlist:
+        return jsonify([])
+    else:
+        retval = []
+        for domain in BannedInstances.query.all():
+            retval.append({
+                'domain': domain.domain,
+                'digest': sha256_digest(domain.domain),
+                'severity': 'suspend',
+                'comment': domain.reason if domain.reason else ''
+            })
+    return jsonify(retval)
 
 
 @bp.route('/api/v3/site')
@@ -759,18 +777,33 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     else:
                         ap_id = request_json['object']['id']  # kbin
                     post = Post.query.filter_by(ap_id=ap_id).first()
+                    # Delete post
                     if post:
                         post.delete_dependencies()
                         post.community.post_count -= 1
                         db.session.delete(post)
+                        db.session.commit()
+                        activity_log.result = 'success'
                     else:
+                        # Delete PostReply
                         reply = PostReply.query.filter_by(ap_id=ap_id).first()
                         if reply:
                             reply.body_html = '<p><em>deleted</em></p>'
                             reply.body = 'deleted'
                             reply.post.reply_count -= 1
-                    db.session.commit()
-                    activity_log.result = 'success'
+                            db.session.commit()
+                            activity_log.result = 'success'
+                        else:
+                            # Delete User
+                            user = find_actor_or_create(ap_id, create_if_not_found=False)
+                            if user:
+                                user.deleted = True
+                                user.delete_dependencies()
+                                db.session.commit()
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'Delete: cannot find ' + ap_id
+
                 elif request_json['type'] == 'Like':  # Upvote
                     activity_log.activity_type = request_json['type']
                     user_ap_id = request_json['actor']
