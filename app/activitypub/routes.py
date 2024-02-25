@@ -21,7 +21,7 @@ from app.activitypub.util import public_key, users_total, active_half_year, acti
     update_post_from_activity, undo_vote, undo_downvote
 from app.utils import gibberish, get_setting, is_image_url, allowlist_html, html_to_markdown, render_template, \
     domain_from_url, markdown_to_html, community_membership, ap_datetime, markdown_to_text, ip_address, can_downvote, \
-    can_upvote, can_create_post, awaken_dormant_instance, shorten_string, can_create_post_reply
+    can_upvote, can_create_post, awaken_dormant_instance, shorten_string, can_create_post_reply, sha256_digest
 import werkzeug.exceptions
 
 
@@ -114,6 +114,24 @@ def nodeinfo2():
                 "openRegistrations": g.site.registration_mode == 'Open'
             }
     return jsonify(nodeinfo_data)
+
+
+@bp.route('/api/v1/instance/domain_blocks')
+@cache.cached(timeout=600)
+def domain_blocks():
+    use_allowlist = get_setting('use_allowlist', False)
+    if use_allowlist:
+        return jsonify([])
+    else:
+        retval = []
+        for domain in BannedInstances.query.all():
+            retval.append({
+                'domain': domain.domain,
+                'digest': sha256_digest(domain.domain),
+                'severity': 'suspend',
+                'comment': domain.reason if domain.reason else ''
+            })
+    return jsonify(retval)
 
 
 @bp.route('/api/v3/site')
