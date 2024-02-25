@@ -196,7 +196,7 @@ def instance_allowed(host: str) -> bool:
     return instance is not None
 
 
-def find_actor_or_create(actor: str) -> Union[User, Community, None]:
+def find_actor_or_create(actor: str, create_if_not_found=True) -> Union[User, Community, None]:
     actor = actor.strip().lower()
     user = None
     # actor parameter must be formatted as https://server/u/actor or https://server/c/actor
@@ -238,42 +238,43 @@ def find_actor_or_create(actor: str) -> Union[User, Community, None]:
                     refresh_instance_profile(user.instance_id)
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
-        if actor.startswith('https://'):
-            try:
-                actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
-            except requests.exceptions.ReadTimeout:
-                time.sleep(randint(3, 10))
-                actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
-            if actor_data.status_code == 200:
-                actor_json = actor_data.json()
-                actor_data.close()
-                return actor_json_to_model(actor_json, address, server)
-        else:
-            # retrieve user details via webfinger, etc
-            try:
-                webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
-                                             params={'resource': f"acct:{address}@{server}"})
-            except requests.exceptions.ReadTimeout:
-                time.sleep(randint(3, 10))
-                webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
-                                             params={'resource': f"acct:{address}@{server}"})
-            if webfinger_data.status_code == 200:
-                webfinger_json = webfinger_data.json()
-                webfinger_data.close()
-                for links in webfinger_json['links']:
-                    if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
-                        type = links['type'] if 'type' in links else 'application/activity+json'
-                        # retrieve the activitypub profile
-                        try:
-                            actor_data = get_request(links['href'], headers={'Accept': type})
-                        except requests.exceptions.ReadTimeout:
-                            time.sleep(randint(3, 10))
-                            actor_data = get_request(links['href'], headers={'Accept': type})
-                        # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
-                        if actor_data.status_code == 200:
-                            actor_json = actor_data.json()
-                            actor_data.close()
-                            return actor_json_to_model(actor_json, address, server)
+        if create_if_not_found:
+            if actor.startswith('https://'):
+                try:
+                    actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
+                except requests.exceptions.ReadTimeout:
+                    time.sleep(randint(3, 10))
+                    actor_data = get_request(actor, headers={'Accept': 'application/activity+json'})
+                if actor_data.status_code == 200:
+                    actor_json = actor_data.json()
+                    actor_data.close()
+                    return actor_json_to_model(actor_json, address, server)
+            else:
+                # retrieve user details via webfinger, etc
+                try:
+                    webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
+                                                 params={'resource': f"acct:{address}@{server}"})
+                except requests.exceptions.ReadTimeout:
+                    time.sleep(randint(3, 10))
+                    webfinger_data = get_request(f"https://{server}/.well-known/webfinger",
+                                                 params={'resource': f"acct:{address}@{server}"})
+                if webfinger_data.status_code == 200:
+                    webfinger_json = webfinger_data.json()
+                    webfinger_data.close()
+                    for links in webfinger_json['links']:
+                        if 'rel' in links and links['rel'] == 'self':  # this contains the URL of the activitypub profile
+                            type = links['type'] if 'type' in links else 'application/activity+json'
+                            # retrieve the activitypub profile
+                            try:
+                                actor_data = get_request(links['href'], headers={'Accept': type})
+                            except requests.exceptions.ReadTimeout:
+                                time.sleep(randint(3, 10))
+                                actor_data = get_request(links['href'], headers={'Accept': type})
+                            # to see the structure of the json contained in actor_data, do a GET to https://lemmy.world/c/technology with header Accept: application/activity+json
+                            if actor_data.status_code == 200:
+                                actor_json = actor_data.json()
+                                actor_data.close()
+                                return actor_json_to_model(actor_json, address, server)
     return None
 
 
@@ -732,6 +733,8 @@ def refresh_instance_profile_task(instance_id: int):
                     software = 'Kbin'
                 elif instance_json['name'].lower() == 'mbin':
                     software = 'Mbin'
+                elif instance_json['name'].lower() == 'piefed':
+                    software = 'PieFed'
                 else:
                     software = 'Lemmy'
                 instance.inbox = instance_json['inbox']

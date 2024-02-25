@@ -759,18 +759,33 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     else:
                         ap_id = request_json['object']['id']  # kbin
                     post = Post.query.filter_by(ap_id=ap_id).first()
+                    # Delete post
                     if post:
                         post.delete_dependencies()
                         post.community.post_count -= 1
                         db.session.delete(post)
+                        db.session.commit()
+                        activity_log.result = 'success'
                     else:
+                        # Delete PostReply
                         reply = PostReply.query.filter_by(ap_id=ap_id).first()
                         if reply:
                             reply.body_html = '<p><em>deleted</em></p>'
                             reply.body = 'deleted'
                             reply.post.reply_count -= 1
-                    db.session.commit()
-                    activity_log.result = 'success'
+                            db.session.commit()
+                            activity_log.result = 'success'
+                        else:
+                            # Delete User
+                            user = find_actor_or_create(ap_id, create_if_not_found=False)
+                            if user:
+                                user.deleted = True
+                                user.delete_dependencies()
+                                db.session.commit()
+                                activity_log.result = 'success'
+                            else:
+                                activity_log.exception_message = 'Delete: cannot find ' + ap_id
+
                 elif request_json['type'] == 'Like':  # Upvote
                     activity_log.activity_type = request_json['type']
                     user_ap_id = request_json['actor']

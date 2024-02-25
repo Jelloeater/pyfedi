@@ -463,13 +463,13 @@ def ban_purge_profile(actor):
             # federate deletion
             if user.is_local():
                 purge_user_then_delete(user.id)
+                flash(f'{actor} has been banned, deleted and all their content deleted. This might take a few minutes.')
             else:
                 user.deleted = True
                 user.delete_dependencies()
                 user.purge_content()
                 db.session.commit()
-
-            flash(f'{actor} has been banned, deleted and all their content deleted.')
+                flash(f'{actor} has been banned, deleted and all their content deleted.')
     else:
         abort(401)
 
