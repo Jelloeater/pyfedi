@@ -339,4 +339,5 @@ You need a reverse proxy that sends all traffic to port 5000. Something like:
         }
     }
 
+The above is not a complete configuration - you will want to add more settings for SSL, etc.
 
