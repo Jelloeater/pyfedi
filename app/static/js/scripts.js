@@ -388,7 +388,7 @@ var showCurrentPost = false;    // when true, the currently selected post will b
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', function(event) {
         if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-            if(document.activeElement.tagName !== 'A' && document.activeElement.classList.contains('skip-link')) {
+            if(document.activeElement.classList.contains('skip-link')) {
                 return;
             }
             var didSomething = false;

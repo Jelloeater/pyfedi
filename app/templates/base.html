@@ -5,7 +5,7 @@
     {% else %}
         {% if user.avatar_id and not low_bandwidth %}
             <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">
-                <img src="{{ user.avatar_thumbnail() }}" alt="Avatar" loading="lazy" /></a>
+                <img src="{{ user.avatar_thumbnail() }}" alt="" loading="lazy" /></a>
         {% endif %}
         <a href="/u/{{ user.link() }}" title="{{ user.ap_id if user.ap_id != none else user.user_name }}">{{ user.display_name() }}</a>
         {% if user.created_recently() %}
@@ -179,7 +179,7 @@
                             {% endif %}
                             <li class="nav-item"><a class="nav-link" href="/auth/logout">{{ _('Log out') }}</a></li>
                             <li class="nav-item d-none d-md-inline-block">
-                                <a class="nav-link" href="/notifications" aria-label="{{ _('Notifications') }}">
+                                <a class="nav-link" href="/notifications" aria-label="{{ _('%(num)d unread notifications', num=current_user.unread_notifications) if current_user.unread_notifications else _('Notifications') }}">
                                     {% if current_user.unread_notifications %}
                                     <span class="fe fe-bell red"></span> <span class="red">{{ current_user.unread_notifications }}</span>
                                     {% else %}
@@ -211,7 +211,7 @@
             {% block app_content %}{% endblock %}
         </div>
         <footer class="footer mt-auto" role="contentinfo">
-            <p id="timeSpent" class="text-center mt-4" title="This is how long you have spent using PieFed during this month. We hope this use of your time aligns with your priorities and values."></p>
+            <p role="timer" id="timeSpent" class="text-center mt-4" title="This is how long you have spent using PieFed during this month. We hope this use of your time aligns with your priorities and values."></p>
             {% if not low_bandwidth %}
                 <p class="text-center mt-4"><a href="https://liberapay.com/PieFed/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></p>
             {% else %}

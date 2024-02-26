@@ -36,6 +36,7 @@ class SettingsForm(FlaskForm):
     ignore_bots = BooleanField(_l('Hide posts by bots'))
     nsfw = BooleanField(_l('Show NSFW posts'))
     nsfl = BooleanField(_l('Show NSFL posts'))
+    markdown_editor = BooleanField(_l('Use markdown editor GUI when writing'))
     searchable = BooleanField(_l('Show profile in user list'))
     indexable = BooleanField(_l('Allow search engines to index this profile'))
     manually_approves_followers = BooleanField(_l('Manually approve followers'))

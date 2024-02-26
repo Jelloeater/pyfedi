@@ -22,7 +22,7 @@
                 <tr>
                     <th>Notification</th>
                     <th>When</th>
-                    <th><a href="{{ url_for('user.notifications_all_read') }}" class="btn btn-primary btn-sm">Mark all read</a></th>
+                    <th><a href="{{ url_for('user.notifications_all_read') }}" class="btn btn-primary btn-sm">{{ _('Mark all as read') }}</a></th>
                 </tr>
                 {% for notification in notifications %}
                     <tr>

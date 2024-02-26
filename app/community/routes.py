@@ -512,7 +512,7 @@ def add_post(actor):
         form.notify_author.data = True
 
     return render_template('community/add_post.html', title=_('Add post to community'), form=form, community=community,
-                           markdown_editor=True, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
+                           markdown_editor=current_user.markdown_editor, low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.id),
                            inoculation=inoculation[randint(0, len(inoculation) - 1)]

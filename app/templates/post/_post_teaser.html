@@ -3,7 +3,7 @@
     {# do nothing - blocked by keyword filter #}
 {% else %}
     <div class="post_teaser type_{{ post.type }}{{ ' reported' if post.reports and current_user.is_authenticated and post.community.is_moderator() }}{{ ' blocked' if content_blocked }}"
-        {% if content_blocked %} title="{{ _('Filtered: ') }}{{ content_blocked }}"{% endif %}>
+        {% if content_blocked %} title="{{ _('Filtered: ') }}{{ content_blocked }}"{% endif %} tabindex="0">
             <div class="row">
                 <div class="col-12">
                     <div class="row main_row">
@@ -24,15 +24,15 @@
                                     {% else %}
                                         {% if post.type == POST_TYPE_LINK %}
                                             <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="{{ _('Read article') }}"><span class="fe fe-external"></span><img src="{{ post.image.thumbnail_url() }}"
-                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                                                 alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" class="{{ 'blur' if (post.nsfw and not post.community.nsfw) or (post.nsfl and not post.community.nsfl) }}" /></a>
                                         {% elif post.type == POST_TYPE_IMAGE %}
                                             {% if post.image_id %}
                                                 <a href="{{ post.image.view_url() }}" rel="nofollow ugc" aria-label="{{ _('View image') }}" target="_blank"><span class="fe fe-magnify"></span><img src="{{ post.image.thumbnail_url() }}"
-                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" class="{{ 'blur' if (post.nsfw and not post.community.nsfw) or (post.nsfl and not post.community.nsfl) }}" /></a>
                                             {% endif %}
                                         {% else %}
                                             <a href="{{ url_for('activitypub.post_ap', post_id=post.id) }}" aria-label="{{ _('Read post') }}"><span class="fe fe-reply"></span><img src="{{ post.image.thumbnail_url() }}"
-                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" /></a>
+                                                alt="{{ post.image.alt_text if post.image.alt_text else '' }}" loading="lazy" class="{{ 'blur' if (post.nsfw and not post.community.nsfw) or (post.nsfl and not post.community.nsfl) }}" /></a>
                                         {% endif %}
                                     {% endif %}
                                 </div>
@@ -62,7 +62,7 @@
                     </div>
                     <div class="row utilities_row">
                         <div class="col-6">
-                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}"><span class="fe fe-reply"></span> {{ post.reply_count }}</a>
+                            <a href="{{ url_for('activitypub.post_ap', post_id=post.id, sort='new' if sort == 'active' else None, _anchor='post_replies') }}" aria-label="{{ _('View comments') }}"><span class="fe fe-reply"></span> <span aria-label="{{ _('Number of comments:') }}">{{ post.reply_count }}</span></a>
                             {% if post.type == POST_TYPE_IMAGE %}
                                 {% if post.image_id %}
                                     <a href="{{ post.image.view_url() }}" rel="nofollow ugc" class="preview_image" aria-label="{{ _('View image') }}" aria-hidden="true"><span class="fe fe-magnify"></span></a>
