@@ -301,3 +301,42 @@ Inspect log files at:
     /var/log/celery/*
     /var/log/nginx/*
     /your_piefed_installation/logs/pyfedi.log
+
+
+### Nginx
+
+You need a reverse proxy that sends all traffic to port 5000. Something like:
+
+    upstream app_server {
+        # fail_timeout=0 means we always retry an upstream even if it failed
+        # to return a good HTTP response
+
+        # for UNIX domain socket setups
+        # server unix:/tmp/gunicorn.sock fail_timeout=0;
+
+        # for a TCP configuration
+        server 127.0.0.1:5000 fail_timeout=0;
+        keepalive 4;
+    }
+
+    server {
+        server_name piefed.social
+        root /whatever
+
+        keepalive_timeout 5;
+        ssi off;
+
+        location / {
+            # Proxy all requests to Gunicorn
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_pass http://app_server;
+            ssi off;
+        }
+    }
+
+
