@@ -4,6 +4,7 @@ from math import log
 from random import randint
 
 import flask
+import markdown2
 from sqlalchemy.sql.operators import or_, and_
 
 from app import db, cache
@@ -21,7 +22,7 @@ from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
-    joined_communities, moderating_communities, parse_page, theme_list, get_request
+    joined_communities, moderating_communities, parse_page, theme_list, get_request, markdown_to_html, allowlist_html
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File, Instance, \
     InstanceRole, Notification
 from PIL import Image
@@ -259,10 +260,18 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-    u = User.query.get(1)
-    send_welcome_email(u, False)
+    md = '''>dear god the markdown on this site is fucked
 
-    return ''
+|  | Q1 | Q2 | Q3 | Q4 |
+| --- | --- | --- | --- | --- |
+| 2022 | 0.8m | 0.7m | 1.0m | 1.1m |
+| 2023 | 0.9m | 0.8m | 1.1m | 1.2m |
+| 2024 | 1.0m |  |  |  |
+
+Better?'''
+
+    return allowlist_html(markdown2.markdown(md, safe_mode=True, extras={'middle-word-em': False, 'tables': True}))
+
     users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(
             User.ap_id == None,
             Notification.created_at > User.last_seen,
