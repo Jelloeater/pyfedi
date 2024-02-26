@@ -13,7 +13,7 @@
         <div class="row post_replies">
             <div class="col">
                 {% macro render_comment(comment) %}
-                    <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}">
+                    <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}" role="treeitem">
                         <div class="limit_height">
                             <div class="comment_author">
                                 {% if comment['comment'].author.deleted %}
@@ -70,7 +70,7 @@
                             <a href="{{ url_for('post.post_reply_options', post_id=post.id, comment_id=comment['comment'].id) }}" class="comment_actions_link" rel="nofollow"><span class="fe fe-options" title="Options"> </span></a>
                         </div>
                         {% if comment['replies'] %}
-                            <div class="replies hidable">
+                            <div class="replies hidable" role="group">
                                 {% for reply in comment['replies'] %}
                                   {{ render_comment(reply) | safe }}
                                 {% endfor %}
@@ -78,7 +78,7 @@
                         {% endif %}
                     </div>
                 {% endmacro %}
-                <div id="replies" class="comments">
+                <div id="replies" class="comments" role="tree">
                     {% for reply in replies %}
                       {{ render_comment(reply) | safe }}
                     {% endfor %}

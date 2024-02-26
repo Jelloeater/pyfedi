@@ -1,6 +1,6 @@
 {% if current_user.is_authenticated and current_user.verified %}
         {% if can_upvote(current_user, post.community) %}
-                <div class="upvote_button {{ upvoted_class }}" role="button" aria-label="{{ _('UpVote') }}"
+                <div class="upvote_button {{ upvoted_class }}" role="button" aria-label="{{ _('UpVote') }}" aria-live="assertive"
                  hx-post="/post/{{ post.id }}/upvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons" tabindex="0">
                         <span class="fe fe-arrow-up"></span>
                         {{ shorten_number(post.up_votes) }}
@@ -8,7 +8,7 @@
                 </div>
         {% endif %}
         {% if can_downvote(current_user, post.community) %}
-                <div class="downvote_button {{ downvoted_class }}" role="button" aria-label="{{ _('DownVote') }}"
+                <div class="downvote_button {{ downvoted_class }}" role="button" aria-label="{{ _('DownVote') }}" aria-live="assertive"
                  hx-post="/post/{{ post.id }}/downvote" hx-trigger="click throttle:1s" hx-target="closest .voting_buttons" tabindex="0">
                         <span class="fe fe-arrow-down"></span>
                         {{ shorten_number(post.down_votes) }}
