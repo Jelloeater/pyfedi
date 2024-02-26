@@ -268,7 +268,9 @@ html {
         @include breakpoint(tablet) {
           height: 70px;
           width: 133px;
-
+        }
+        &.blur {
+          filter: blur(3px);
         }
       }
 

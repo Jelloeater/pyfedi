@@ -654,6 +654,9 @@ fieldset legend {
     width: 133px;
   }
 }
+.post_list .post_teaser .thumbnail img.blur {
+  filter: blur(3px);
+}
 .post_list .post_teaser .thumbnail.lbw .fe {
   background: none;
 }
