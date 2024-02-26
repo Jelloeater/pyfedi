@@ -5,7 +5,7 @@ services:
     env_file:
      - ./.env.docker
     volumes:
-     - pgdata:/var/lib/postgresql/data
+     - ./pgdata:/var/lib/postgresql/data
   redis:
     image: redis
     env_file:
@@ -29,6 +29,7 @@ services:
     volumes:
      - ./.env:/app/.env
      - ./.gunicorn.conf.py:/app/gunicorn.conf.py
+     - ./media/:/app/app/static/media/
     ports:
       - '8080:5000'
   adminer:
@@ -36,7 +37,5 @@ services:
     restart: always
     ports:
       - 8888:8080
-volumes:
-  pgdata:
 
 

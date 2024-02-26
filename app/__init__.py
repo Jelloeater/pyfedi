@@ -97,7 +97,7 @@ def create_app(config_class=Config):
             secure = ()
         mail_handler = SMTPHandler(
             mailhost=(app.config['MAIL_SERVER'], app.config['MAIL_PORT']),
-            fromaddr='errors@rimu.geek.nz',
+            fromaddr=(app.config['MAIL_FROM']),
             toaddrs=app.config['ADMINS'], subject='PieFed error',
             credentials=auth, secure=secure)
         mail_handler.setLevel(logging.ERROR)
