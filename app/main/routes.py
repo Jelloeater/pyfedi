@@ -261,7 +261,7 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-    c = find_actor_or_create('https://feddit.de/c/europe')
+    x = find_actor_or_create('artporn@lemm.ee')
     return 'ok'
 
     users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(

@@ -5,6 +5,7 @@
     <a href="{{ url_for('admin.admin_communities') }}">{{ _('Communities') }}</a> |
     <a href="{{ url_for('admin.admin_topics') }}">{{ _('Topics') }}</a> |
     <a href="{{ url_for('admin.admin_users', local_remote='local') }}">{{ _('Users') }}</a> |
+    <a href="{{ url_for('admin.admin_users_trash', local_remote='local') }}">{{ _('Watch') }}</a> |
     {% if site.registration_mode == 'RequireApplication' %}
         <a href="{{ url_for('admin.admin_approve_registrations') }}">{{ _('Registration applications') }}</a> |
     {% endif %}
