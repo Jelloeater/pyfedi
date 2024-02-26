@@ -54,7 +54,7 @@ html {
     top: -40px; /* Adjust as needed to hide the link off-screen */
     left: 0;
     background-color: #fff; /* Background color to cover the link for screen readers */
-    z-index: 1030; /* Ensure it's above other content */
+    z-index: 1060; /* Ensure it's above other content */
 }
 
 .skip-link:focus {
@@ -853,13 +853,6 @@ fieldset {
   padding-top: 0;
 }
 
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background-color: #fff;
-  z-index: 999;
-}
 .skip-link:focus {
   top: 0;
 }

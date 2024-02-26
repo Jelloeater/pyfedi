@@ -22,7 +22,7 @@
                 </nav>
             </div>
             <img class="community_icon_big bump_up rounded-circle" src="{{ community.icon_image() }}" alt="Community icon" />
-            <h1 class="mt-2">{{ community.title }}
+            <h1 class="mt-2"  aria-live="assertive">{{ community.title }}
                 {% if current_user.is_authenticated %}
                     {% include 'community/_notification_toggle.html' %}
                 {% endif %}

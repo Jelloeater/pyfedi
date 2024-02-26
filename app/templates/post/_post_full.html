@@ -12,7 +12,7 @@
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
             </nav>
-            <div class="voting_buttons">
+            <div class="voting_buttons" aria-live="assertive">
                 {% include "post/_post_voting_buttons.html" %}
             </div>
             <h1 class="mt-2 post_title">{{ post.title }}
@@ -61,7 +61,7 @@
                 <li class="breadcrumb-item active">{{ post.title|shorten(15) }}</li>
               </ol>
             </nav>
-            <div class="voting_buttons">
+            <div class="voting_buttons" aria-live="assertive">
                 {% include "post/_post_voting_buttons.html" %}
             </div>
             <h1 class="mt-2 post_title">{{ post.title }}
