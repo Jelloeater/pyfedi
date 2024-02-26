@@ -359,9 +359,9 @@ def refresh_user_profile_task(user_id):
 
 def refresh_community_profile(community_id):
     if current_app.debug:
-        refresh_community_profile(community_id)
+        refresh_community_profile_task(community_id)
     else:
-        refresh_community_profile.apply_async(args=(community_id,), countdown=randint(1, 10))
+        refresh_community_profile_task.apply_async(args=(community_id,), countdown=randint(1, 10))
 
 
 @celery.task
