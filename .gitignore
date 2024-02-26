@@ -166,3 +166,7 @@ celery_worker.py
 # sensitive data
 .env.docker
 .gunicorn.conf.py
+
+# local volumes for docker
+media/
+pgdata/
