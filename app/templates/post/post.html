@@ -66,7 +66,7 @@
                 </div>
                 {% macro render_comment(comment) %}
                     <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].score <= -10 %}low_score{% endif %}
-                        {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}">
+                        {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}" aria-level="{{ comment['comment'].depth + 1 }}" role="treeitem">
                         <div class="limit_height">
                             <div class="comment_author">
                                 {% if comment['comment'].author.deleted %}
@@ -124,7 +124,7 @@
                         </div>
                         {% if comment['replies'] %}
                             {% if comment['comment'].depth <= THREAD_CUTOFF_DEPTH %}
-                                <div class="replies hidable">
+                                <div class="replies hidable" role="group">
                                     {% for reply in comment['replies'] %}
                                       {{ render_comment(reply) | safe }}
                                     {% endfor %}
@@ -144,7 +144,7 @@
                     {% endif %}
                 {% endmacro %}
 
-                <div id="replies" class="comments">
+                <div id="replies" class="comments" role="tree" aria-label="{{ _('Comments') }}">
                     {% for reply in replies %}
                       {{ render_comment(reply) | safe }}
                     {% endfor %}

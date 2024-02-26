@@ -90,10 +90,10 @@
                             {% endif %}</td>
                         {% if not low_bandwidth %}
                             <td width="46">
-                                    <a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" alt="" /></a>
+                                    <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image('tiny') }}" class="community_icon rounded-circle" loading="lazy" alt="" /></a>
                             </td>
                         {% endif %}
-                        <th scope="row" class="pl-0"><a href="/c/{{ community.link() }}" aria-label="{{ _('View community') }}">{{ community.display_name() }}</a></th>
+                        <th scope="row" class="pl-0"><a href="/c/{{ community.link() }}">{{ community.display_name() }}</a></th>
                         <td>{{ community.post_count }}</td>
                         <td>{{ community.post_reply_count }}</td>
                         <td>{{ moment(community.last_active).fromNow(refresh=True) }}</td>

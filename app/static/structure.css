@@ -460,7 +460,7 @@ fieldset legend {
   left: 0;
   background-color: #fff;
   /* Background color to cover the link for screen readers */
-  z-index: 999;
+  z-index: 1030;
   /* Ensure it's above other content */
 }
 
