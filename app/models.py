@@ -465,6 +465,7 @@ class User(UserMixin, db.Model):
     default_sort = db.Column(db.String(25), default='hot')
     theme = db.Column(db.String(20), default='')
     referrer = db.Column(db.String(256))
+    markdown_editor = db.Column(db.Boolean, default=False)
 
     avatar = db.relationship('File', lazy='joined', foreign_keys=[avatar_id], single_parent=True, cascade="all, delete-orphan")
     cover = db.relationship('File', lazy='joined', foreign_keys=[cover_id], single_parent=True, cascade="all, delete-orphan")

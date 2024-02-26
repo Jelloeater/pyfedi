@@ -20,7 +20,7 @@
                         <div class="col">
                             <div class="reply_form_inner position-relative">
                                 {% if post.community.ap_id and '@beehaw.org' in post.community.ap_id %}
-                                    <p>{{ _('This post is hosted on beehaw.org which has <a href="https://docs.beehaw.org/docs/core-principles/what-is-beehaw/" target="_blank" rel="nofollow">higher standards of behaviour than most places. Be nice</a>.') }}</p>
+                                    <p>{{ _('This post is hosted on beehaw.org which has <a href="https://docs.beehaw.org/docs/core-principles/what-is-beehaw/" target="_blank" rel="nofollow">high er standards of behaviour than most places. Be nice</a>.') }}</p>
                                 {% endif %}
                                 {{ render_form(form) }}
                                 {% if markdown_editor %}
@@ -51,6 +51,7 @@
             <p>{{ _('Comments are disabled.') }}</p>
         {% endif %}
         {% if replies %}
+        <h2 class="visually-hidden">{{ len(replies) }} {{ _('Comments') }}</h2>
         <div id="post_replies" class="row">
             <div class="col">
                 <div class="btn-group mt-1 mb-2">
@@ -66,7 +67,7 @@
                 </div>
                 {% macro render_comment(comment) %}
                     <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].score <= -10 %}low_score{% endif %}
-                        {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}" aria-level="{{ comment['comment'].depth + 1 }}" role="treeitem">
+                        {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}" aria-level="{{ comment['comment'].depth + 1 }}" role="treeitem" aria-expanded="true" tabindex="0">
                         <div class="limit_height">
                             <div class="comment_author">
                                 {% if comment['comment'].author.deleted %}
@@ -120,7 +121,7 @@
                             {% if current_user.is_authenticated and current_user.verified and current_user.id == comment['comment'].author.id %}
                                 {% include "post/_reply_notification_toggle.html" %}
                             {% endif %}
-                            <a href="{{ url_for('post.post_reply_options', post_id=post.id, comment_id=comment['comment'].id) }}" class="comment_actions_link" rel="nofollow noindex"><span class="fe fe-options" title="Options"> </span></a>
+                            <a href="{{ url_for('post.post_reply_options', post_id=post.id, comment_id=comment['comment'].id) }}" class="comment_actions_link" rel="nofollow noindex" aria-label="{{ _('Comment options') }}"><span class="fe fe-options" title="Options"> </span></a>
                         </div>
                         {% if comment['replies'] %}
                             {% if comment['comment'].depth <= THREAD_CUTOFF_DEPTH %}

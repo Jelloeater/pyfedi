@@ -4,16 +4,16 @@
     </div>
 {% endif %}
 <div class="btn-group mt-1 mb-2">
-    <a href="?sort=hot&layout={{ post_layout }}" class="btn {{ 'btn-primary' if sort == '' or sort == 'hot' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+    <a href="?sort=hot&layout={{ post_layout }}" aria-label="{{ _('Sort by hot') }}" class="btn {{ 'btn-primary' if sort == '' or sort == 'hot' else 'btn-outline-secondary' }}" rel="nofollow noindex">
         {{ _('Hot') }}
     </a>
-    <a href="?sort=top&layout={{ post_layout }}" class="btn {{ 'btn-primary' if sort == 'top' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+    <a href="?sort=top&layout={{ post_layout }}" aria-label="{{ _('Sort by top') }}" class="btn {{ 'btn-primary' if sort == 'top' else 'btn-outline-secondary' }}" rel="nofollow noindex">
         {{ _('Top') }}
     </a>
-    <a href="?sort=new&layout={{ post_layout }}" class="btn {{ 'btn-primary' if sort == 'new' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+    <a href="?sort=new&layout={{ post_layout }}" aria-label="{{ _('Sort by new') }}" class="btn {{ 'btn-primary' if sort == 'new' else 'btn-outline-secondary' }}" rel="nofollow noindex">
         {{ _('New') }}
     </a>
-    <a href="?sort=active&layout={{ post_layout }}" class="btn {{ 'btn-primary' if sort == 'active' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+    <a href="?sort=active&layout={{ post_layout }}" aria-label="{{ _('Sort by active') }}" class="btn {{ 'btn-primary' if sort == 'active' else 'btn-outline-secondary' }}" rel="nofollow noindex">
         {{ _('Active') }}
     </a>
 </div>

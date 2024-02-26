@@ -163,6 +163,7 @@ def change_settings():
         current_user.default_sort = form.default_sort.data
         current_user.theme = form.theme.data
         current_user.email_unread = form.email_unread.data
+        current_user.markdown_editor = form.markdown_editor.data
         import_file = request.files['import_file']
         if import_file and import_file.filename != '':
             file_ext = os.path.splitext(import_file.filename)[1]
@@ -195,6 +196,7 @@ def change_settings():
         form.indexable.data = current_user.indexable
         form.default_sort.data = current_user.default_sort
         form.theme.data = current_user.theme
+        form.markdown_editor.data = current_user.markdown_editor
 
     return render_template('user/edit_settings.html', title=_('Edit profile'), form=form, user=current_user,
                            moderating_communities=moderating_communities(current_user.get_id()),

@@ -1,4 +1,5 @@
-<a href="/community/{{ community.id }}/notification" rel="nofollow"
+<a href="/community/{{ community.id }}/notification" rel="nofollow" aria-live="assertive"
+   aria-label="{{ 'Notify about new posts in this community' if community.notify_new_posts(current_user.id) else 'Do not notify about new posts' }}"
 class="fe {{ 'fe-bell' if community.notify_new_posts(current_user.id) else 'fe-no-bell' }} no-underline"
 hx-post="/community/{{ community.id }}/notification" hx-trigger="click throttle:1s" hx-swap="outerHTML"
 title="{{ _('Notify about every new post. Not advisable in high traffic communities!') }}"></a>

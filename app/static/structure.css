@@ -460,7 +460,7 @@ fieldset legend {
   left: 0;
   background-color: #fff;
   /* Background color to cover the link for screen readers */
-  z-index: 1030;
+  z-index: 1060;
   /* Ensure it's above other content */
 }
 
@@ -653,6 +653,9 @@ fieldset legend {
     height: 70px;
     width: 133px;
   }
+}
+.post_list .post_teaser .thumbnail img.blur {
+  filter: blur(3px);
 }
 .post_list .post_teaser .thumbnail.lbw .fe {
   background: none;
@@ -1172,14 +1175,6 @@ fieldset legend {
 
 .list-group-item:first-child {
   padding-top: 0;
-}
-
-.skip-link {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background-color: #fff;
-  z-index: 999;
 }
 
 .skip-link:focus {
