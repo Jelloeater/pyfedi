@@ -8,7 +8,8 @@ import markdown2
 from sqlalchemy.sql.operators import or_, and_
 
 from app import db, cache
-from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create
+from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create, \
+    refresh_community_profile_task
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
     SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
 from app.email import send_email, send_welcome_email
@@ -260,17 +261,8 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-    md = '''>dear god the markdown on this site is fucked
-
-|  | Q1 | Q2 | Q3 | Q4 |
-| --- | --- | --- | --- | --- |
-| 2022 | 0.8m | 0.7m | 1.0m | 1.1m |
-| 2023 | 0.9m | 0.8m | 1.1m | 1.2m |
-| 2024 | 1.0m |  |  |  |
-
-Better?'''
-
-    return allowlist_html(markdown2.markdown(md, safe_mode=True, extras={'middle-word-em': False, 'tables': True}))
+    c = find_actor_or_create('https://feddit.de/c/europe')
+    return 'ok'
 
     users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(
             User.ap_id == None,
