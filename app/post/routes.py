@@ -176,7 +176,7 @@ def show_post(post_id: int):
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
                            POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
-                           etag=f"{post.id}{sort}_{hash(post.last_active)}", markdown_editor=current_user.markdown_editor,
+                           etag=f"{post.id}{sort}_{hash(post.last_active)}", markdown_editor=current_user.is_authenticated and current_user.markdown_editor,
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1', SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()),
@@ -368,7 +368,7 @@ def continue_discussion(post_id, comment_id):
     replies = get_comment_branch(post.id, comment.id, 'top')
 
     return render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                           is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=current_user.markdown_editor,
+                           is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=current_user.is_authenticated and current_user.markdown_editor,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), community=post.community,
                            inoculation=inoculation[randint(0, len(inoculation) - 1)])
@@ -531,7 +531,7 @@ def add_reply(post_id: int, comment_id: int):
     else:
         form.notify_author.data = True
         return render_template('post/add_reply.html', title=_('Discussing %(title)s', title=post.title), post=post,
-                               is_moderator=is_moderator, form=form, comment=in_reply_to, markdown_editor=current_user.markdown_editor,
+                               is_moderator=is_moderator, form=form, comment=in_reply_to, markdown_editor=current_user.is_authenticated and current_user.markdown_editor,
                                moderating_communities=moderating_communities(current_user.get_id()),
                                joined_communities = joined_communities(current_user.id),
                                inoculation=inoculation[randint(0, len(inoculation) - 1)])
