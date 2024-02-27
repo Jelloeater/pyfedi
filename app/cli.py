@@ -53,6 +53,12 @@ def register(app):
         if os.system('pybabel compile -d app/translations'):
             raise RuntimeError('compile command failed')
 
+    @app.cli.command("keys")
+    def keys():
+        private_key, public_key = RsaKeys.generate_keypair()
+        print(private_key)
+        print(public_key)
+
     @app.cli.command("init-db")
     def init_db():
         with app.app_context():
