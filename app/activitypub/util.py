@@ -234,7 +234,7 @@ def find_actor_or_create(actor: str, create_if_not_found=True) -> Union[User, Co
                 if isinstance(user, User):
                     refresh_user_profile(user.id)
                 elif isinstance(user, Community):
-                    # todo: refresh community profile also, not just instance_profile
+                    refresh_community_profile(user.id)
                     refresh_instance_profile(user.instance_id)
         return user
     else:   # User does not exist in the DB, it's going to need to be created from it's remote home instance
@@ -355,6 +355,112 @@ def refresh_user_profile_task(user_id):
                 make_image_sizes(user.avatar_id, 40, 250, 'users')
             if user.cover_id and cover_changed:
                 make_image_sizes(user.cover_id, 700, 1600, 'users')
+
+
+def refresh_community_profile(community_id):
+    if current_app.debug:
+        refresh_community_profile_task(community_id)
+    else:
+        refresh_community_profile_task.apply_async(args=(community_id,), countdown=randint(1, 10))
+
+
+@celery.task
+def refresh_community_profile_task(community_id):
+    community = Community.query.get(community_id)
+    if community and not community.is_local():
+        try:
+            actor_data = get_request(community.ap_profile_id, headers={'Accept': 'application/activity+json'})
+        except requests.exceptions.ReadTimeout:
+            time.sleep(randint(3, 10))
+            actor_data = get_request(community.ap_profile_id, headers={'Accept': 'application/activity+json'})
+        if actor_data.status_code == 200:
+            activity_json = actor_data.json()
+            actor_data.close()
+
+            if 'attributedTo' in activity_json:  # lemmy and mbin
+                mods_url = activity_json['attributedTo']
+            elif 'moderators' in activity_json:  # kbin
+                mods_url = activity_json['moderators']
+            else:
+                mods_url = None
+
+            community.nsfw = activity_json['sensitive']
+            if 'nsfl' in activity_json and activity_json['nsfl']:
+                community.nsfl = activity_json['nsfl']
+            community.title = activity_json['name']
+            community.description = activity_json['summary'] if 'summary' in activity_json else ''
+            community.rules = activity_json['rules'] if 'rules' in activity_json else ''
+            community.rules_html = markdown_to_html(activity_json['rules'] if 'rules' in activity_json else '')
+            community.restricted_to_mods = activity_json['postingRestrictedToMods']
+            community.new_mods_wanted = activity_json['newModsWanted'] if 'newModsWanted' in activity_json else False
+            community.private_mods = activity_json['privateMods'] if 'privateMods' in activity_json else False
+            community.ap_moderators_url = mods_url
+            community.ap_fetched_at = utcnow()
+            community.public_key=activity_json['publicKey']['publicKeyPem']
+
+            if 'source' in activity_json and \
+                    activity_json['source']['mediaType'] == 'text/markdown':
+                community.description = activity_json['source']['content']
+                community.description_html = markdown_to_html(community.description)
+            elif 'content' in activity_json:
+                community.description_html = allowlist_html(activity_json['content'])
+                community.description = html_to_markdown(community.description_html)
+
+            icon_changed = cover_changed = False
+            if 'icon' in activity_json:
+                if community.icon_id and activity_json['icon']['url'] != community.icon.source_url:
+                    community.icon.delete_from_disk()
+                icon = File(source_url=activity_json['icon']['url'])
+                community.icon = icon
+                db.session.add(icon)
+                icon_changed = True
+            if 'image' in activity_json:
+                if community.image_id and activity_json['image']['url'] != community.image.source_url:
+                    community.image.delete_from_disk()
+                image = File(source_url=activity_json['image']['url'])
+                community.image = image
+                db.session.add(image)
+                cover_changed = True
+            db.session.commit()
+            if community.icon_id and icon_changed:
+                make_image_sizes(community.icon_id, 60, 250, 'communities')
+            if community.image_id and cover_changed:
+                make_image_sizes(community.image_id, 700, 1600, 'communities')
+
+            if community.ap_moderators_url:
+                mods_request = get_request(community.ap_moderators_url, headers={'Accept': 'application/activity+json'})
+                if mods_request.status_code == 200:
+                    mods_data = mods_request.json()
+                    mods_request.close()
+                    if mods_data and mods_data['type'] == 'OrderedCollection' and 'orderedItems' in mods_data:
+                        for actor in mods_data['orderedItems']:
+                            time.sleep(0.5)
+                            user = find_actor_or_create(actor)
+                            if user:
+                                existing_membership = CommunityMember.query.filter_by(community_id=community.id,
+                                                                                      user_id=user.id).first()
+                                if existing_membership:
+                                    existing_membership.is_moderator = True
+                                    db.session.commit()
+                                else:
+                                    new_membership = CommunityMember(community_id=community.id, user_id=user.id,
+                                                                     is_moderator=True)
+                                    db.session.add(new_membership)
+                                    db.session.commit()
+
+                        # Remove people who are no longer mods
+                        for member in CommunityMember.query.filter_by(community_id=community.id, is_moderator=True).all():
+                            member_user = User.query.get(member.user_id)
+                            is_mod = False
+                            for actor in mods_data['orderedItems']:
+                                if actor.lower() == member_user.profile_id().lower():
+                                    is_mod = True
+                                    break
+                            if not is_mod:
+                                db.session.query(CommunityMember).filter_by(community_id=community.id,
+                                                                            user_id=member_user.id,
+                                                                            is_moderator=True).delete()
+                                db.session.commit()
 
 
 def actor_json_to_model(activity_json, address, server):

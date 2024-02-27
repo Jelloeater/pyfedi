@@ -142,8 +142,7 @@ def register(app):
     def daily_maintenance():
         with app.app_context():
             """Remove activity older than 3 days"""
-            db.session.query(ActivityPubLog).filter(
-                ActivityPubLog.created_at < utcnow() - timedelta(days=3)).delete()
+            db.session.query(ActivityPubLog).filter(ActivityPubLog.created_at < utcnow() - timedelta(days=3)).delete()
             db.session.commit()
 
     @app.cli.command("spaceusage")

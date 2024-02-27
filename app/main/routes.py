@@ -4,10 +4,12 @@ from math import log
 from random import randint
 
 import flask
+import markdown2
 from sqlalchemy.sql.operators import or_, and_
 
 from app import db, cache
-from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create
+from app.activitypub.util import default_context, make_image_sizes_async, refresh_user_profile, find_actor_or_create, \
+    refresh_community_profile_task
 from app.constants import SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK, \
     SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR
 from app.email import send_email, send_welcome_email
@@ -21,7 +23,7 @@ from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
-    joined_communities, moderating_communities, parse_page, theme_list, get_request
+    joined_communities, moderating_communities, parse_page, theme_list, get_request, markdown_to_html, allowlist_html
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File, Instance, \
     InstanceRole, Notification
 from PIL import Image
@@ -132,8 +134,8 @@ def home_page(type, sort):
                            low_bandwidth=low_bandwidth,
                            SUBSCRIPTION_PENDING=SUBSCRIPTION_PENDING, SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER,
                            etag=f"{type}_{sort}_{hash(str(g.site.last_active))}", next_url=next_url, prev_url=prev_url,
-                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
-                           rss_feed_name=f"Posts on " + g.site.name,
+                           #rss_feed=f"https://{current_app.config['SERVER_NAME']}/feed",
+                           #rss_feed_name=f"Posts on " + g.site.name,
                            title=f"{g.site.name} - {g.site.description}",
                            description=shorten_string(markdown_to_text(g.site.sidebar), 150),
                            content_filters=content_filters, type=type, sort=sort,
@@ -259,10 +261,9 @@ def list_files(directory):
 
 @bp.route('/test')
 def test():
-    u = User.query.get(1)
-    send_welcome_email(u, False)
+    x = find_actor_or_create('artporn@lemm.ee')
+    return 'ok'
 
-    return ''
     users_to_notify = User.query.join(Notification, User.id == Notification.user_id).filter(
             User.ap_id == None,
             Notification.created_at > User.last_seen,

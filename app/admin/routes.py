@@ -445,6 +445,36 @@ def admin_users():
                            )
 
 
+@bp.route('/users/trash', methods=['GET'])
+@login_required
+@permission_required('administer all users')
+def admin_users_trash():
+
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    local_remote = request.args.get('local_remote', '')
+
+    users = User.query.filter_by(deleted=False)
+    if local_remote == 'local':
+        users = users.filter_by(ap_id=None)
+    if local_remote == 'remote':
+        users = users.filter(User.ap_id != None)
+    if search:
+        users = users.filter(User.email.ilike(f"%{search}%"))
+    users = users.filter(User.reputation < -10)
+    users = users.order_by(User.reputation).paginate(page=page, per_page=1000, error_out=False)
+
+    next_url = url_for('admin.admin_users_trash', page=users.next_num) if users.has_next else None
+    prev_url = url_for('admin.admin_users_trash', page=users.prev_num) if users.has_prev and page != 1 else None
+
+    return render_template('admin/users.html', title=_('Problematic users'), next_url=next_url, prev_url=prev_url, users=users,
+                           local_remote=local_remote, search=search,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()),
+                           site=g.site
+                           )
+
+
 @bp.route('/approve_registrations', methods=['GET'])
 @login_required
 @permission_required('approve registrations')
