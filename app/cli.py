@@ -129,10 +129,18 @@ def register(app):
             email = input("Admin email address: ")
             password = input("Admin password: ")
             verification_token = random_token(16)
-            admin_user = User(user_name=user_name, email=email, verification_token=verification_token)
+            private_key, public_key = RsaKeys.generate_keypair()
+            admin_user = User(user_name=user_name, title=user_name,
+                              email=email, verification_token=verification_token,
+                              instance_id=1, email_unread_sent=False,
+                              private_key=private_key, public_key=public_key)
             admin_user.set_password(password)
             admin_user.roles.append(admin_role)
             admin_user.verified = True
+            admin_user.last_seen = utcnow()
+            admin_user.ap_profile_id = f"https://{current_app.config['SERVER_NAME']}/u/{admin_user.user_name}"
+            admin_user.ap_public_url = f"https://{current_app.config['SERVER_NAME']}/u/{admin_user.user_name}"
+            admin_user.ap_inbox_url = f"https://{current_app.config['SERVER_NAME']}/u/{admin_user.user_name}/inbox"
             db.session.add(admin_user)
 
             db.session.commit()
