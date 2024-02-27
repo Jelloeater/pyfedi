@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 from random import randint
 
-from flask import request, flash, json, url_for, current_app, redirect, abort
+from feedgen.feed import FeedGenerator
+from flask import request, flash, json, url_for, current_app, redirect, abort, make_response, g
 from flask_login import login_required, current_user
 from flask_babel import _
 from sqlalchemy import text, desc, or_
@@ -79,10 +80,49 @@ def show_topic(topic_name):
         return render_template('topic/show_topic.html', title=_(topic.name), posts=posts, topic=topic, sort=sort,
                                page=page, post_layout=post_layout, next_url=next_url, prev_url=prev_url,
                                topic_communities=topic_communities, content_filters=content_filters,
+                               rss_feed=f"https://{current_app.config['SERVER_NAME']}/topic/{topic_name}.rss",
+                               rss_feed_name=f"{topic.name} on {g.site.name}",
                                show_post_community=True, moderating_communities=moderating_communities(current_user.get_id()),
                                joined_communities=joined_communities(current_user.get_id()),
                                inoculation=inoculation[randint(0, len(inoculation) - 1)],
                                POST_TYPE_LINK=POST_TYPE_LINK, POST_TYPE_IMAGE=POST_TYPE_IMAGE)
+    else:
+        abort(404)
+
+
+@bp.route('/topic/<topic_name>.rss', methods=['GET'])
+def show_topic_rss(topic_name):
+    topic = Topic.query.filter(Topic.machine_name == topic_name.strip().lower()).first()
+
+    if topic:
+        posts = Post.query.join(Community, Post.community_id == Community.id).filter(Community.topic_id == topic.id,
+                                                                                     Community.banned == False)
+        posts = posts.filter(Post.from_bot == False, Post.nsfw == False, Post.nsfl == False)
+        posts = posts.order_by(desc(Post.created_at)).limit(100).all()
+
+        fg = FeedGenerator()
+        fg.id(f"https://{current_app.config['SERVER_NAME']}/topic/{topic_name}")
+        fg.title(f'{topic.name} on {g.site.name}')
+        fg.link(href=f"https://{current_app.config['SERVER_NAME']}/topic/{topic_name}", rel='alternate')
+        fg.logo(f"https://{current_app.config['SERVER_NAME']}/static/images/apple-touch-icon.png")
+        fg.subtitle(' ')
+        fg.link(href=f"https://{current_app.config['SERVER_NAME']}/topic/{topic_name}.rss", rel='self')
+        fg.language('en')
+
+        for post in posts:
+            fe = fg.add_entry()
+            fe.title(post.title)
+            fe.link(href=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}")
+            fe.description(post.body_html)
+            fe.guid(post.profile_id(), permalink=True)
+            fe.author(name=post.author.user_name)
+            fe.pubDate(post.created_at.replace(tzinfo=timezone.utc))
+
+        response = make_response(fg.rss_str())
+        response.headers.set('Content-Type', 'application/rss+xml')
+        response.headers.add_header('ETag', f"{topic.id}_{hash(g.site.last_active)}")
+        response.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+        return response
     else:
         abort(404)
 

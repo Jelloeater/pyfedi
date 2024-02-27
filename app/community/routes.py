@@ -190,7 +190,7 @@ def show_community(community: Community):
                            SUBSCRIPTION_MEMBER=SUBSCRIPTION_MEMBER, SUBSCRIPTION_OWNER=SUBSCRIPTION_OWNER, SUBSCRIPTION_MODERATOR=SUBSCRIPTION_MODERATOR,
                            etag=f"{community.id}{sort}{post_layout}_{hash(community.last_active)}", related_communities=related_communities,
                            next_url=next_url, prev_url=prev_url, low_bandwidth=low_bandwidth,
-                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} posts on PieFed",
+                           rss_feed=f"https://{current_app.config['SERVER_NAME']}/community/{community.link()}/feed", rss_feed_name=f"{community.title} on PieFed",
                            content_filters=content_filters, moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), sort=sort,
                            inoculation=inoculation[randint(0, len(inoculation) - 1)], post_layout=post_layout, current_app=current_app)
@@ -216,7 +216,7 @@ def show_community_rss(actor):
         og_image = community.image.source_url if community.image_id else None
         fg = FeedGenerator()
         fg.id(f"https://{current_app.config['SERVER_NAME']}/c/{actor}")
-        fg.title(community.title)
+        fg.title(f'{community.title} on {g.site.name}')
         fg.link(href=f"https://{current_app.config['SERVER_NAME']}/c/{actor}", rel='alternate')
         if og_image:
             fg.logo(og_image)
