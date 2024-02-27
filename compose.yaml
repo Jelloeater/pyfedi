@@ -17,6 +17,8 @@ services:
     env_file:
      - ./.env.docker
     entrypoint: ./entrypoint_celery.sh
+    volumes:
+     - ./media/:/app/app/static/media/
   web: 
     build:
       context: .
@@ -27,7 +29,6 @@ services:
     env_file:
      - ./.env.docker
     volumes:
-     - ./.env:/app/.env
      - ./.gunicorn.conf.py:/app/gunicorn.conf.py
      - ./media/:/app/app/static/media/
     ports:
