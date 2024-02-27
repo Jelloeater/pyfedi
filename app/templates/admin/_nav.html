@@ -1,5 +1,6 @@
 <nav class="mb-4">
-    <a href="{{ url_for('admin.admin_home') }}">{{ _('Home') }}</a> |
+    <h2 class="visually-hidden">{{ _('Admin navigation') }}</h2>
+    <a href="{{ url_for('admin.admin_home') }}">{{ _('Admin home') }}</a> |
     <a href="{{ url_for('admin.admin_site') }}">{{ _('Site profile') }}</a> |
     <a href="{{ url_for('admin.admin_misc') }}">{{ _('Misc settings') }}</a> |
     <a href="{{ url_for('admin.admin_communities') }}">{{ _('Communities') }}</a> |
