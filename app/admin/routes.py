@@ -559,6 +559,8 @@ def admin_user_edit(user_id):
             if role.id != form.role.data:
                 user.roles.remove(role)
         user.roles.append(Role.query.get(form.role.data))
+        if form.role.data == 4:
+            flash(_("Permissions are cached for 50 seconds so new admin roles won't take effect immediately."))
 
         db.session.commit()
         user.flush_cache()
