@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 import random
 import urllib
 from collections import defaultdict
@@ -325,6 +326,13 @@ def ensure_directory_exists(directory):
         if not os.path.isdir(rebuild_directory):
             os.mkdir(rebuild_directory)
         rebuild_directory += '/'
+
+
+def mimetype_from_url(url):
+    parsed_url = urlparse(url)
+    path = parsed_url.path.split('?')[0]  # Strip off anything after '?'
+    mime_type, _ = mimetypes.guess_type(path)
+    return mime_type
 
 
 def validation_required(func):

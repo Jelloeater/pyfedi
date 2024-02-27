@@ -15,7 +15,7 @@ from app.topic import bp
 from app import db, celery, cache
 from app.topic.forms import ChooseTopicsForm
 from app.utils import render_template, user_filters_posts, moderating_communities, joined_communities, \
-    community_membership, blocked_domains, validation_required
+    community_membership, blocked_domains, validation_required, mimetype_from_url
 
 
 @bp.route('/topic/<topic_name>', methods=['GET'])
@@ -113,6 +113,10 @@ def show_topic_rss(topic_name):
             fe = fg.add_entry()
             fe.title(post.title)
             fe.link(href=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}")
+            if post.url:
+                type = mimetype_from_url(post.url)
+                if type and not type.startswith('text/'):
+                    fe.enclosure(post.url, type=type)
             fe.description(post.body_html)
             fe.guid(post.profile_id(), permalink=True)
             fe.author(name=post.author.user_name)

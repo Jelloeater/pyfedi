@@ -22,7 +22,7 @@ from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, gibberish, community_membership, ap_datetime, \
     request_etag_matches, return_304, instance_banned, can_create_post, can_upvote, can_downvote, user_filters_posts, \
-    joined_communities, moderating_communities, blocked_domains
+    joined_communities, moderating_communities, blocked_domains, mimetype_from_url
 from feedgen.feed import FeedGenerator
 from datetime import timezone, timedelta
 
@@ -233,6 +233,10 @@ def show_community_rss(actor):
             fe = fg.add_entry()
             fe.title(post.title)
             fe.link(href=f"https://{current_app.config['SERVER_NAME']}/post/{post.id}")
+            if post.url:
+                type = mimetype_from_url(post.url)
+                if type and not type.startswith('text/'):
+                    fe.enclosure(post.url, type=type)
             fe.description(post.body_html)
             fe.guid(post.profile_id(), permalink=True)
             fe.author(name=post.author.user_name)
