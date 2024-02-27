@@ -11,7 +11,7 @@ from app.activitypub.routes import process_inbox_request, process_delete_request
 from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm, \
-    EditTopicForm, SendNewsletterForm
+    EditTopicForm, SendNewsletterForm, AddUserForm
 from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community, send_newsletter
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
@@ -575,6 +575,73 @@ def admin_user_edit(user_id):
         form.manually_approves_followers.data = user.ap_manually_approves_followers
 
     return render_template('admin/edit_user.html', title=_('Edit user'), form=form, user=user,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()),
+                           site=g.site
+                           )
+
+
+@bp.route('/users/add', methods=['GET', 'POST'])
+@login_required
+@permission_required('administer all users')
+def admin_users_add():
+    form = AddUserForm()
+    user = User()
+    if form.validate_on_submit():
+        user.user_name = form.user_name.data
+        user.set_password(form.password.data)
+        user.about = form.about.data
+        user.email = form.email.data
+        user.about_html = markdown_to_html(form.about.data)
+        user.matrix_user_id = form.matrix_user_id.data
+        user.bot = form.bot.data
+        profile_file = request.files['profile_file']
+        if profile_file and profile_file.filename != '':
+            # remove old avatar
+            if user.avatar_id:
+                file = File.query.get(user.avatar_id)
+                file.delete_from_disk()
+                user.avatar_id = None
+                db.session.delete(file)
+
+            # add new avatar
+            file = save_icon_file(profile_file, 'users')
+            if file:
+                user.avatar = file
+        banner_file = request.files['banner_file']
+        if banner_file and banner_file.filename != '':
+            # remove old cover
+            if user.cover_id:
+                file = File.query.get(user.cover_id)
+                file.delete_from_disk()
+                user.cover_id = None
+                db.session.delete(file)
+
+            # add new cover
+            file = save_banner_file(banner_file, 'users')
+            if file:
+                user.cover = file
+        user.newsletter = form.newsletter.data
+        user.ignore_bots = form.ignore_bots.data
+        user.show_nsfw = form.nsfw.data
+        user.show_nsfl = form.nsfl.data
+
+        from app.activitypub.signature import RsaKeys
+        user.verified = True
+        user.last_seen = utcnow()
+        private_key, public_key = RsaKeys.generate_keypair()
+        user.private_key = private_key
+        user.public_key = public_key
+        user.ap_profile_id = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
+        user.ap_public_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
+        user.ap_inbox_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}/inbox"
+        db.session.add(user)
+        db.session.commit()
+
+        flash(_('User added'))
+        return redirect(url_for('admin.admin_users', local_remote='local'))
+
+    return render_template('admin/add_user.html', title=_('Add user'), form=form, user=user,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()),
                            site=g.site

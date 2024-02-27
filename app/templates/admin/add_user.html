@@ -1,0 +1,46 @@
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
+{% from 'bootstrap/form.html' import render_field %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col">
+        {% include 'admin/_nav.html' %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col col-login mx-auto">
+        <h3>{{ _('Add new user') }}</h3>
+        <form method="post" enctype="multipart/form-data" id="add_local_user_form">
+            {{ form.csrf_token() }}
+            {{ render_field(form.user_name) }}
+            {{ render_field(form.email) }}
+            {{ render_field(form.password) }}
+            {{ render_field(form.password2) }}
+            {{ render_field(form.about) }}
+            {{ render_field(form.matrix_user_id) }}
+            {% if user.avatar_id %}
+                <img class="user_icon_big rounded-circle" src="{{ user.avatar_image() }}" width="120" height="120" />
+            {% endif %}
+            {{ render_field(form.profile_file) }}
+            <small class="field_hint">Provide a square image that looks good when small.</small>
+            {% if user.cover_id %}
+                <a href="{{ user.cover_image() }}"><img class="user_icon_big" src="{{ user.cover_image() }}" style="width: 300px; height: auto;" /></a>
+            {% endif %}
+            {{ render_field(form.banner_file) }}
+            <small class="field_hint">Provide a wide image - letterbox orientation.</small>
+            {{ render_field(form.bot) }}
+            {{ render_field(form.verified) }}
+            {{ render_field(form.banned) }}
+            {{ render_field(form.newsletter) }}
+            {{ render_field(form.nsfw) }}
+            {{ render_field(form.nsfl) }}
+            {{ render_field(form.submit) }}
+        </form>
+    </div>
+</div>
+{% endblock %}
