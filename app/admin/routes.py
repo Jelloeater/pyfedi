@@ -15,7 +15,7 @@ from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditC
 from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community, send_newsletter
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
-    User, Instance, File, Report, Topic, UserRegistration
+    User, Instance, File, Report, Topic, UserRegistration, Role
 from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html, \
     moderating_communities, joined_communities, finalize_user_setup, theme_list
 from app.admin import bp
@@ -553,6 +553,13 @@ def admin_user_edit(user_id):
         user.searchable = form.searchable.data
         user.indexable = form.indexable.data
         user.ap_manually_approves_followers = form.manually_approves_followers.data
+
+        # Update user roles. The UI only lets the user choose 1 role but the DB structure allows for multiple roles per user.
+        for role in user.roles:
+            if role.id != form.role.data:
+                user.roles.remove(role)
+        user.roles.append(Role.query.get(form.role.data))
+
         db.session.commit()
         user.flush_cache()
         flash(_('Saved'))
@@ -573,6 +580,8 @@ def admin_user_edit(user_id):
         form.searchable.data = user.searchable
         form.indexable.data = user.indexable
         form.manually_approves_followers.data = user.ap_manually_approves_followers
+        if user.roles:
+            form.role.data = user.roles[0].id
 
     return render_template('admin/edit_user.html', title=_('Edit user'), form=form, user=user,
                            moderating_communities=moderating_communities(current_user.get_id()),
@@ -635,6 +644,7 @@ def admin_users_add():
         user.ap_profile_id = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
         user.ap_public_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}"
         user.ap_inbox_url = f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}/inbox"
+        user.roles.append(Role.query.get(form.role.data))
         db.session.add(user)
         db.session.commit()
 

@@ -117,6 +117,11 @@ class AddUserForm(FlaskForm):
     ignore_bots = BooleanField(_l('Hide posts by bots'))
     nsfw = BooleanField(_l('Show NSFW posts'))
     nsfl = BooleanField(_l('Show NSFL posts'))
+    role_options = [(2, _l('User')),
+               (3, _l('Staff')),
+               (4, _l('Admin')),
+               ]
+    role = SelectField(_l('Role'), choices=role_options, default=2, coerce=int)
     submit = SubmitField(_l('Save'))
 
     def validate_email(self, email):
@@ -174,6 +179,11 @@ class EditUserForm(FlaskForm):
     searchable = BooleanField(_l('Show profile in user list'))
     indexable = BooleanField(_l('Allow search engines to index this profile'))
     manually_approves_followers = BooleanField(_l('Manually approve followers'))
+    role_options = [(2, _l('User')),
+               (3, _l('Staff')),
+               (4, _l('Admin')),
+               ]
+    role = SelectField(_l('Role'), choices=role_options, default=2, coerce=int)
     submit = SubmitField(_l('Save'))
 
 
