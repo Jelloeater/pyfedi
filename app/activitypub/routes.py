@@ -460,12 +460,22 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                                 in_reply_to = request_json['object']['inReplyTo'] if 'inReplyTo' in request_json['object'] else None
                                 if not in_reply_to:
                                     if can_create_post(user, community):
-                                        post = create_post(activity_log, community, request_json, user)
+                                        try:
+                                            post = create_post(activity_log, community, request_json, user)
+                                        except TypeError as e:
+                                            activity_log.exception_message = 'TypeError. See log file.'
+                                            current_app.logger.error('TypeError: ' + str(request_json))
+                                            post = None
                                     else:
                                         post = None
                                 else:
                                     if can_create_post_reply(user, community):
-                                        post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
+                                        try:
+                                            post = create_post_reply(activity_log, community, in_reply_to, request_json, user)
+                                        except TypeError as e:
+                                            activity_log.exception_message = 'TypeError. See log file.'
+                                            current_app.logger.error('TypeError: ' + str(request_json))
+                                            post = None
                                     else:
                                         post = None
                             else:
