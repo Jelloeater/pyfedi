@@ -1105,11 +1105,12 @@ def create_post_reply(activity_log: ActivityPubLog, community: Community, in_rep
                                ap_create_id=request_json['id'],
                                ap_announce_id=announce_id,
                                instance_id=user.instance_id)
-        if 'source' in request_json['object'] and \
+        # Get comment content. Lemmy and Kbin put this in different places.
+        if 'source' in request_json['object'] and isinstance(request_json['object']['source'], dict) and \
                 request_json['object']['source']['mediaType'] == 'text/markdown':
             post_reply.body = request_json['object']['source']['content']
             post_reply.body_html = markdown_to_html(post_reply.body)
-        elif 'content' in request_json['object']:
+        elif 'content' in request_json['object']:   # Kbin
             post_reply.body_html = allowlist_html(request_json['object']['content'])
             post_reply.body = html_to_markdown(post_reply.body_html)
         if post_id is not None:
@@ -1195,10 +1196,11 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
                 score=instance_weight(user.ap_domain),
                 instance_id=user.instance_id
                 )
-    if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+    # Get post content. Lemmy and Kbin put this in different places.
+    if 'source' in request_json['object'] and isinstance(request_json['object']['source'], dict) and request_json['object']['source']['mediaType'] == 'text/markdown': # Lemmy
         post.body = request_json['object']['source']['content']
         post.body_html = markdown_to_html(post.body)
-    elif 'content' in request_json['object'] and request_json['object']['content'] is not None:
+    elif 'content' in request_json['object'] and request_json['object']['content'] is not None: # Kbin
         post.body_html = allowlist_html(request_json['object']['content'])
         post.body = html_to_markdown(post.body_html)
     if 'attachment' in request_json['object'] and len(request_json['object']['attachment']) > 0 and \
