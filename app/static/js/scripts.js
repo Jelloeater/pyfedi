@@ -550,3 +550,16 @@ function displayTimeTracked() {
         timeSpentElement.textContent = formatTime(timeSpent)
     }
 }
+
+/*register a service worker */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/static/service_worker.js', {scope: '/static/'}).then(function(registration) {
+      // Registration was successful
+      // console.log('ServiceWorker2 registration successful with scope: ', registration.scope);
+    }, function(err) {
+      // registration failed :(
+      console.log('ServiceWorker2 registration failed: ', err);
+    });
+  });
+}
