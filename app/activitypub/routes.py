@@ -1055,7 +1055,7 @@ def comment_ap(comment_id):
             }
         resp = jsonify(reply_data)
         resp.content_type = 'application/activity+json'
-        resp.headers.set('Vary', 'Accept, Cookie')
+        resp.headers.set('Vary', 'Accept, Accept-Encoding, Cookie')
         return resp
     else:
         reply = PostReply.query.get_or_404(comment_id)
@@ -1076,7 +1076,7 @@ def post_ap(post_id):
         post_data['@context'] = default_context()
         resp = jsonify(post_data)
         resp.content_type = 'application/activity+json'
-        resp.headers.set('Vary', 'Accept, Cookie')
+        resp.headers.set('Vary', 'Accept, Accept-Encoding, Cookie')
         return resp
     else:
         return show_post(post_id)

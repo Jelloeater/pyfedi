@@ -57,6 +57,7 @@ def return_304(etag, content_type=None):
     resp = make_response('', 304)
     resp.headers.add_header('ETag', request.headers['If-None-Match'])
     resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+    resp.headers.add_header('Vary', 'Accept, Accept-Encoding, Cookie')
     if content_type:
         resp.headers.set('Content-Type', content_type)
     return resp

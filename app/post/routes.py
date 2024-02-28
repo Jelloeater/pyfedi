@@ -182,7 +182,7 @@ def show_post(post_id: int):
                            joined_communities=joined_communities(current_user.get_id()),
                            inoculation=inoculation[randint(0, len(inoculation) - 1)]
                            )
-    response.headers.set('Vary', 'Accept, Cookie')
+    response.headers.set('Vary', 'Accept, Accept-Encoding, Cookie')
     return response
 
 
@@ -374,7 +374,8 @@ def continue_discussion(post_id, comment_id):
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), community=post.community,
                            inoculation=inoculation[randint(0, len(inoculation) - 1)])
-    return response.headers.set('Vary', 'Accept, Cookie')
+    response.headers.set('Vary', 'Accept, Accept-Encoding, Cookie')
+    return response
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
