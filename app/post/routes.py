@@ -172,7 +172,7 @@ def show_post(post_id: int):
     og_image = post.image.source_url if post.image_id else None
     description = shorten_string(markdown_to_text(post.body), 150) if post.body else None
 
-    return render_template('post/post.html', title=post.title, post=post, is_moderator=is_moderator, community=post.community,
+    response = render_template('post/post.html', title=post.title, post=post, is_moderator=is_moderator, community=post.community,
                            canonical=post.ap_id, form=form, replies=replies, THREAD_CUTOFF_DEPTH=constants.THREAD_CUTOFF_DEPTH,
                            description=description, og_image=og_image, POST_TYPE_IMAGE=constants.POST_TYPE_IMAGE,
                            POST_TYPE_LINK=constants.POST_TYPE_LINK, POST_TYPE_ARTICLE=constants.POST_TYPE_ARTICLE,
@@ -182,6 +182,8 @@ def show_post(post_id: int):
                            joined_communities=joined_communities(current_user.get_id()),
                            inoculation=inoculation[randint(0, len(inoculation) - 1)]
                            )
+    response.headers.set('Vary', 'Accept, Cookie')
+    return response
 
 
 @bp.route('/post/<int:post_id>/<vote_direction>', methods=['GET', 'POST'])
@@ -367,11 +369,12 @@ def continue_discussion(post_id, comment_id):
     is_moderator = current_user.is_authenticated and any(mod.user_id == current_user.id for mod in mods)
     replies = get_comment_branch(post.id, comment.id, 'top')
 
-    return render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
+    response = render_template('post/continue_discussion.html', title=_('Discussing %(title)s', title=post.title), post=post,
                            is_moderator=is_moderator, comment=comment, replies=replies, markdown_editor=current_user.is_authenticated and current_user.markdown_editor,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), community=post.community,
                            inoculation=inoculation[randint(0, len(inoculation) - 1)])
+    return response.headers.set('Vary', 'Accept, Cookie')
 
 
 @bp.route('/post/<int:post_id>/comment/<int:comment_id>/reply', methods=['GET', 'POST'])
