@@ -36,6 +36,13 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    if app.config['SENTRY_DSN']:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=app.config["SENTRY_DSN"],
+            enable_tracing=True
+        )
+
     db.init_app(app)
     migrate.init_app(app, db, render_as_batch=True)
     login.init_app(app)

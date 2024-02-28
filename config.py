@@ -38,3 +38,4 @@ class Config(object):
     BOUNCE_USERNAME = os.environ.get('BOUNCE_USERNAME') or ''
     BOUNCE_PASSWORD = os.environ.get('BOUNCE_PASSWORD') or ''
 
+    SENTRY_DSN = os.environ.get('SENTRY_DSN') or None
