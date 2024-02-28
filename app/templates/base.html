@@ -41,7 +41,7 @@
             <link href="{{ url_for('static', filename='structure.css', changed=getmtime('structure.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='styles.css', changed=getmtime('styles.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='themes/high_contrast/styles.css') }}" type="text/css" rel="alternate stylesheet" title="High contrast" />
-            {% if markdown_editor %}
+            {% if not low_bandwidth %}
                 <link href="{{ url_for('static', filename='js/markdown/downarea.css') }}" type="text/css" rel="stylesheet" />
             {% endif %}
             {% if theme() and file_exists('app/templates/themes/' + theme() + '/styles.css') %}
@@ -235,7 +235,7 @@
     {% endif %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
-    {% if markdown_editor and not low_bandwidth %}
+    {% if not low_bandwidth %}
         <script type="text/javascript" src="{{ url_for('static', filename='js/markdown/downarea.js') }}"></script>
     {% endif %}
     {% if theme() and file_exists('app/templates/themes/' + theme() + '/scripts.js') %}

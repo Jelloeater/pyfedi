@@ -935,3 +935,19 @@ fieldset {
     right: 0;
   }
 }
+
+#post_reply_markdown_editor_enabler {
+  display: none;
+  position: absolute;
+  bottom: 3px;
+  right: 0;
+  @include breakpoint(phablet) {
+    display: inline-block;
+  }
+}
+
+.create_post_markdown_editor_enabler {
+  text-align: right;
+  margin-bottom: 10px;
+  display: block;
+}

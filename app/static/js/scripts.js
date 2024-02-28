@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupKeyboardShortcuts();
     setupTopicChooser();
     setupConversationChooser();
+    setupMarkdownEditorEnabler();
 });
 
 
@@ -551,7 +552,26 @@ function displayTimeTracked() {
     }
 }
 
-/*register a service worker */
+function setupMarkdownEditorEnabler() {
+    const markdownEnablerLinks = document.querySelectorAll('.markdown_editor_enabler');
+    markdownEnablerLinks.forEach(function(link) {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            const dataId = link.dataset.id;
+            if(dataId) {
+                var downarea = new DownArea({
+                    elem: document.querySelector('#' + dataId),
+                    resize: DownArea.RESIZE_VERTICAL,
+                    hide: ['heading', 'bold-italic'],
+                });
+                setupAutoResize(dataId);
+                link.style.display = 'none';
+            }
+        });
+    });
+}
+
+/* register a service worker */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/static/service_worker.js', {scope: '/static/'}).then(function(registration) {
@@ -559,7 +579,7 @@ if ('serviceWorker' in navigator) {
       // console.log('ServiceWorker2 registration successful with scope: ', registration.scope);
     }, function(err) {
       // registration failed :(
-      console.log('ServiceWorker2 registration failed: ', err);
+      console.log('ServiceWorker registration failed: ', err);
     });
   });
 }
