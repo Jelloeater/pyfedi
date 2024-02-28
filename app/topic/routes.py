@@ -91,6 +91,7 @@ def show_topic(topic_name):
 
 
 @bp.route('/topic/<topic_name>.rss', methods=['GET'])
+@cache.cached(timeout=600)
 def show_topic_rss(topic_name):
     topic = Topic.query.filter(Topic.machine_name == topic_name.strip().lower()).first()
 
