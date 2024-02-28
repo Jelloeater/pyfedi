@@ -41,7 +41,7 @@
             <link href="{{ url_for('static', filename='structure.css', changed=getmtime('structure.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='styles.css', changed=getmtime('styles.css')) }}" type="text/css" rel="stylesheet" />
             <link href="{{ url_for('static', filename='themes/high_contrast/styles.css') }}" type="text/css" rel="alternate stylesheet" title="High contrast" />
-            {% if markdown_editor %}
+            {% if not low_bandwidth %}
                 <link href="{{ url_for('static', filename='js/markdown/downarea.css') }}" type="text/css" rel="stylesheet" />
             {% endif %}
             {% if theme() and file_exists('app/templates/themes/' + theme() + '/styles.css') %}
@@ -52,7 +52,7 @@
         <link rel="apple-touch-icon" sizes="152x152" href="/static/images/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon-16x16.png">
-        <link rel="manifest" href="/static/site.webmanifest">
+        <link rel="manifest" href="/static/manifest.json">
         <link rel="shortcut icon" type="image/png" href="/static/images/favicon-32x32.png">
         <link href='/static/images/favicon.ico' rel='icon' type='image/x-icon'>
         <meta name="msapplication-TileColor" content="#da532c">
@@ -235,7 +235,7 @@
     {% endif %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js', changed=getmtime('js/scripts.js')) }}"></script>
-    {% if markdown_editor and not low_bandwidth %}
+    {% if not low_bandwidth %}
         <script type="text/javascript" src="{{ url_for('static', filename='js/markdown/downarea.js') }}"></script>
     {% endif %}
     {% if theme() and file_exists('app/templates/themes/' + theme() + '/scripts.js') %}

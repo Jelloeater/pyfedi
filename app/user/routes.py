@@ -140,6 +140,7 @@ def edit_profile(actor):
         form.password_field.data = ''
 
     return render_template('user/edit_profile.html', title=_('Edit profile'), form=form, user=current_user,
+                           markdown_editor=current_user.markdown_editor,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())
                            )

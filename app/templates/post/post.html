@@ -20,20 +20,24 @@
                         <div class="col">
                             <div class="reply_form_inner position-relative">
                                 {% if post.community.ap_id and '@beehaw.org' in post.community.ap_id %}
-                                    <p>{{ _('This post is hosted on beehaw.org which has <a href="https://docs.beehaw.org/docs/core-principles/what-is-beehaw/" target="_blank" rel="nofollow">high er standards of behaviour than most places. Be nice</a>.') }}</p>
+                                    <p>{{ _('This post is hosted on beehaw.org which has <a href="https://docs.beehaw.org/docs/core-principles/what-is-beehaw/" target="_blank" rel="nofollow">higher standards of behaviour than most places. Be nice</a>.') }}</p>
                                 {% endif %}
                                 {{ render_form(form) }}
-                                {% if markdown_editor %}
-                                    <script nonce="{{ session['nonce'] }}">
-                                        window.addEventListener("load", function () {
-                                            var downarea = new DownArea({
-                                                elem: document.querySelector('#body'),
-                                                resize: DownArea.RESIZE_VERTICAL,
-                                                hide: ['heading', 'bold-italic'],
+                                {% if not low_bandwidth %}
+                                    {% if markdown_editor %}
+                                        <script nonce="{{ session['nonce'] }}">
+                                            window.addEventListener("load", function () {
+                                                var downarea = new DownArea({
+                                                    elem: document.querySelector('#body'),
+                                                    resize: DownArea.RESIZE_VERTICAL,
+                                                    hide: ['heading', 'bold-italic'],
+                                                });
+                                                setupAutoResize('body');
                                             });
-                                            setupAutoResize('body');
-                                        });
-                                    </script>
+                                        </script>
+                                    {% else %}
+                                        <a href="#" aria-hidden="true" id="post_reply_markdown_editor_enabler" class="markdown_editor_enabler" data-id="body">{{ _('Enable markdown editor') }}</a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -45,7 +49,7 @@
                     <p><a href="{{ url_for('auth.validation_required') }}">{{ _('Verify your email address to comment') }}</a></p>
                 {% endif %}
             {% else %}
-                <p><a href="{{ url_for('auth.login') }}">{{ _('Log in to comment') }}</a></p>
+                <p><a href="{{ url_for('auth.login', next='/post/' + str(post.id)) }}">{{ _('Log in to comment') }}</a></p>
             {% endif %}
         {% else %}
             <p>{{ _('Comments are disabled.') }}</p>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 import random
 import urllib
 from collections import defaultdict
@@ -56,6 +57,7 @@ def return_304(etag, content_type=None):
     resp = make_response('', 304)
     resp.headers.add_header('ETag', request.headers['If-None-Match'])
     resp.headers.add_header('Cache-Control', 'no-cache, max-age=600, must-revalidate')
+    resp.headers.add_header('Vary', 'Accept, Accept-Encoding, Cookie')
     if content_type:
         resp.headers.set('Content-Type', content_type)
     return resp
@@ -325,6 +327,13 @@ def ensure_directory_exists(directory):
         if not os.path.isdir(rebuild_directory):
             os.mkdir(rebuild_directory)
         rebuild_directory += '/'
+
+
+def mimetype_from_url(url):
+    parsed_url = urlparse(url)
+    path = parsed_url.path.split('?')[0]  # Strip off anything after '?'
+    mime_type, _ = mimetypes.guess_type(path)
+    return mime_type
 
 
 def validation_required(func):
