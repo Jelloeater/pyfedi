@@ -1184,7 +1184,7 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
     nsfl_in_title = '[NSFL]' in request_json['object']['name'].upper() or '(NSFL)' in request_json['object']['name'].upper()
     post = Post(user_id=user.id, community_id=community.id,
                 title=html.unescape(request_json['object']['name']),
-                comments_enabled=request_json['object']['commentsEnabled'],
+                comments_enabled=request_json['object']['commentsEnabled'] if 'commentsEnabled' in request_json['object'] else True,
                 sticky=request_json['object']['stickied'] if 'stickied' in request_json['object'] else False,
                 nsfw=request_json['object']['sensitive'],
                 nsfl=request_json['object']['nsfl'] if 'nsfl' in request_json['object'] else nsfl_in_title,
