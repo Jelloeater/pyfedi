@@ -15,7 +15,7 @@ from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditC
 from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community, send_newsletter
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
-    User, Instance, File, Report, Topic, UserRegistration, Role
+    User, Instance, File, Report, Topic, UserRegistration, Role, Post
 from app.utils import render_template, permission_required, set_setting, get_setting, gibberish, markdown_to_html, \
     moderating_communities, joined_communities, finalize_user_setup, theme_list
 from app.admin import bp
@@ -469,6 +469,26 @@ def admin_users_trash():
 
     return render_template('admin/users.html', title=_('Problematic users'), next_url=next_url, prev_url=prev_url, users=users,
                            local_remote=local_remote, search=search,
+                           moderating_communities=moderating_communities(current_user.get_id()),
+                           joined_communities=joined_communities(current_user.get_id()),
+                           site=g.site
+                           )
+
+
+@bp.route('/content/trash', methods=['GET'])
+@login_required
+@permission_required('administer all users')
+def admin_content_trash():
+
+    page = request.args.get('page', 1, type=int)
+
+    posts = Post.query.filter(Post.posted_at > utcnow() - timedelta(days=3)).order_by(Post.score)
+    posts = posts.paginate(page=page, per_page=100, error_out=False)
+
+    next_url = url_for('admin.admin_content_trash', page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('admin.admin_content_trash', page=posts.prev_num) if posts.has_prev and page != 1 else None
+
+    return render_template('admin/posts.html', title=_('Bad posts'), next_url=next_url, prev_url=prev_url, posts=posts,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()),
                            site=g.site
