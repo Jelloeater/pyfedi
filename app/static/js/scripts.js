@@ -23,8 +23,11 @@ window.addEventListener("load", function () {
 
 function setupMobileNav() {
     var navbarToggler = document.getElementById('navbar-toggler');
+    var navbarSupportedContent = document.getElementById('navbarSupportedContent');
     navbarToggler.addEventListener("click", function(event) {
-        toggleClass('navbarSupportedContent', 'show_menu')
+        toggleClass('navbarSupportedContent', 'show_menu');
+        var isExpanded = navbarSupportedContent.classList.contains('show_menu');
+        navbarSupportedContent.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
     });
 }
 
