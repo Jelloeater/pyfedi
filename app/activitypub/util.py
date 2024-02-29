@@ -465,27 +465,32 @@ def refresh_community_profile_task(community_id):
 
 def actor_json_to_model(activity_json, address, server):
     if activity_json['type'] == 'Person':
-        user = User(user_name=activity_json['preferredUsername'],
-                    title=activity_json['name'] if 'name' in activity_json else None,
-                    email=f"{address}@{server}",
-                    about_html=parse_summary(activity_json),
-                    matrix_user_id=activity_json['matrixUserId'] if 'matrixUserId' in activity_json else '',
-                    indexable=activity_json['indexable'] if 'indexable' in activity_json else False,
-                    searchable=activity_json['discoverable'] if 'discoverable' in activity_json else True,
-                    created=activity_json['published'] if 'published' in activity_json else utcnow(),
-                    ap_id=f"{address}@{server}",
-                    ap_public_url=activity_json['id'],
-                    ap_profile_id=activity_json['id'].lower(),
-                    ap_inbox_url=activity_json['endpoints']['sharedInbox'],
-                    ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
-                    ap_preferred_username=activity_json['preferredUsername'],
-                    ap_manually_approves_followers=activity_json['manuallyApprovesFollowers'] if 'manuallyApprovesFollowers' in activity_json else False,
-                    ap_fetched_at=utcnow(),
-                    ap_domain=server,
-                    public_key=activity_json['publicKey']['publicKeyPem'],
-                    instance_id=find_instance_id(server)
-                    # language=community_json['language'][0]['identifier'] # todo: language
-                    )
+        try:
+            user = User(user_name=activity_json['preferredUsername'],
+                        title=activity_json['name'] if 'name' in activity_json else None,
+                        email=f"{address}@{server}",
+                        about_html=parse_summary(activity_json),
+                        matrix_user_id=activity_json['matrixUserId'] if 'matrixUserId' in activity_json else '',
+                        indexable=activity_json['indexable'] if 'indexable' in activity_json else False,
+                        searchable=activity_json['discoverable'] if 'discoverable' in activity_json else True,
+                        created=activity_json['published'] if 'published' in activity_json else utcnow(),
+                        ap_id=f"{address}@{server}",
+                        ap_public_url=activity_json['id'],
+                        ap_profile_id=activity_json['id'].lower(),
+                        ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                        ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
+                        ap_preferred_username=activity_json['preferredUsername'],
+                        ap_manually_approves_followers=activity_json['manuallyApprovesFollowers'] if 'manuallyApprovesFollowers' in activity_json else False,
+                        ap_fetched_at=utcnow(),
+                        ap_domain=server,
+                        public_key=activity_json['publicKey']['publicKeyPem'],
+                        instance_id=find_instance_id(server)
+                        # language=community_json['language'][0]['identifier'] # todo: language
+                        )
+        except KeyError as e:
+            current_app.logger.error(f'KeyError for {address}@{server} while parsing ' + str(activity_json))
+            return None
+
         if 'icon' in activity_json:
             avatar = File(source_url=activity_json['icon']['url'])
             user.avatar = avatar
@@ -1271,7 +1276,9 @@ def notify_about_post(post: Post):
 
 
 def update_post_reply_from_activity(reply: PostReply, request_json: dict):
-    if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+    if 'source' in request_json['object'] and \
+            isinstance(request_json['object']['source'], dict) and \
+            request_json['object']['source']['mediaType'] == 'text/markdown':
         reply.body = request_json['object']['source']['content']
         reply.body_html = markdown_to_html(reply.body)
     elif 'content' in request_json['object']:
@@ -1283,7 +1290,9 @@ def update_post_reply_from_activity(reply: PostReply, request_json: dict):
 
 def update_post_from_activity(post: Post, request_json: dict):
     post.title = request_json['object']['name']
-    if 'source' in request_json['object'] and request_json['object']['source']['mediaType'] == 'text/markdown':
+    if 'source' in request_json['object'] and \
+            isinstance(request_json['object']['source'], dict) and \
+            request_json['object']['source']['mediaType'] == 'text/markdown':
         post.body = request_json['object']['source']['content']
         post.body_html = markdown_to_html(post.body)
     elif 'content' in request_json['object']:
