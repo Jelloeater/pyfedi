@@ -54,7 +54,7 @@
                             {% endif %}
                             </h3>
 
-                            <span class="small">{% if show_post_community %}<strong><a href="/c/{{ post.community.link() }}" aria-label="{{ _('Go to community') }}">c/{{ post.community.name }}</a></strong>{% endif %}
+                            <span class="small">{% if show_post_community %}<strong><a href="/c/{{ post.community.link() }}" aria-label="{{ _('Go to community {{ post.community.name }}') }}">c/{{ post.community.name }}</a></strong>{% endif %}
                                 by {{ render_username(post.author) }} {{ moment(post.last_active if sort == 'active' else post.posted_at).fromNow() }}</span>
 
                         </div>
