@@ -55,7 +55,7 @@
             <p>{{ _('Comments are disabled.') }}</p>
         {% endif %}
         {% if replies %}
-        <h2 class="visually-hidden">{{ len(replies) }} {{ _('Comments') }}</h2>
+        <h2 class="visually-hidden">{{ post.reply_count }} {{ _('Comments') }}</h2>
         <div id="post_replies" class="row">
             <div class="col">
                 <div class="btn-group mt-1 mb-2">
@@ -79,9 +79,9 @@
                                 {% else %}
                                     {% if comment['comment'].author.avatar_id and comment['comment'].score > -10 and not low_bandwidth %}
                                     <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.ap_id }}">
-                                        <img src="{{ comment['comment'].author.avatar_image() }}" alt="Avatar" loading="lazy" /></a>
+                                        <img src="{{ comment['comment'].author.avatar_image() }}" alt="" loading="lazy" /></a>
                                     {% endif %}
-                                    <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}">
+                                    <a href="/u/{{ comment['comment'].author.link() }}" title="{{ comment['comment'].author.link() }}" aria-label="{{ _('Author') }}">
                                             {{ comment['comment'].author.display_name() }}</a>
                                 {% endif %}
                                 {% if comment['comment'].author.created_recently() %}
@@ -95,8 +95,8 @@
                                         <span class="fe fe-warning orangered" title="Low reputation."> </span>
                                     {% endif %}
                                 {% endif %}
-                                {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="submitter" class="small">[OP]</span>{% endif %}
-                                <span class="text-muted small">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
+                                {% if comment['comment'].author.id == post.author.id %}<span title="Submitter of original post" aria-label="{{ _('Post creator') }}" class="small">[OP]</span>{% endif %}
+                                <span class="text-muted small" aria_label="{{ _('When: ') }}">{{ moment(comment['comment'].posted_at).fromNow(refresh=True) }}{% if comment['comment'].edited_at %}, edited {{ moment(comment['comment'].edited_at).fromNow(refresh=True) }} {% endif %}</span>
                                 <a class="unhide" href="#"><span class="fe fe-expand"></span></a>
                                 {% if comment['comment'].reports and current_user.is_authenticated and post.community.is_moderator(current_user)%}
                                     <span class="red fe fe-report" title="{{ _('Reported. Check comment for issues.') }}"></span>

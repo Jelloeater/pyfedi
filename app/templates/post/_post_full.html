@@ -23,7 +23,7 @@
                 {% if post.nsfl %}<span class="warning_badge nsfl" title="{{ _('Potentially emotionally scarring content') }}">nsfl</span>{% endif %}
             </h1>
             {% if post.url %}
-                <p><a href="{{ post.url }}" rel="nofollow ugc" target="_blank">{{ post.url|shorten_url }}
+                <p><a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="Go to image">{{ post.url|shorten_url }}
                     <span class="fe fe-external"></span></a></p>
             {% endif %}
             <p>{% if post.reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}
@@ -41,7 +41,7 @@
                              width="{{ post.image.width }}" height="{{ post.image.height }}" /></a>
                     {% endif %}
                 {% else %}
-                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank"><img src="{{ post.url }}" style="max-width: 100%; height: auto;"  /></a>
+                    <a href="{{ post.url }}" rel="nofollow ugc" target="_blank" aria-label="Go to image"><img src="{{ post.url }}" style="max-width: 100%; height: auto;"  /></a>
                 {% endif %}
             </div>
             <div class="post_body mt-2">
@@ -73,7 +73,7 @@
             </h1>
             {% if post.type == POST_TYPE_LINK and post.image_id and not (post.url and 'youtube.com' in post.url) %}
                 <div class="url_thumbnail">
-                    <a href="{{ post.url }}" target="_blank" rel="nofollow ugc" class="post_link"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else post.title }}"
+                    <a href="{{ post.url }}" target="_blank" rel="nofollow ugc" class="post_link"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else '' }}"
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" loading="lazy" /></a>
                 </div>
             {% endif %}
@@ -84,7 +84,7 @@
                 {% if post.edited_at %} edited {{ moment(post.edited_at).fromNow() }}{% endif %}</small>
             </p>
             {% if post.type == POST_TYPE_LINK %}
-                <p><a href="{{ post.url }}" rel="nofollow ugc" target="_blank" class="post_link">{{ post.url|shorten_url }}
+                <p><a href="{{ post.url }}" rel="nofollow ugc" target="_blank" class="post_link" aria-label="Go to post url">{{ post.url|shorten_url }}
                 <span class="fe fe-external"></span></a></p>
                 {% if post.url.endswith('.mp3') %}
                     <p><audio controls preload="{{ 'none' if low_bandwidth else 'metadata' }}" src="{{ post.url }}"></audio></p>
@@ -99,7 +99,7 @@
                 </div>
             {% else %}
                 {% if post.image_id and not (post.url and 'youtube.com' in post.url) %}
-                        <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else post.title }}"
+                        <a href="{{ post.image.view_url() }}" target="_blank" class="post_link" aria-label="Go to video" rel="nofollow ugc"><img src="{{ post.image.thumbnail_url() }}" alt="{{ post.image.alt_text if post.image.alt_text else post.title }}"
                             width="{{ post.image.thumbnail_width }}" height="{{ post.image.thumbnail_height }}" loading="lazy" /></a>
                 {% endif %}
             {% endif %}
