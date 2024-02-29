@@ -27,8 +27,12 @@ function setupMobileNav() {
     navbarToggler.addEventListener("click", function(event) {
         toggleClass('navbarSupportedContent', 'show_menu');
         var isExpanded = navbarSupportedContent.classList.contains('show_menu');
+        navbarToggler.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
         navbarSupportedContent.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
     });
+    if(window.innerWidth < 992) {
+        navbarToggler.setAttribute('aria-expanded', 'false');
+    }
 }
 
 function setupLightDark() {
