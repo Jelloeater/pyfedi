@@ -10,7 +10,7 @@ from sqlalchemy import text, desc, or_
 from app.activitypub.signature import post_request
 from app.constants import SUBSCRIPTION_NONMEMBER, POST_TYPE_IMAGE, POST_TYPE_LINK
 from app.inoculation import inoculation
-from app.models import Topic, Community, Post, utcnow, CommunityMember, CommunityJoinRequest
+from app.models import Topic, Community, Post, utcnow, CommunityMember, CommunityJoinRequest, User
 from app.topic import bp
 from app import db, celery, cache
 from app.topic.forms import ChooseTopicsForm
@@ -187,9 +187,9 @@ def join_topic(topic_id):
                 db.session.add(join_request)
                 db.session.commit()
                 if current_app.debug:
-                    send_community_follow(community.id, join_request)
+                    send_community_follow(community.id, join_request, current_user.id)
                 else:
-                    send_community_follow.delay(community.id, join_request.id)
+                    send_community_follow.delay(community.id, join_request.id, current_user.id)
 
             member = CommunityMember(user_id=current_user.id, community_id=community.id)
             db.session.add(member)
@@ -198,15 +198,16 @@ def join_topic(topic_id):
 
 
 @celery.task
-def send_community_follow(community_id, join_request_id):
+def send_community_follow(community_id, join_request_id, user_id):
     with current_app.app_context():
+        user = User.query.get(user_id)
         community = Community.query.get(community_id)
         follow = {
-            "actor": f"https://{current_app.config['SERVER_NAME']}/u/{current_user.user_name}",
+            "actor": f"https://{current_app.config['SERVER_NAME']}/u/{user.user_name}",
             "to": [community.ap_profile_id],
             "object": community.ap_profile_id,
             "type": "Follow",
             "id": f"https://{current_app.config['SERVER_NAME']}/activities/follow/{join_request_id}"
         }
-        success = post_request(community.ap_inbox_url, follow, current_user.private_key,
-                               current_user.profile_id() + '#main-key')
+        success = post_request(community.ap_inbox_url, follow, user.private_key,
+                               user.profile_id() + '#main-key')
