@@ -94,7 +94,7 @@ def create_app(config_class=Config):
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
 
     # send error reports via email
-    if app.config['MAIL_SERVER']:
+    if app.config['MAIL_SERVER'] and app.config['MAIL_ERRORS']:
         auth = None
         if app.config['MAIL_USERNAME'] or app.config['MAIL_PASSWORD']:
             auth = (app.config['MAIL_USERNAME'],

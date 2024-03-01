@@ -17,7 +17,7 @@ from app.inoculation import inoculation
 from app.main import bp
 from flask import g, session, flash, request, current_app, url_for, redirect, make_response, jsonify
 from flask_moment import moment
-from flask_login import current_user
+from flask_login import current_user, login_required
 from flask_babel import _, get_locale
 from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
@@ -306,6 +306,15 @@ def test():
 
 
     return 'ok'
+
+
+@bp.route('/test_email')
+@login_required
+def test_email():
+    send_email('This is a test email', f'{g.site.name} <{current_app.config["MAIL_FROM"]}>', [current_user.email],
+               'This is a test email. If you received this, email sending is working!',
+               '<p>This is a test email. If you received this, email sending is working!</p>')
+    return f'Email sent to {current_user.email}.'
 
 
 def verification_warning():
