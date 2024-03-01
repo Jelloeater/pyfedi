@@ -1,0 +1,79 @@
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block app_content %}
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <h1>{{ _('Search results for') }} <form method="get" class="redo_search"><input type="search" name="q" value="{{ q }}" class="form-control"></form></h1>
+        <div class="post_list">
+            {% for post in posts.items %}
+                {% include 'post/_post_teaser.html' %}
+            {% else %}
+                <p>{{ _('No posts match your search.') }}</p>
+            {% endfor %}
+        </div>
+
+        <nav aria-label="Pagination" class="mt-4" role="navigation">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}" class="btn btn-primary" rel="nofollow">
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous page') }}
+                    </a>
+                {% endif %}
+                {% if next_url %}
+                    <a href="{{ next_url }}" class="btn btn-primary" rel="nofollow">
+                        {{ _('Next page') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+        </nav>
+    </div>
+
+    <aside id="side_pane" class="col-12 col-md-4 side_pane" role="complementary">
+        <!-- <div class="card">
+            <div class="card-body">
+                <form method="get">
+                    <input type="search" name="search" class="form-control mt-2" placeholder="{{ _('Search') }}" />
+                </form>
+            </div>
+        </div> -->
+
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('Active communities') }}</h2>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for community in active_communities %}
+                        <li class="list-group-item">
+                            <a href="/c/{{ community.link() }}"><img src="{{ community.icon_image() }}" class="community_icon rounded-circle" loading="lazy" alt="" />
+                                {{ community.display_name() }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p class="mt-4"><a class="btn btn-primary" href="/communities">{{ _('Explore communities') }}</a></p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                 <h2>{{ _('About %(site_name)s', site_name=g.site.name) }}</h2>
+            </div>
+            <div class="card-body">
+                <p><strong>{{ g.site.description|safe }}</strong></p>
+                <p>{{ g.site.sidebar|safe }}</p>
+                {% if rss_feed %}
+                <p class="mt-4">
+                    <a class="no-underline" href="{{ rss_feed }}" rel="nofollow"><span class="fe fe-rss"></span> RSS feed</a>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% include "_inoculation_links.html" %}
+    </aside>
+</div>
+{% endblock %}

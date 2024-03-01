@@ -8,6 +8,7 @@ import flask
 from flask import json, current_app
 from flask_babel import _
 from sqlalchemy import or_, desc
+from sqlalchemy.orm import configure_mappers
 
 from app import db
 import click

@@ -1273,4 +1273,15 @@ fieldset legend {
   display: block;
 }
 
+.redo_search {
+  display: inline;
+}
+.redo_search input[type=search] {
+  width: unset;
+  display: inline;
+  font-size: inherit;
+  line-height: initial;
+  max-width: 100%;
+}
+
 /*# sourceMappingURL=structure.css.map */

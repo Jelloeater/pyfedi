@@ -951,3 +951,14 @@ fieldset {
   margin-bottom: 10px;
   display: block;
 }
+
+.redo_search {
+  display: inline;
+  input[type=search] {
+    width: unset;
+    display: inline;
+    font-size: inherit;
+    line-height: initial;
+    max-width: 100%;
+  }
+}

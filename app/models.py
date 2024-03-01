@@ -222,6 +222,7 @@ class Topic(db.Model):
     machine_name = db.Column(db.String(50), index=True)
     name = db.Column(db.String(50))
     num_communities = db.Column(db.Integer, default=0)
+    parent_id = db.Column(db.Integer)
     communities = db.relationship('Community', lazy='dynamic', backref='topic', cascade="all, delete-orphan")
 
 
@@ -483,7 +484,7 @@ class User(UserMixin, db.Model):
     ap_inbox_url = db.Column(db.String(255))
     ap_domain = db.Column(db.String(255))
 
-    search_vector = db.Column(TSVectorType('user_name', 'bio', 'keywords'))
+    search_vector = db.Column(TSVectorType('user_name', 'about', 'keywords'))
     activity = db.relationship('ActivityLog', backref='account', lazy='dynamic', cascade="all, delete-orphan")
     posts = db.relationship('Post', lazy='dynamic', cascade="all, delete-orphan")
     post_replies = db.relationship('PostReply', lazy='dynamic', cascade="all, delete-orphan")

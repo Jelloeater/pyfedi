@@ -11,7 +11,7 @@ flask-babel==3.1.0
 psycopg2-binary
 requests==2.31.0
 pyjwt==2.8.0
-SQLAlchemy-Searchable==1.4.1
+SQLAlchemy-Searchable==2.1.0
 SQLAlchemy-Utils==0.41.1
 cryptography==41.0.3
 Bootstrap-Flask==2.3.0

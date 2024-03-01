@@ -477,7 +477,7 @@ div.navbar {
 }
 
 #outer_container {
-  margin-top: -4px;
+  margin-top: -1px;
 }
 @media (min-width: 992px) {
   #outer_container {

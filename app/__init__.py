@@ -87,6 +87,9 @@ def create_app(config_class=Config):
     from app.chat import bp as chat_bp
     app.register_blueprint(chat_bp)
 
+    from app.search import bp as search_bp
+    app.register_blueprint(search_bp)
+
     def get_resource_as_string(name, charset='utf-8'):
         with app.open_resource(name) as f:
             return f.read().decode(charset)
