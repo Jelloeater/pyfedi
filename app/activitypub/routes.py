@@ -449,7 +449,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             activity_log.activity_type = 'exception'
                             db.session.commit()
                             return
-                        community = find_actor_or_create(community_ap_id)
+                        community = find_actor_or_create(community_ap_id, community_only=True)
                         user = find_actor_or_create(user_ap_id)
                         if (user and not user.is_local()) and community:
                             user.last_seen = community.last_active = site.last_active = utcnow()
@@ -501,7 +501,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                             activity_log.activity_type = 'exception'
                             db.session.commit()
                             return
-                        community = find_actor_or_create(community_ap_id)
+                        community = find_actor_or_create(community_ap_id, community_only=True)
                         user = find_actor_or_create(user_ap_id)
                         if (user and not user.is_local()) and community:
                             user.last_seen = community.last_active = site.last_active = utcnow()
@@ -674,7 +674,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                     community_ap_id = request_json['object']
                     follow_id = request_json['id']
                     user = find_actor_or_create(user_ap_id)
-                    community = find_actor_or_create(community_ap_id)
+                    community = find_actor_or_create(community_ap_id, community_only=True)
                     if community and community.local_only:
                         # todo: send Deny activity
                         activity_log.exception_message = 'Local only cannot be followed by remote users'
@@ -718,7 +718,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         community_ap_id = request_json['actor']
                         user_ap_id = request_json['object']['actor']
                         user = find_actor_or_create(user_ap_id)
-                        community = find_actor_or_create(community_ap_id)
+                        community = find_actor_or_create(community_ap_id, community_only=True)
                         if user and community:
                             join_request = CommunityJoinRequest.query.filter_by(user_id=user.id, community_id=community.id).first()
                             if join_request:
@@ -734,7 +734,7 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         community_ap_id = request_json['object']['object']
                         user_ap_id = request_json['object']['actor']
                         user = find_actor_or_create(user_ap_id)
-                        community = find_actor_or_create(community_ap_id)
+                        community = find_actor_or_create(community_ap_id, community_only=True)
                         if user and community:
                             user.last_seen = utcnow()
                             member = CommunityMember.query.filter_by(user_id=user.id, community_id=community.id).first()

@@ -196,7 +196,7 @@ def instance_allowed(host: str) -> bool:
     return instance is not None
 
 
-def find_actor_or_create(actor: str, create_if_not_found=True) -> Union[User, Community, None]:
+def find_actor_or_create(actor: str, create_if_not_found=True, community_only=False) -> Union[User, Community, None]:
     actor = actor.strip().lower()
     user = None
     # actor parameter must be formatted as https://server/u/actor or https://server/c/actor
@@ -248,7 +248,10 @@ def find_actor_or_create(actor: str, create_if_not_found=True) -> Union[User, Co
                 if actor_data.status_code == 200:
                     actor_json = actor_data.json()
                     actor_data.close()
-                    return actor_json_to_model(actor_json, address, server)
+                    actor_model = actor_json_to_model(actor_json, address, server)
+                    if community_only and not isinstance(actor_model, Community):
+                        return None
+                    return actor_model
             else:
                 # retrieve user details via webfinger, etc
                 try:
@@ -274,7 +277,10 @@ def find_actor_or_create(actor: str, create_if_not_found=True) -> Union[User, Co
                             if actor_data.status_code == 200:
                                 actor_json = actor_data.json()
                                 actor_data.close()
-                                return actor_json_to_model(actor_json, address, server)
+                                actor_model = actor_json_to_model(actor_json, address, server)
+                                if community_only and not isinstance(actor_model, Community):
+                                    return None
+                                return actor_model
     return None
 
 
@@ -477,7 +483,7 @@ def actor_json_to_model(activity_json, address, server):
                         ap_id=f"{address}@{server}",
                         ap_public_url=activity_json['id'],
                         ap_profile_id=activity_json['id'].lower(),
-                        ap_inbox_url=activity_json['endpoints']['sharedInbox'],
+                        ap_inbox_url=activity_json['endpoints']['sharedInbox'] if 'endpoints' in activity_json else activity_json['inbox'] if 'inbox' in activity_json else '',
                         ap_followers_url=activity_json['followers'] if 'followers' in activity_json else None,
                         ap_preferred_username=activity_json['preferredUsername'],
                         ap_manually_approves_followers=activity_json['manuallyApprovesFollowers'] if 'manuallyApprovesFollowers' in activity_json else False,
@@ -1061,7 +1067,7 @@ def delete_post_or_comment(user_ap_id, community_ap_id, to_be_deleted_ap_id):
 @celery.task
 def delete_post_or_comment_task(user_ap_id, community_ap_id, to_be_deleted_ap_id):
     deletor = find_actor_or_create(user_ap_id)
-    community = find_actor_or_create(community_ap_id)
+    community = find_actor_or_create(community_ap_id, community_only=True)
     to_delete = find_liked_object(to_be_deleted_ap_id)
 
     if deletor and community and to_delete:

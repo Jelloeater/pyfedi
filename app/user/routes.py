@@ -551,7 +551,7 @@ def import_settings_task(user_id, filename):
 
     # Follow communities
     for community_ap_id in contents_json['followed_communities'] if 'followed_communities' in contents_json else []:
-        community = find_actor_or_create(community_ap_id)
+        community = find_actor_or_create(community_ap_id, community_only=True)
         if community:
             if community.posts.count() == 0:
                 if current_app.debug:
@@ -585,7 +585,7 @@ def import_settings_task(user_id, filename):
                 cache.delete_memoized(community_membership, current_user, community)
 
     for community_ap_id in contents_json['blocked_communities'] if 'blocked_communities' in contents_json else []:
-        community = find_actor_or_create(community_ap_id)
+        community = find_actor_or_create(community_ap_id, community_only=True)
         if community:
             existing_block = CommunityBlock.query.filter_by(user_id=user.id, community_id=community.id).first()
             if not existing_block:
