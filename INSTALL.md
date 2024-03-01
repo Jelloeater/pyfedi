@@ -221,6 +221,12 @@ also [see this](https://pganalyze.com/blog/5mins-postgres-tuning-huge-pages).
 
 (PgBouncer)[https://www.pgbouncer.org] can be helpful in a high traffic situation.
 
+---
+
+
+Background services
+---
+
 Gunicorn and Celery need to run as background services:
 
 ### Gunicorn
@@ -319,7 +325,11 @@ Inspect log files at:
     /your_piefed_installation/logs/pyfedi.log
 
 
-### Nginx
+---
+
+
+Nginx
+---
 
 You need a reverse proxy that sends all traffic to port 5000. Something like:
 
@@ -356,4 +366,24 @@ You need a reverse proxy that sends all traffic to port 5000. Something like:
     }
 
 The above is not a complete configuration - you will want to add more settings for SSL, etc.
+
+---
+
+
+Cron tasks
+---
+
+To send email reminders about unread notifications, put this in a new file under /etc/cron.d
+
+```
+1 */6 * * * rimu cd /home/rimu/pyfedi && /home/rimu/pyfedi/email_notifs.sh
+```
+
+Change /home/rimu/pyfedi to the location of your installation and change 'rimu' to the user that piefed runs as.
+
+Once a week or so it's good to run remove_orphan_files.sh to save disk space:
+
+```
+5 4 * * 1 rimu cd /home/rimu/pyfedi && /home/rimu/pyfedi/remove_orphan_files.sh
+```
 
