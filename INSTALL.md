@@ -116,13 +116,26 @@ while RedisCache should be used in production. If using RedisCache, set CACHE_RE
 
 CELERY_BROKER_URL is similar to CACHE_REDIS_URL but with a different number on the end: 'redis://localhost:6379/0'
 
+MAIL_* is for sending email using a SMTP server. Leave MAIL_SERVER empty to send email using AWS SES instead.
 
+AWS_REGION is the name of the AWS region where you chose to set up SES, if using SES. [SES credentials are stored in ~/.aws/credentials](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html). That file has a format like
 
+```
+[default]
+aws_access_key_id = JKJHER*#KJFFF
+aws_secret_access_key = /jkhejhkrejhkre
+region=ap-southeast-2
+```
+You can also [use environment variables](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#environment-variables) if you prefer.
 
-Virtual Env setup (inside the api root directory)
 ---
-    python -m venv ./venv
 
+
+Virtual Env setup (inside the root directory)
+---
+    python3 -m venv ./venv
+
+    pip install -r requirements.txt
 
 ---
 
