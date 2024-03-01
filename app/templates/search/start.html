@@ -8,7 +8,7 @@
 {% block app_content %}
         <div class="row">
             <div class="col mx-auto">
-                <div class="card mt-5">
+                <div class="card mt-5" style="width: 500px; max-width: 100%;">
                     <div class="card-body p-6">
                         <div class="card-title">{{ _('Search for posts') }}</div>
                         <form action="" method="get" class="form" role="form">
@@ -17,6 +17,26 @@
                             </div>
                             <input class="btn btn-primary btn-md" id="submit" name="submit" type="submit" value="Search">
                         </form>
+                        <h6 class="mt-5">{{ _('Example searches:') }} </h6>
+                        <table class="table">
+                            <tr>
+                                <td nowrap="nowrap"><p>{{ _('star wars') }}</p></td>
+                                <td><p>{{ _('There is an implied "and" here. Results will have both words somewhere in them.') }}</p></td>
+                            </tr>
+                            <tr>
+                                <td nowrap="nowrap"><p>{{ _('star or wars') }}</p></td>
+                                <td><p>{{ _('This will broaden the search to include results that contain any of the words.') }}</p></td>
+                            </tr>
+                            <tr>
+                                <td nowrap="nowrap"><p>{{ _('star -wars') }}</p></td>
+                                <td><p>{{ _('To search for things containing "star" but not "wars" you can put a - before the word you want to exclude.') }}</p></td>
+                            </tr>
+                            <tr>
+                                <td nowrap="nowrap"><p>{{ _('"star wars"') }}</p></td>
+                                <td><p>{{ _('Results will have exactly that phrase in them.') }}</p></td>
+                            </tr>
+                        </table>
+
                     </div>
                 </div>
             </div>
