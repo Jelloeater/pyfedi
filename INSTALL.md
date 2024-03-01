@@ -128,6 +128,9 @@ region=ap-southeast-2
 ```
 You can also [use environment variables](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#environment-variables) if you prefer.
 
+Test email sending by going to https://yourdomain/test_email. It will try to send an email to the current user's email address.
+If it does not work check the log file at logs/pyfedi.log for clues.
+
 ---
 
 
