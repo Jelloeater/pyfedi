@@ -1186,6 +1186,8 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
         activity_log.exception_message = 'Community is local only, post discarded'
         activity_log.result = 'ignored'
         return None
+    if 'name' not in request_json['object']:    # Microblog posts sometimes get Announced by lemmy. They don't have a title, so we can't use them.
+        return None
     nsfl_in_title = '[NSFL]' in request_json['object']['name'].upper() or '(NSFL)' in request_json['object']['name'].upper()
     post = Post(user_id=user.id, community_id=community.id,
                 title=html.unescape(request_json['object']['name']),
