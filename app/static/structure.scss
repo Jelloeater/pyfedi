@@ -283,6 +283,13 @@ html {
           padding-right: 7px;
         }
       }
+
+      &.missing_thumbnail {
+        .fe::before {
+          font-size: x-large;
+          opacity: 0.8;
+        }
+      }
     }
     &.blocked {
       opacity: 0.2;

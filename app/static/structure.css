@@ -664,6 +664,10 @@ fieldset legend {
   font-size: 28px;
   padding-right: 7px;
 }
+.post_list .post_teaser .thumbnail.missing_thumbnail .fe::before {
+  font-size: x-large;
+  opacity: 0.8;
+}
 .post_list .post_teaser.blocked {
   opacity: 0.2;
   font-size: 80%;
