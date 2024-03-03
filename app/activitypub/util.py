@@ -1222,6 +1222,9 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
             post.url = request_json['object']['attachment'][0]['href']
             if is_image_url(post.url):
                 post.type = POST_TYPE_IMAGE
+                image = File(source_url=request_json['object']['image']['url'])
+                db.session.add(image)
+                post.image = image
             else:
                 post.type = POST_TYPE_LINK
             domain = domain_from_url(post.url)
@@ -1247,7 +1250,7 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
             if not domain.banned:
                 domain.post_count += 1
                 post.domain = domain
-    if 'image' in request_json['object']:
+    if 'image' in request_json['object'] and post.image is None:
         image = File(source_url=request_json['object']['image']['url'])
         db.session.add(image)
         post.image = image
