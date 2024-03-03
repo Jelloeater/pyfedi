@@ -387,3 +387,31 @@ Once a week or so it's good to run remove_orphan_files.sh to save disk space:
 5 4 * * 1 rimu cd /home/rimu/pyfedi && /home/rimu/pyfedi/remove_orphan_files.sh
 ```
 
+---
+
+
+Email
+---
+
+Email can be sent either through SMTP or Amazon web services (SES). SES is faster but PieFed does not send much
+email so it probably doesn't matter which method you choose.
+
+### AWS SES
+
+PieFed uses Amazon's "boto3" module to connect to SES. Boto3 needs to log into AWS and that can be set up using a file
+at ~/.aws/credentials or environment variables. Details at https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html.
+
+In your .env you need to set the AWS region you're using for SES. Something like AWS_REGION = 'ap-southeast-2'.
+
+### SMTP
+
+To use SMTP you need to set all the MAIL_* environment variables in you .env file. See env.sample for a list of them.
+
+### Testing email
+
+You need to set MAIL_FROM in .env to some email address.
+
+Log into Piefed then go to https://yourdomain/test_email to trigger a test email. It will use SES or SMTP depending on
+which environment variables you defined in .env. If MAIL_SERVER is empty it will try SES. Then if AWS_REGION is empty it'll
+silently do nothing.
+
