@@ -172,7 +172,7 @@ class File(db.Model):
     file_name = db.Column(db.String(255))
     width = db.Column(db.Integer)
     height = db.Column(db.Integer)
-    alt_text = db.Column(db.String(256))
+    alt_text = db.Column(db.String(300))
     source_url = db.Column(db.String(1024))
     thumbnail_path = db.Column(db.String(255))
     thumbnail_width = db.Column(db.Integer)

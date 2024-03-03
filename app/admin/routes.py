@@ -12,7 +12,8 @@ from app.activitypub.signature import post_request
 from app.activitypub.util import default_context
 from app.admin.forms import FederationForm, SiteMiscForm, SiteProfileForm, EditCommunityForm, EditUserForm, \
     EditTopicForm, SendNewsletterForm, AddUserForm
-from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community, send_newsletter
+from app.admin.util import unsubscribe_from_everything_then_delete, unsubscribe_from_community, send_newsletter, \
+    topic_tree, topics_for_form
 from app.community.util import save_icon_file, save_banner_file
 from app.models import AllowedInstances, BannedInstances, ActivityPubLog, utcnow, Site, Community, CommunityMember, \
     User, Instance, File, Report, Topic, UserRegistration, Role, Post
@@ -212,29 +213,13 @@ def admin_communities():
                            site=g.site)
 
 
-def topics_for_form():
-    topics = Topic.query.order_by(Topic.name).all()
-    result = [(0, _('None'))]
-    for topic in topics:
-        result.append((topic.id, topic.name))
-    return result
-
-
-def communities_for_form():
-    communities = Community.query.order_by(Community.title).all()
-    result = [(0, _('None'))]
-    for community in communities:
-        result.append((community.id, community.title))
-    return result
-
-
 @bp.route('/community/<int:community_id>/edit', methods=['GET', 'POST'])
 @login_required
 @permission_required('administer all communities')
 def admin_community_edit(community_id):
     form = EditCommunityForm()
     community = Community.query.get_or_404(community_id)
-    form.topic.choices = topics_for_form()
+    form.topic.choices = topics_for_form(0)
     if form.validate_on_submit():
         community.name = form.url.data
         community.title = form.title.data
@@ -253,6 +238,7 @@ def admin_community_edit(community_id):
         community.content_retention = form.content_retention.data
         community.topic_id = form.topic.data if form.topic.data != 0 else None
         community.default_layout = form.default_layout.data
+
         icon_file = request.files['icon_file']
         if icon_file and icon_file.filename != '':
             if community.icon_id:
@@ -268,6 +254,8 @@ def admin_community_edit(community_id):
             if file:
                 community.image = file
 
+        db.session.commit()
+        community.topic.num_communities = community.topic.communities.count()
         db.session.commit()
         flash(_('Saved'))
         return redirect(url_for('admin.admin_communities'))
@@ -341,7 +329,7 @@ def unsubscribe_everyone_then_delete_task(community_id):
 @login_required
 @permission_required('administer all communities')
 def admin_topics():
-    topics = Topic.query.order_by(Topic.name).all()
+    topics = topic_tree()
     return render_template('admin/topics.html', title=_('Topics'), topics=topics,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()),
@@ -354,16 +342,16 @@ def admin_topics():
 @permission_required('administer all communities')
 def admin_topic_add():
     form = EditTopicForm()
-    form.add_community.choices = communities_for_form()
+    form.parent_id.choices = topics_for_form(0)
     if form.validate_on_submit():
         topic = Topic(name=form.name.data, machine_name=form.machine_name.data, num_communities=0)
+        if form.parent_id.data:
+            topic.parent_id = form.parent_id.data
+        else:
+            topic.parent_id = None
         db.session.add(topic)
         db.session.commit()
-        if form.add_community.data:
-            community = Community.query.get(form.add_community.data)
-            community.topic_id = topic.id
-            topic.num_communities += 1
-            db.session.commit()
+
         flash(_('Saved'))
         return redirect(url_for('admin.admin_topics'))
 
@@ -379,20 +367,22 @@ def admin_topic_add():
 def admin_topic_edit(topic_id):
     form = EditTopicForm()
     topic = Topic.query.get_or_404(topic_id)
-    form.add_community.choices = communities_for_form()
+    form.parent_id.choices = topics_for_form(topic_id)
     if form.validate_on_submit():
         topic.name = form.name.data
-        topic.num_communities = topic.communities.count() + 1
+        topic.num_communities = topic.communities.count()
         topic.machine_name = form.machine_name.data
-        if form.add_community.data:
-            community = Community.query.get(form.add_community.data)
-            community.topic_id = topic.id
+        if form.parent_id.data:
+            topic.parent_id = form.parent_id.data
+        else:
+            topic.parent_id = None
         db.session.commit()
         flash(_('Saved'))
         return redirect(url_for('admin.admin_topics'))
     else:
         form.name.data = topic.name
         form.machine_name.data = topic.machine_name
+        form.parent_id.data = topic.parent_id
     return render_template('admin/edit_topic.html', title=_('Edit topic'), form=form, topic=topic,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()),
