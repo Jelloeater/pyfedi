@@ -144,6 +144,9 @@ def register(app):
             user_name = input("Admin user name (ideally not 'admin'): ")
             email = input("Admin email address: ")
             password = input("Admin password: ")
+            while '@' in user_name:
+                print('User name cannot be an email address.')
+                user_name = input("Admin user name (ideally not 'admin'): ")
             verification_token = random_token(16)
             private_key, public_key = RsaKeys.generate_keypair()
             admin_user = User(user_name=user_name, title=user_name,
