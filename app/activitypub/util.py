@@ -1309,7 +1309,8 @@ def update_post_from_activity(post: Post, request_json: dict):
     if 'attachment' in request_json['object'] and 'href' in request_json['object']['attachment']:
         post.url = request_json['object']['attachment']['href']
     post.nsfw = request_json['object']['sensitive']
-    if 'nsfl' in request_json['object']:
+    nsfl_in_title = '[NSFL]' in request_json['object']['name'].upper() or '(NSFL)' in request_json['object']['name'].upper()
+    if 'nsfl' in request_json['object'] or nsfl_in_title:
         post.nsfl = request_json['object']['nsfl']
     post.comments_enabled = request_json['object']['commentsEnabled']
     post.edited_at = utcnow()
@@ -1380,22 +1381,6 @@ def undo_vote(activity_log, comment, post, target_ap_id, user):
             activity_log.exception_message = 'Activity about local content which is already present'
             activity_log.result = 'ignored'
     return post
-
-
-# given an activitypub id for a post or comment, retrieve it and all it's parent objects
-def backfill_from_ap_id(ap_id: str):
-    if ap_id.startswith(f"https://{current_app.config['SERVER_NAME']}"):
-        ...
-    else:
-        try:
-            activity_data = get_request(ap_id, headers={'Accept': 'application/activity+json'})
-        except requests.exceptions.ReadTimeout:
-            time.sleep(randint(3, 10))
-            activity_data = get_request(ap_id, headers={'Accept': 'application/activity+json'})
-        if activity_data.status_code == 200:
-            actor_json = activity_data.json()
-            activity_data.close()
-            return actor_json_to_model(actor_json, address, server)
 
 
 def lemmy_site_data():
