@@ -565,9 +565,7 @@ def admin_user_edit(user_id):
         user.ap_manually_approves_followers = form.manually_approves_followers.data
 
         # Update user roles. The UI only lets the user choose 1 role but the DB structure allows for multiple roles per user.
-        for role in user.roles:
-            if role.id != form.role.data:
-                user.roles.remove(role)
+        db.session.execute(text('DELETE FROM user_role WHERE user_id = :user_id'), {'user_id': user.id})
         user.roles.append(Role.query.get(form.role.data))
         if form.role.data == 4:
             flash(_("Permissions are cached for 50 seconds so new admin roles won't take effect immediately."))
@@ -575,7 +573,7 @@ def admin_user_edit(user_id):
         db.session.commit()
         user.flush_cache()
         flash(_('Saved'))
-        return redirect(url_for('admin.admin_users'))
+        return redirect(url_for('admin.admin_users', local_remote='local' if user.is_local() else 'remote'))
     else:
         if not user.is_local():
             flash(_('This is a remote user - most settings here will be regularly overwritten with data from the original server.'), 'warning')
@@ -592,7 +590,7 @@ def admin_user_edit(user_id):
         form.searchable.data = user.searchable
         form.indexable.data = user.indexable
         form.manually_approves_followers.data = user.ap_manually_approves_followers
-        if user.roles:
+        if user.roles and user.roles.count() > 0:
             form.role.data = user.roles[0].id
 
     return render_template('admin/edit_user.html', title=_('Edit user'), form=form, user=user,
