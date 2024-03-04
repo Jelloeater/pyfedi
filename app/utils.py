@@ -319,6 +319,19 @@ def retrieve_block_list():
         return response.text
 
 
+def retrieve_peertube_block_list():
+    try:
+        response = requests.get('https://peertube_isolation.frama.io/list/peertube_isolation.json', timeout=1)
+    except:
+        return None
+    list = ''
+    if response and response.status_code == 200:
+        response_data = response.json()
+        for row in response_data['data']:
+            list += row['value'] + "\n"
+    return list.strip()
+
+
 def ensure_directory_exists(directory):
     parts = directory.split('/')
     rebuild_directory = ''

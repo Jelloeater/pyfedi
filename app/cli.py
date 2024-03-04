@@ -19,7 +19,7 @@ from app.auth.util import random_token
 from app.email import send_verification_email, send_email
 from app.models import Settings, BannedInstances, Interest, Role, User, RolePermission, Domain, ActivityPubLog, \
     utcnow, Site, Instance, File, Notification, Post, CommunityMember
-from app.utils import file_get_contents, retrieve_block_list, blocked_domains
+from app.utils import file_get_contents, retrieve_block_list, blocked_domains, retrieve_peertube_block_list
 
 
 def register(app):
@@ -111,6 +111,12 @@ def register(app):
 
             # Load initial domain block list
             block_list = retrieve_block_list()
+            if block_list:
+                for domain in block_list.split('\n'):
+                    db.session.add(Domain(name=domain.strip(), banned=True))
+
+            # Load peertube domain block list
+            block_list = retrieve_peertube_block_list()
             if block_list:
                 for domain in block_list.split('\n'):
                     db.session.add(Domain(name=domain.strip(), banned=True))
