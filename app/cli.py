@@ -307,6 +307,12 @@ def register(app):
                             account.bounces += 1
                     db.session.commit()
 
+    @app.cli.command("clean_up_old_activities")
+    def clean_up_old_activities():
+        with app.app_context():
+            db.session.query(ActivityPubLog).filter(ActivityPubLog.created_at < utcnow() - timedelta(days=3)).delete()
+            db.session.commit()
+
 
 def parse_communities(interests_source, segment):
     lines = interests_source.split("\n")
