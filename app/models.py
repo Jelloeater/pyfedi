@@ -338,7 +338,7 @@ class Community(db.Model):
         if self.ap_id is None:
             return self.name
         else:
-            return self.ap_id
+            return self.ap_id.lower()
 
     @cache.memoize(timeout=30)
     def moderators(self):
@@ -376,7 +376,8 @@ class Community(db.Model):
 
 
     def profile_id(self):
-        return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
+        retval = self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/c/{self.name}"
+        return retval.lower()
 
     def is_local(self):
         return self.ap_id is None or self.profile_id().startswith('https://' + current_app.config['SERVER_NAME'])
@@ -592,7 +593,7 @@ class User(UserMixin, db.Model):
         if self.is_local():
             return self.user_name
         else:
-            return self.ap_id
+            return self.ap_id.lower()
 
     def followers_url(self):
         if self.ap_followers_url:
@@ -678,7 +679,8 @@ class User(UserMixin, db.Model):
             join(CommunityMember).filter(CommunityMember.is_banned == False, CommunityMember.user_id == self.id).all()
 
     def profile_id(self):
-        return self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
+        result = self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
+        return result.lower()
 
     def created_recently(self):
         return self.created and self.created > utcnow() - timedelta(days=7)
