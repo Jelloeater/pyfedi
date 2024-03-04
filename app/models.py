@@ -593,7 +593,7 @@ class User(UserMixin, db.Model):
         if self.is_local():
             return self.user_name
         else:
-            return self.ap_id.lower()
+            return self.ap_id
 
     def followers_url(self):
         if self.ap_followers_url:
@@ -680,7 +680,7 @@ class User(UserMixin, db.Model):
 
     def profile_id(self):
         result = self.ap_profile_id if self.ap_profile_id else f"https://{current_app.config['SERVER_NAME']}/u/{self.user_name}"
-        return result.lower()
+        return result
 
     def created_recently(self):
         return self.created and self.created > utcnow() - timedelta(days=7)
