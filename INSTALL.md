@@ -1,109 +1,90 @@
-Mac OS
----
-Install Python Version Manager (pyenv)
-see this site: https://opensource.com/article/19/5/python-3-default-mac
-    
-    brew install pyenv
+# Contents
 
-Install Python3 version and set as default (with pyenv) 
+* [Setup Database](#setup-database)   
+* [Install Python Libraries](#install-python-libraries)      
+* [Install redis-server and git](#install-redis-server-and-git)      
+* [Setup pyfedi](#setup-pyfedi)
+* [Setup .env file](#setup-env-file)
+* [Initialise Database and Setup Admin account](#initialise-database-and-setup-admin-account)
+* [Run the app](#run-the-app)
+* [Database Management](#database-management)
+* [Keeping your local instance up to date](#keeping-your-local-instance-up-to=date)
+* [Running PieFed in production](#running-piefed-in-production)
+* [Pre-requisites for Mac OS](#pre-requisites-for-mac-os)
+* [Notes for Windows (WSL2)](#notes-for-windows-wsl2)        
+* [Notes for Pip Package Management](#notes-for-pip-package-management)
 
-    pyenv install 3.8.6
-    pyenv global 3.7.3
+<div id="setup-database"></div>
 
-Note..
-You may see this error when running `pip install -r requirements.txt` in regards to psycopg2:
-    
-    ld: library not found for -lssl
-    clang: error: linker command failed with exit code 1 (use -v to see invocation)
-    error: command 'clang' failed with exit status 1
+## Setup Database
 
-If this happens try installing openssl...
-Install openssl with brew install openssl if you don't have it already.
-    
-    brew install openssl
-    
-Add openssl path to LIBRARY_PATH :
-    
-    export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
+#### Install postgresql 16            
 
-Linux
----
-install these additional packages
+For installation environments that use 'apt' as a package manager:
 
-```sudo apt install python3-psycopg2 libpq-dev python3-dev redis-server```
+`sudo apt install ca-certificates pkg-config`             
+`wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -`            
+`sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'`          
+`sudo apt update`           
+`sudo apt install libpq-dev postgresql`            
 
+#### Create new DB user
 
-Pip Package Management:
----
+Choose a username and password. To use 'pyfedi' for both:     
+`sudo -iu postgres psql -c "CREATE USER pyfedi WITH PASSWORD 'pyfedi';"`      
 
-make sure you have 'wheel' installed:
-    ```pip install wheel```
+#### Create new database
 
-dump currently installed packages to file:
-    ```pip freeze > requirements.txt```
+Choose a database name, owned by your new user. For a database called and owned by 'pyfedi':      
+`sudo -iu postgres psql -c "CREATE DATABASE pyfedi WITH OWNER pyfedi;"`    
 
-install packages from a file:
-    ```pip install -r requirements.txt```
+<div id="install-python-libraries"></div>
 
-upgrade a package:
-    ```pip install --upgrade <package_name>```
+## Install Python Libraries
 
+[Pre-requisites for Mac OS](#pre-requisites-for-mac-os)         
+[Notes for Windows (WSL2)](#notes-for-windows-wsl2)        
 
----
+For installation environments that use 'apt' as a package manager:   
+`sudo apt install python3-pip python3-venv python3-dev python3-psycopg2` 
 
 
-Postgresql Setup:
----
-installing postgresql https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-18-04
+<div id="install-redis-server-and-git"></div>
 
+## Install redis-server and git
 
+For installation environments that use 'apt' as a package manager:        
+`sudo apt install redis-server`       
+`sudo apt install git` 
 
-Windows (WSL 2 - Ubuntu 22.04 LTS - Python 3.9.16)
----
-**Important**
-    Python 3.10+ or 3.11+ may cause some package or compatibility errors. If you are having issues installing packages from
-    requirements.txt, try using Python 3.8 or 3.9 instead with pyenv (https://github.com/pyenv/pyenv).
-    Follow all the setup instructions in the pyenv documentation and setup any version of either Python 3.8 or 3.9.
-    If you are getting installation errors or missing packages with pyenv, run 
+<div id="setup-pyfedi"></div>
 
-        sudo apt update
-        sudo apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev llvm
+## Setup PyFedi
 
-Install Python 3, pip, and venv
+#### Clone PyFedi            
+`git clone https://codeberg.org/rimu/pyfedi.git`
 
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get install python3 python3-pip ipython3 libpq-dev python3-psycopg2 python3-dev build-essential redis-server
-    sudo apt-get install python3-venv
+#### cd into pyfedi, set up and enter virtual environment
+`cd pyfedi`            
+`python3 -m venv ./venv`           
+`source venv/bin/activate`
 
-Setup venv first before installing other packages
-**Note**
-    (Replace <3.9> with your version number if you are using another version of Python, 
-    e.g. 'sudo apt-get install python3.10-venv' for Python 3.10. Repeat for the rest of the instructions below.)
+#### Use pip to install requirements               
+`pip install wheel`               
+`pip install -r requirements.txt`       
+(see [Notes for Windows (WSL2)](#windows-wsl2) if appropriate)        
 
-        python3.9 -m venv ./venv
-        source venv/bin/activate
+<div id="setup-env-file"></div>
 
-Make sure that your venv is also running the correct version of pyenv. You may need to re-setup venv if you setup venv before pyenv.
-
-Follow the package installation instructions above to get the packages
-
-    python3.9 -m pip install --upgrade pip setuptools wheel
-    pip install -r requirements.txt
-
-Continue with the .env setup and "Run API" sections below.
-
-
----
-
-
-.env setup
----
+## Setup .env file
 Copy env.sample to .env
 
-Edit .env to suit your server. Set the database connection up, something like this
+Edit .env to suit your server.  
+
+Using the same username, password, and database name as used when setting up database, set the connection up, something like this:
     
     DATABASE_URL=postgresql+psycopg2://username:password@localhost/database_name
+    
 
 Also change SECRET_KEY to some random sequence of numbers and letters.
 
@@ -131,85 +112,63 @@ You can also [use environment variables](https://boto3.amazonaws.com/v1/document
 Test email sending by going to https://yourdomain/test_email. It will try to send an email to the current user's email address.
 If it does not work check the log file at logs/pyfedi.log for clues.
 
----
+<div id="initialise-database-and-setup-admin-account"></div>
 
+## Initialise database, and set up admin account
+`flask init-db`       
+(choose a new username, email address, and password for your PyFedi admin account)
 
-Virtual Env setup (inside the root directory)
----
-    python3 -m venv ./venv
+<div id="run-the-app"></div>
 
-    pip install -r requirements.txt
+## Run the app             
+`flask run`          
+(open web browser at http://127.0.0.1:5000)          
+(log in with username and password from admin account)
 
----
+<div id="database-management"></div>
 
+## Database Management
 
-Database Setup 
----
-Inside api dir
-    source venv/bin/activate   (to set up virtual env if necessary)
-    export FLASK_APP=pyfedi.py
-    flask db upgrade
-    flask init-db
+In future if you use git pull and notice some new files in migrations/versions/*, you need to do:    
 
+`source venv/bin/activate`   (if not already in virtual environment)  
+`flask db upgrade`
 
-In future if you use git pull and notice some new files in migrations/versions/*, you need to do
+#### For Database changes:
 
-    flask db upgrade
+create a migration based on recent changes to app/models.py:        
+`flask db migrate -m "users table"`     
+run migrations:         
+`flask db upgrade`     
 
----
+<div id="keeping-your-local-instance-up-to=date"></div>
 
+## Keeping your local instance up to date
 
-Run development server
----
-
-    export FLASK_APP=pyfedi.py
-    flask run
-
-To enable debug mode and hot reloading, set the environment variable FLASK_ENV=development
-
-    export FLASK_ENV=development
-    export FLASK_APP=pyfedi.py
-    flask run
-
-Make sure you have activated the venv by running
-
-    source venv/bin/activate
-first!
-
-
-Database Changes
----
-create a migration based on recent changes to app/models.py:
-
-    flask db migrate -m "users table"
-
-run migrations
-
-    flask db upgrade
-
-Keeping your local instance up to date
----
 In a development environment, all you need to do is
 
-    git pull
-    flask db upgrade
+`git pull`  
+`flask db upgrade`
 
 In production, celery and flask run as background services so they need to be restarted manually. Run the `./deploy.sh` script
 to easily restart services at the same time as pulling down changes from git, etc.
 
-Federation during development
----
+<div id="federation-during-development"></div>
+
+## Federation during development
 
 Federation doesn't work without SSL, without a domain name or without your server being accessible from outside your network. So, when running on http://127.0.0.1:5000 you have none of those.
 
 The site will still run without federation. You can create local communities and post in them...
 
-My way around this is to use ngrok.com, which is a quick and simple way to create a temporary VPN with a domain and SSL. On the free plan your domain changes every few days, which will break federation. $10 per month will get you https://yourwhatever.ngrok.app which won't change. 
+My way around this is to use ngrok.com, which is a quick and simple way to create a temporary VPN with a domain and SSL. The free plan comes with ephermeral domain names that change every few days, which will break federation, or one randomly-named static domain that will need re-launching every few days. $10 per month will get you https://yourwhatever.ngrok.app which won't change. 
 
 Once you have ngrok working, edit the .env file and change the SERVER_NAME variable to your new domain name. 
 
-Running PieFed in production
----
+<div id="running-piefed-in-production"></div>
+
+## Running PieFed in production
+
 
 Copy celery_worker.default.py to celery_worker.py. Edit DATABASE_URL and SERVER_NAME to have the same values as in .env.
 
@@ -221,15 +180,14 @@ also [see this](https://pganalyze.com/blog/5mins-postgres-tuning-huge-pages).
 
 (PgBouncer)[https://www.pgbouncer.org] can be helpful in a high traffic situation.
 
----
+<div id="background-services"></div>
 
+### Background services
 
-Background services
----
 
 Gunicorn and Celery need to run as background services:
 
-### Gunicorn
+#### Gunicorn
 
 Create a new file:
 
@@ -254,7 +212,7 @@ Add the following to the new file, altering paths as appropriate for your instal
     [Install]
     WantedBy=multi-user.target
 
-### Celery
+#### Celery
 
 Create another file:
 
@@ -305,7 +263,7 @@ Contents (change paths to suit):
     CELERY_BIN=/home/rimu/pyfedi/venv/bin/celery
     CELERYD_OPTS="--autoscale=5,1"
 
-### Enable and start background services
+#### Enable and start background services
 
     sudo systemctl enable pyfedi.service
     sudo systemctl enable celery.service
@@ -325,11 +283,7 @@ Inspect log files at:
     /your_piefed_installation/logs/pyfedi.log
 
 
----
-
-
-Nginx
----
+### Nginx
 
 You need a reverse proxy that sends all traffic to port 5000. Something like:
 
@@ -367,11 +321,8 @@ You need a reverse proxy that sends all traffic to port 5000. Something like:
 
 The above is not a complete configuration - you will want to add more settings for SSL, etc.
 
----
+### Cron tasks
 
-
-Cron tasks
----
 
 To send email reminders about unread notifications, put this in a new file under /etc/cron.d
 
@@ -387,31 +338,115 @@ Once a week or so it's good to run remove_orphan_files.sh to save disk space:
 5 4 * * 1 rimu cd /home/rimu/pyfedi && /home/rimu/pyfedi/remove_orphan_files.sh
 ```
 
----
-
-
-Email
----
+### Email
 
 Email can be sent either through SMTP or Amazon web services (SES). SES is faster but PieFed does not send much
 email so it probably doesn't matter which method you choose.
 
-### AWS SES
+#### AWS SES
 
 PieFed uses Amazon's "boto3" module to connect to SES. Boto3 needs to log into AWS and that can be set up using a file
 at ~/.aws/credentials or environment variables. Details at https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html.
 
 In your .env you need to set the AWS region you're using for SES. Something like AWS_REGION = 'ap-southeast-2'.
 
-### SMTP
+#### SMTP
 
 To use SMTP you need to set all the MAIL_* environment variables in you .env file. See env.sample for a list of them.
 
-### Testing email
+#### Testing email
 
 You need to set MAIL_FROM in .env to some email address.
 
 Log into Piefed then go to https://yourdomain/test_email to trigger a test email. It will use SES or SMTP depending on
 which environment variables you defined in .env. If MAIL_SERVER is empty it will try SES. Then if AWS_REGION is empty it'll
 silently do nothing.
+
+---
+
+
+<div id="pre-requisites-for-mac-os"></div>
+
+## Pre-requisites for Mac OS
+
+#### Install Python Version Manager (pyenv)
+see this site: https://opensource.com/article/19/5/python-3-default-mac
+    
+`brew install pyenv`
+
+#### Install Python3 version and set as default (with pyenv) 
+
+`pyenv install 3.8.6`  
+`pyenv global 3.7.3`
+
+Note..
+You may see this error when running `pip install -r requirements.txt` in regards to psycopg2:
+    
+    ld: library not found for -lssl
+    clang: error: linker command failed with exit code 1 (use -v to see invocation)
+    error: command 'clang' failed with exit status 1
+
+If this happens try installing openssl...
+Install openssl with brew install openssl if you don't have it already.
+    
+`brew install openssl`
+    
+Add openssl path to LIBRARY_PATH :
+    
+    export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/opt/openssl/lib/
+    
+---
+
+<div id="notes-for-windows-wsl2"></div>
+
+## Notes for Windows (WSL 2 - Ubuntu 22.04 LTS - Python 3.9.16)
+
+**Important:**
+    Python 3.10+ or 3.11+ may cause some package or compatibility errors. If you are having issues installing packages from
+    requirements.txt, try using Python 3.8 or 3.9 instead with pyenv (https://github.com/pyenv/pyenv).
+    Follow all the setup instructions in the pyenv documentation and setup any version of either Python 3.8 or 3.9.
+    If you are getting installation errors or missing packages with pyenv, run 
+
+`sudo apt update`
+`sudo apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev llvm`
+
+#### Install Python 3, pip, and venv
+
+`sudo apt-get update`
+`sudo apt-get upgrade`
+`sudo apt-get install python3 python3-pip ipython3 libpq-dev python3-psycopg2 python3-dev build-essential redis-server`
+`sudo apt-get install python3-venv`
+
+#### Setup venv first before installing other packages
+**Note: **
+    (Replace <3.9> with your version number if you are using another version of Python, 
+    e.g. 'sudo apt-get install python3.10-venv' for Python 3.10. Repeat for the rest of the instructions below.)
+
+`python3.9 -m venv ./venv`   
+`source venv/bin/activate`
+
+Make sure that your venv is also running the correct version of pyenv. You may need to re-setup venv if you setup venv before pyenv.
+
+Follow the package installation instructions above to get the packages
+
+`python3.9 -m pip install --upgrade pip setuptools wheel`   
+`pip install -r requirements.txt`
+
+<div id="notes-for-pip-package-management"></div>
+
+---
+
+## Notes for Pip Package Management:
+
+make sure you have 'wheel' installed:
+`pip install wheel`
+    
+install packages from a file:
+`pip install -r requirements.txt`
+
+dump currently installed packages to file:
+`pip freeze > requirements.txt`
+
+upgrade a package:
+`pip install --upgrade <package_name>`
 
