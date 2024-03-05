@@ -75,7 +75,7 @@ def show_post(post_id: int):
 
         reply = PostReply(user_id=current_user.id, post_id=post.id, community_id=community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
-                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
+                          from_bot=current_user.bot, nsfw=post.nsfw, nsfl=post.nsfl,
                           notify_author=form.notify_author.data, instance_id=1)
         if post.notify_author and current_user.id != post.user_id:
             notification = Notification(title=shorten_string(_('Reply from %(name)s on %(post_title)s',
@@ -208,16 +208,16 @@ def post_vote(post_id: int, vote_direction):
                 post.score -= 2
                 downvoted_class = 'voted_down'
         else:  # previous vote was down
-            if vote_direction == 'upvote':  # new vote is upvote
+            if vote_direction == 'downvote':  # new vote is also down, so remove it
+                db.session.delete(existing_vote)
+                post.down_votes -= 1
+                post.score += 1
+            else:  # new vote is up while previous vote was down, so reverse their previous vote
                 existing_vote.effect = 1
                 post.up_votes += 1
                 post.down_votes -= 1
-                post.score += 1
-                upvoted_class = 'voted_up'
-            else:  # reverse a previous downvote
-                db.session.delete(existing_vote)
-                post.down_votes -= 1
                 post.score += 2
+                upvoted_class = 'voted_up'
     else:
         if vote_direction == 'upvote':
             effect = 1
@@ -303,16 +303,16 @@ def comment_vote(comment_id, vote_direction):
                 comment.score -= 2
                 downvoted_class = 'voted_down'
         else:  # previous vote was down
-            if vote_direction == 'upvote':  # new vote is upvote
+            if vote_direction == 'downvote':  # new vote is also down, so remove it
+                db.session.delete(existing_vote)
+                comment.down_votes -= 1
+                comment.score += 1
+            else:  # new vote is up while previous vote was down, so reverse their previous vote
                 existing_vote.effect = 1
                 comment.up_votes += 1
                 comment.down_votes -= 1
-                comment.score += 1
-                upvoted_class = 'voted_up'
-            else:  # reverse a previous downvote
-                db.session.delete(existing_vote)
-                comment.down_votes -= 1
                 comment.score += 2
+                upvoted_class = 'voted_up'
     else:
         if vote_direction == 'upvote':
             effect = 1
@@ -422,7 +422,7 @@ def add_reply(post_id: int, comment_id: int):
         reply = PostReply(user_id=current_user.id, post_id=post.id, parent_id=in_reply_to.id, depth=in_reply_to.depth + 1,
                           community_id=post.community.id, body=form.body.data,
                           body_html=markdown_to_html(form.body.data), body_html_safe=True,
-                          from_bot=current_user.bot, up_votes=1, nsfw=post.nsfw, nsfl=post.nsfl,
+                          from_bot=current_user.bot, nsfw=post.nsfw, nsfl=post.nsfl,
                           notify_author=form.notify_author.data, instance_id=1)
         db.session.add(reply)
         if in_reply_to.notify_author and current_user.id != in_reply_to.user_id and in_reply_to.author.ap_id is None:    # todo: check if replier is blocked
