@@ -208,16 +208,16 @@ def post_vote(post_id: int, vote_direction):
                 post.score -= 2
                 downvoted_class = 'voted_down'
         else:  # previous vote was down
-            if vote_direction == 'upvote':  # new vote is upvote
+            if vote_direction == 'downvote':  # new vote is also down, so remove it
+                db.session.delete(existing_vote)
+                post.down_votes -= 1
+                post.score += 1
+            else:  # new vote is up while previous vote was down, so reverse their previous vote
                 existing_vote.effect = 1
                 post.up_votes += 1
                 post.down_votes -= 1
-                post.score += 1
-                upvoted_class = 'voted_up'
-            else:  # reverse a previous downvote
-                db.session.delete(existing_vote)
-                post.down_votes -= 1
                 post.score += 2
+                upvoted_class = 'voted_up'
     else:
         if vote_direction == 'upvote':
             effect = 1
@@ -303,16 +303,16 @@ def comment_vote(comment_id, vote_direction):
                 comment.score -= 2
                 downvoted_class = 'voted_down'
         else:  # previous vote was down
-            if vote_direction == 'upvote':  # new vote is upvote
+            if vote_direction == 'downvote':  # new vote is also down, so remove it
+                db.session.delete(existing_vote)
+                comment.down_votes -= 1
+                comment.score += 1
+            else:  # new vote is up while previous vote was down, so reverse their previous vote
                 existing_vote.effect = 1
                 comment.up_votes += 1
                 comment.down_votes -= 1
-                comment.score += 1
-                upvoted_class = 'voted_up'
-            else:  # reverse a previous downvote
-                db.session.delete(existing_vote)
-                comment.down_votes -= 1
                 comment.score += 2
+                upvoted_class = 'voted_up'
     else:
         if vote_direction == 'upvote':
             effect = 1
