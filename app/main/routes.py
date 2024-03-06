@@ -147,7 +147,7 @@ def home_page(type, sort):
 @bp.route('/topics', methods=['GET'])
 def list_topics():
     verification_warning()
-    topics = Topic.query.order_by(Topic.name).all()
+    topics = Topic.query.filter_by(parent_id=None).order_by(Topic.name).all()
 
     return render_template('list_topics.html', topics=topics, title=_('Browse by topic'),
                            low_bandwidth=request.cookies.get('low_bandwidth', '0') == '1',

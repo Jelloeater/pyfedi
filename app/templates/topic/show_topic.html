@@ -17,7 +17,14 @@
         </nav>
         <h1 class="mt-2">{{ topic.name }}
         </h1>
-
+        {% if sub_topics %}
+        <h3 class="mb-0" id="sub-topics">{{ _('Sub-topics') }}</h3>
+        <ul class="nav" role="listbox" aria-labelledby="sub-topics">
+        {% for topic in sub_topics %}
+            <li class="nav-item" role="option"><a class="nav-link" href="/topic/{{ topic.machine_name }}">{{ topic.name }}</a></li>
+        {% endfor %}
+        </ul>
+        {% endif %}
         {% include "community/_community_nav.html" %}
         {% if post_layout == 'masonry' or post_layout == 'masonry_wide' %}
             <div class="post_list_{{ post_layout }}">

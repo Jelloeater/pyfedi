@@ -77,9 +77,12 @@ def show_topic(topic_name):
                            topic_name=topic_name,
                            page=posts.prev_num, sort=sort, layout=post_layout) if posts.has_prev and page != 1 else None
 
+        sub_topics = Topic.query.filter_by(parent_id=topic.id).order_by(Topic.name).all()
+
         return render_template('topic/show_topic.html', title=_(topic.name), posts=posts, topic=topic, sort=sort,
                                page=page, post_layout=post_layout, next_url=next_url, prev_url=prev_url,
                                topic_communities=topic_communities, content_filters=content_filters,
+                               sub_topics=sub_topics,
                                rss_feed=f"https://{current_app.config['SERVER_NAME']}/topic/{topic_name}.rss",
                                rss_feed_name=f"{topic.name} on {g.site.name}",
                                show_post_community=True, moderating_communities=moderating_communities(current_user.get_id()),
