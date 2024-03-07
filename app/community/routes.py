@@ -327,14 +327,8 @@ def unsubscribe(actor):
                         'id': undo_id,
                         'object': follow
                     }
-                    activity = ActivityPubLog(direction='out', activity_id=undo_id, activity_type='Undo',
-                                              activity_json=json.dumps(undo), result='processing')
-                    db.session.add(activity)
-                    db.session.commit()
                     success = post_request(community.ap_inbox_url, undo, current_user.private_key,
                                                                current_user.profile_id() + '#main-key')
-                    activity.result = 'success'
-                    db.session.commit()
                     if not success:
                         flash('There was a problem while trying to unsubscribe', 'error')
 
