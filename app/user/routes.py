@@ -25,7 +25,10 @@ import os
 @bp.route('/people', methods=['GET', 'POST'])
 @login_required
 def show_people():
-    people = User.query.filter_by(ap_id=None, deleted=False, banned=False).all()
+    if current_user.is_admin():
+        people = User.query.filter_by(ap_id=None, deleted=False, banned=False).all()
+    else:
+        people = User.query.filter_by(ap_id=None, deleted=False, banned=False, searchable=True).all()
     return render_template('user/people.html', people=people, moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id()), title=_('People'))
 

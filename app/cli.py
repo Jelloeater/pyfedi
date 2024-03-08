@@ -86,7 +86,7 @@ def register(app):
             db.session.add(Settings(name='registration_open', value=json.dumps(True)))
             db.session.add(Settings(name='approve_registrations', value=json.dumps(False)))
             db.session.add(Settings(name='federation', value=json.dumps(True)))
-            banned_instances = ['lemmygrad.ml', 'gab.com', 'rqd2.net', 'exploding-heads.com', 'hexbear.net', 'threads.net', 'pieville.net', 'noauthority.social', 'pieville.net', 'links.hackliberty.org']
+            banned_instances = ['anonib.al','lemmygrad.ml', 'gab.com', 'rqd2.net', 'exploding-heads.com', 'hexbear.net', 'threads.net', 'pieville.net', 'noauthority.social', 'pieville.net', 'links.hackliberty.org']
             for bi in banned_instances:
                 db.session.add(BannedInstances(domain=bi))
                 print("Added banned instance", bi)

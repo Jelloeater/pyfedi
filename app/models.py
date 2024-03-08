@@ -207,6 +207,8 @@ class File(db.Model):
             os.unlink(self.file_path)
         if self.thumbnail_path and os.path.isfile(self.thumbnail_path):
             os.unlink(self.thumbnail_path)
+        if self.source_url and not self.source_url.startswith('http') and os.path.isfile(self.source_url):
+            os.unlink(self.source_url)
 
     def filesize(self):
         size = 0

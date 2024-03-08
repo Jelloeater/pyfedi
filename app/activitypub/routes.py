@@ -722,10 +722,12 @@ def process_inbox_request(request_json, activitypublog_id, ip_address):
                         if user and community:
                             join_request = CommunityJoinRequest.query.filter_by(user_id=user.id, community_id=community.id).first()
                             if join_request:
-                                member = CommunityMember(user_id=user.id, community_id=community.id)
-                                db.session.add(member)
-                                community.subscriptions_count += 1
-                                db.session.commit()
+                                existing_membership = CommunityMember.query.filter_by(user_id=user.id, community_id=community.id).first()
+                                if not existing_membership:
+                                    member = CommunityMember(user_id=user.id, community_id=community.id)
+                                    db.session.add(member)
+                                    community.subscriptions_count += 1
+                                    db.session.commit()
                                 activity_log.result = 'success'
                                 cache.delete_memoized(community_membership, user, community)
 

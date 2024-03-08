@@ -10,7 +10,7 @@ from typing import List, Literal, Union
 
 import markdown2
 import math
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode
 from functools import wraps
 import flask
 from bs4 import BeautifulSoup, NavigableString
@@ -163,7 +163,7 @@ def is_image_url(url):
 def allowlist_html(html: str) -> str:
     if html is None or html == '':
         return ''
-    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h3', 'h4', 'h5', 'pre',
+    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre',
                     'code', 'img', 'details', 'summary', 'table', 'tr', 'td', 'th', 'tbody', 'thead']
     # Parse the HTML using BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
@@ -260,9 +260,12 @@ def markdown_to_text(markdown_text) -> str:
 def domain_from_url(url: str, create=True) -> Domain:
     parsed_url = urlparse(url.lower().replace('www.', ''))
     if parsed_url and parsed_url.hostname:
-        domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
+        find_this = parsed_url.hostname.lower()
+        if find_this == 'youtu.be':
+            find_this = 'youtube.com'
+        domain = Domain.query.filter_by(name=find_this).first()
         if create and domain is None:
-            domain = Domain(name=parsed_url.hostname.lower())
+            domain = Domain(name=find_this)
             db.session.add(domain)
             db.session.commit()
         return domain
@@ -745,3 +748,28 @@ def sha256_digest(input_string):
     sha256_hash = hashlib.sha256()
     sha256_hash.update(input_string.encode('utf-8'))
     return sha256_hash.hexdigest()
+
+
+def remove_tracking_from_link(url):
+    parsed_url = urlparse(url)
+
+    if parsed_url.netloc == 'youtu.be':
+        # Extract video ID
+        video_id = parsed_url.path[1:]  # Remove leading slash
+
+        # Preserve 't' parameter if it exists
+        query_params = parse_qs(parsed_url.query)
+        if 't' in query_params:
+            new_query_params = {'t': query_params['t']}
+            new_query_string = urlencode(new_query_params, doseq=True)
+        else:
+            new_query_string = ''
+
+        cleaned_url = f"https://youtu.be/{video_id}"
+        if new_query_string:
+            cleaned_url += f"?{new_query_string}"
+
+        return cleaned_url
+    else:
+        return url
+
