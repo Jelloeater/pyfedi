@@ -120,6 +120,7 @@ def register(app):
             if block_list:
                 for domain in block_list.split('\n'):
                     db.session.add(Domain(name=domain.strip(), banned=True))
+            db.session.add(Domain(name='anonib.al', banned=True))
 
             # Initial roles
             anon_role = Role(name='Anonymous user', weight=0)
