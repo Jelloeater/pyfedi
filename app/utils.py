@@ -260,9 +260,12 @@ def markdown_to_text(markdown_text) -> str:
 def domain_from_url(url: str, create=True) -> Domain:
     parsed_url = urlparse(url.lower().replace('www.', ''))
     if parsed_url and parsed_url.hostname:
-        domain = Domain.query.filter_by(name=parsed_url.hostname.lower()).first()
+        find_this = parsed_url.hostname.lower()
+        if find_this == 'youtu.be':
+            find_this = 'youtube.com'
+        domain = Domain.query.filter_by(name=find_this).first()
         if create and domain is None:
-            domain = Domain(name=parsed_url.hostname.lower())
+            domain = Domain(name=find_this)
             db.session.add(domain)
             db.session.commit()
         return domain
@@ -747,7 +750,7 @@ def sha256_digest(input_string):
     return sha256_hash.hexdigest()
 
 
-def clean_link(url):
+def remove_tracking_from_link(url):
     # strip ?si=abcDEFgh from youtu.be links
     clean = re.search(r"(https://youtu.be/\w+)", url)
 

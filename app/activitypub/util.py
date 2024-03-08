@@ -24,7 +24,7 @@ import pytesseract
 
 from app.utils import get_request, allowlist_html, html_to_markdown, get_setting, ap_datetime, markdown_to_html, \
     is_image_url, domain_from_url, gibberish, ensure_directory_exists, markdown_to_text, head_request, post_ranking, \
-    shorten_string, reply_already_exists, reply_is_just_link_to_gif_reaction, confidence, clean_link
+    shorten_string, reply_already_exists, reply_is_just_link_to_gif_reaction, confidence, remove_tracking_from_link
 
 
 def public_key():
@@ -1227,7 +1227,7 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
                 post.image = image
             else:
                 post.type = POST_TYPE_LINK
-                post.url = clean_link(post.url)
+                post.url = remove_tracking_from_link(post.url)
             domain = domain_from_url(post.url)
             # notify about links to banned websites.
             already_notified = set()  # often admins and mods are the same people - avoid notifying them twice
