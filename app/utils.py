@@ -163,7 +163,7 @@ def is_image_url(url):
 def allowlist_html(html: str) -> str:
     if html is None or html == '':
         return ''
-    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h3', 'h4', 'h5', 'pre',
+    allowed_tags = ['p', 'strong', 'a', 'ul', 'ol', 'li', 'em', 'blockquote', 'cite', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre',
                     'code', 'img', 'details', 'summary', 'table', 'tr', 'td', 'th', 'tbody', 'thead']
     # Parse the HTML using BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
@@ -745,3 +745,14 @@ def sha256_digest(input_string):
     sha256_hash = hashlib.sha256()
     sha256_hash.update(input_string.encode('utf-8'))
     return sha256_hash.hexdigest()
+
+
+def clean_link(url):
+    # strip ?si=abcDEFgh from youtu.be links
+    clean = re.search(r"(https://youtu.be/\w+)", url)
+
+    if clean is not None:
+        return clean.group(1)
+    else:
+        return url
+

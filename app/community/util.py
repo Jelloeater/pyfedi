@@ -15,7 +15,7 @@ from app.constants import POST_TYPE_ARTICLE, POST_TYPE_LINK, POST_TYPE_IMAGE
 from app.models import Community, File, BannedInstances, PostReply, PostVote, Post, utcnow, CommunityMember, Site, \
     Instance, Notification, User
 from app.utils import get_request, gibberish, markdown_to_html, domain_from_url, allowlist_html, \
-    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string, parse_page
+    html_to_markdown, is_image_url, ensure_directory_exists, inbox_domain, post_ranking, shorten_string, parse_page, clean_link
 from sqlalchemy import func
 import os
 
@@ -177,7 +177,7 @@ def save_post(form, post: Post):
         post.body = form.link_body.data
         post.body_html = markdown_to_html(post.body)
         url_changed = post.id is None or form.link_url.data != post.url
-        post.url = form.link_url.data
+        post.url = clean_link(form.link_url.data)
         post.type = POST_TYPE_LINK
         domain = domain_from_url(form.link_url.data)
         domain.post_count += 1
