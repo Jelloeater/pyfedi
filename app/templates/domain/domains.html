@@ -6,6 +6,7 @@
 {% from 'bootstrap/form.html' import render_form %}
 
 {% block app_content %}
+
 <div class="row">
     <div class="col-12 col-md-8 position-relative main_pane">
         <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
@@ -14,25 +15,57 @@
             <li class="breadcrumb-item active">Domains</li>
           </ol>
         </nav>
+
+        <div class="btn-group mt-1 mb-2">
+            <a href="#" class="btn {{ 'btn-primary' if sort == 'hot' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+                {{ _('Banned') }}
+            </a>
+            <a href="#" class="btn {{ 'btn-primary' if sort == 'top' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+                {{ _('Allowed') }}
+            </a>
+            <a href="#" class="btn {{ 'btn-primary' if sort == 'new' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+                {{ _('Blocked') }}
+            </a>
+            <a href="#" class="btn {{ 'btn-primary' if sort == 'active' else 'btn-outline-secondary' }}" rel="nofollow noindex">
+                {{ _('Active') }}
+            </a>
+        </div>
+
         {% if search == '' %}
         <h1 class="mt-2">{{ _('All known domains') }}</h1>
         {% else %}
         <h1 class="mt-2">{{ _('Domains containing %(search)s', search=search) }}</h1>
         {% endif %}
         <form method="get"><input type="search" name="search" value="{{ search }}" placeholder="{{ _('Search') }}" autofocus></form>
+
         <table class="table table-striped">
-            <thead>
+            <tr>
+               <th>Domain</th>
+               <th><span title="{{ _('How many times has something on this domain been posted?') }}"># Posts</span></th>
+               <th><span title="{{ _('Has the domain been banned or allowed?') }}">Status</span></th>
+               <th>Actions</th>
+            </tr>
+            {% for domain in domains %}
                 <tr>
-                    <th>{{ _('Domain') }}</th>
+                    <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
+                    <td>{{ domain.post_count  }}</td>
+                    <th>{{ 'Banned'|safe if domain.banned else 'Allowed'|safe }}</th>
+                    <td>
+                        {% if domain.blocked_by(current_user) %}
+                        <a href="/d/{{ domain.id }}/unblock" title="{{ _('Unblocking the domain allows you to see posts with that domain again') }}">{{ _('Unblock') }}</a> 
+                        {% else %}
+                        <a href="/d/{{ domain.id }}/block" title="{{ _('Blocking the domain means you wont see posts that reference it') }}">{{ _('Block') }}</a>
+                        {% endif %}
+                        {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
+                            {% if domain.banned %}
+                                    <a class="confirm_first" title="{{ _('Unbanning this domain allows future posts linking to that domain.') }}" href="/d/{{ domain.id }}/unban">{{ _('Unban') }}</a>
+                            {% else %}
+                                    <a class="confirm_first" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                {% for domain in domains %}
-                    <tr>
-                        <th><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></th>
-                    </tr>
-                {% endfor %}
-            </tbody>
+            {% endfor %}
         </table>
         <nav aria-label="Pagination" class="mt-4" role="navigation">
         {% if prev_url %}
@@ -47,13 +80,6 @@
         {% endif %}
         </nav>
     </div>
-
-    <aside id="side_pane" class="col-12 col-md-4 side_pane" role="complementary">
-
-    </aside>
-</div>
-<div class="row">
-
-
 </div>
 {% endblock %}
+

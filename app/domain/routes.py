@@ -56,7 +56,7 @@ def domains():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
 
-    domains = Domain.query.filter_by(banned=False)
+    domains = Domain.query#.filter_by(banned=False)
     if search != '':
         domains = domains.filter(Domain.name.ilike(f'%{search}%'))
     domains = domains.order_by(Domain.name)
