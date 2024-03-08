@@ -2,7 +2,7 @@
 
 * [Setup Database](#setup-database)   
 * [Install Python Libraries](#install-python-libraries)      
-* [Install redis-server and git](#install-redis-server-and-git)      
+* [Install additional requirements](#install-additional-requirements)      
 * [Setup pyfedi](#setup-pyfedi)
 * [Setup .env file](#setup-env-file)
 * [Initialise Database and Setup Admin account](#initialise-database-and-setup-admin-account)
@@ -49,13 +49,14 @@ For installation environments that use 'apt' as a package manager:
 `sudo apt install python3-pip python3-venv python3-dev python3-psycopg2` 
 
 
-<div id="install-redis-server-and-git"></div>
+<div id="install-additional-requirements"></div>
 
-## Install redis-server and git
+## Install additional requirements
 
 For installation environments that use 'apt' as a package manager:        
 `sudo apt install redis-server`       
-`sudo apt install git` 
+`sudo apt install git`     
+`sudo apt install tesseract-ocr`
 
 <div id="setup-pyfedi"></div>
 
