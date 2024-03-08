@@ -10,7 +10,7 @@ from typing import List, Literal, Union
 
 import markdown2
 import math
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode
 from functools import wraps
 import flask
 from bs4 import BeautifulSoup, NavigableString
@@ -751,11 +751,25 @@ def sha256_digest(input_string):
 
 
 def remove_tracking_from_link(url):
-    # strip ?si=abcDEFgh from youtu.be links
-    clean = re.search(r"(https://youtu.be/\w+)", url)
+    parsed_url = urlparse(url)
 
-    if clean is not None:
-        return clean.group(1)
+    if parsed_url.netloc == 'youtu.be':
+        # Extract video ID
+        video_id = parsed_url.path[1:]  # Remove leading slash
+
+        # Preserve 't' parameter if it exists
+        query_params = parse_qs(parsed_url.query)
+        if 't' in query_params:
+            new_query_params = {'t': query_params['t']}
+            new_query_string = urlencode(new_query_params, doseq=True)
+        else:
+            new_query_string = ''
+
+        cleaned_url = f"https://youtu.be/{video_id}"
+        if new_query_string:
+            cleaned_url += f"?{new_query_string}"
+
+        return cleaned_url
     else:
         return url
 
