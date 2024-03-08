@@ -81,7 +81,7 @@ class CreatePostForm(FlaskForm):
                 return False
             domain = domain_from_url(self.link_url.data, create=False)
             if domain and domain.banned:
-                self.link_url.errors.append(_(f"Links to %s are not allowed.".format(domain.name)))
+                self.link_url.errors.append(_("Links to %s are not allowed." % (domain.name)))
                 return False
         elif self.post_type.data == 'image':
             if self.image_title.data == '':

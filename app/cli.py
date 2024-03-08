@@ -86,16 +86,13 @@ def register(app):
             db.session.add(Settings(name='registration_open', value=json.dumps(True)))
             db.session.add(Settings(name='approve_registrations', value=json.dumps(False)))
             db.session.add(Settings(name='federation', value=json.dumps(True)))
-            db.session.add(BannedInstances(domain='lemmygrad.ml'))
-            db.session.add(BannedInstances(domain='gab.com'))
-            db.session.add(BannedInstances(domain='rqd2.net'))
-            db.session.add(BannedInstances(domain='exploding-heads.com'))
-            db.session.add(BannedInstances(domain='hexbear.net'))
-            db.session.add(BannedInstances(domain='threads.net'))
-            db.session.add(BannedInstances(domain='pieville.net'))
-            db.session.add(BannedInstances(domain='noauthority.social'))
-            db.session.add(BannedInstances(domain='pieville.net'))
-            db.session.add(BannedInstances(domain='links.hackliberty.org'))
+            banned_instances = ['anonib.al','lemmygrad.ml', 'gab.com', 'rqd2.net', 'exploding-heads.com', 'hexbear.net', 'threads.net', 'pieville.net', 'noauthority.social', 'pieville.net', 'links.hackliberty.org']
+            for bi in banned_instances:
+                db.session.add(BannedInstances(domain=bi))
+                print("Added banned instance", bi)
+
+            print("Populating DB with instances and interests")
+            print("See interests.txt")
             interests = file_get_contents('interests.txt')
             db.session.add(Interest(name='🕊 Chilling', communities=parse_communities(interests, 'chilling')))
             db.session.add(Interest(name='💭 Interesting stuff', communities=parse_communities(interests, 'interesting stuff')))
@@ -114,13 +111,14 @@ def register(app):
             if block_list:
                 for domain in block_list.split('\n'):
                     db.session.add(Domain(name=domain.strip(), banned=True))
+                print("Added 'No-QAnon' blocklist, see https://github.com/rimu/no-qanon")
 
             # Load peertube domain block list
             block_list = retrieve_peertube_block_list()
             if block_list:
                 for domain in block_list.split('\n'):
                     db.session.add(Domain(name=domain.strip(), banned=True))
-            db.session.add(Domain(name='anonib.al', banned=True))
+                print("Added 'Peertube Isolation' blocklist, see https://peertube_isolation.frama.io/")
 
             # Initial roles
             anon_role = Role(name='Anonymous user', weight=0)
