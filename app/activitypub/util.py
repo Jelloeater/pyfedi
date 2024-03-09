@@ -115,13 +115,16 @@ def send_activity(sender: User, host: str, content: str):
 
 
 def post_to_activity(post: Post, community: Community):
+    # local PieFed posts do not have a create or announce id
+    create_id = post.ap_create_id if post.ap_create_id else f"https://{current_app.config['SERVER_NAME']}/activities/create/{gibberish(15)}"
+    announce_id = post.ap_announce_id if post.ap_announce_id else f"https://{current_app.config['SERVER_NAME']}/activities/announce/{gibberish(15)}"
     activity_data = {
         "actor": f"https://{current_app.config['SERVER_NAME']}/c/{community.name}",
         "to": [
             "https://www.w3.org/ns/activitystreams#Public"
         ],
         "object": {
-            "id": f"https://{current_app.config['SERVER_NAME']}/activities/create/{post.ap_create_id}",
+            "id": create_id,
             "actor": f"https://{current_app.config['SERVER_NAME']}/u/{post.author.user_name}",
             "to": [
                 "https://www.w3.org/ns/activitystreams#Public"
@@ -159,7 +162,7 @@ def post_to_activity(post: Post, community: Community):
             f"https://{current_app.config['SERVER_NAME']}/c/{community.name}/followers"
         ],
         "type": "Announce",
-        "id": f"https://{current_app.config['SERVER_NAME']}/activities/announce/{post.ap_announce_id}"
+        "id": announce_id
     }
     if post.edited_at is not None:
         activity_data["object"]["object"]["updated"] = ap_datetime(post.edited_at)
