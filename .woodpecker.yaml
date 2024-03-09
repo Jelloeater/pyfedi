@@ -1,9 +1,7 @@
 steps:
   - name: docker-build
-
-docker-build:
-  image: woodpeckerci/plugin-docker-buildx
-  settings:
-    repo: codeberg.org/${CI_REPO_OWNER}/pyfedi
-    registry: codeberg.org
-    dry-run: true
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: codeberg.org/${CI_REPO_OWNER}/pyfedi
+      registry: codeberg.org
+      dry-run: true
