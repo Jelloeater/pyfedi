@@ -166,7 +166,7 @@ def post_to_activity(post: Post, community: Community):
     if post.language is not None:
         activity_data["object"]["object"]["language"] = {"identifier": post.language}
     if post.type == POST_TYPE_LINK and post.url is not None:
-        activity_data["object"]["object"]["attachment"] = {"href": post.url, "type": "Link"}
+        activity_data["object"]["object"]["attachment"] = [{"href": post.url, "type": "Link"}]
     if post.image_id is not None:
         activity_data["object"]["object"]["image"] = {"url": post.image.view_url(), "type": "Image"}
         if post.image.alt_text:
@@ -598,9 +598,7 @@ def post_json_to_model(post_json, user, community) -> Post:
         elif 'content' in post_json:
             post.body_html = allowlist_html(post_json['content'])
             post.body = html_to_markdown(post.body_html)
-        if 'attachment' in post_json and \
-                len(post_json['attachment']) > 0 and \
-                'type' in post_json['attachment'][0]:
+        if 'attachment' in post_json and len(post_json['attachment']) > 0 and 'type' in post_json['attachment'][0]:
             if post_json['attachment'][0]['type'] == 'Link':
                 post.url = post_json['attachment'][0]['href']
                 if is_image_url(post.url):
