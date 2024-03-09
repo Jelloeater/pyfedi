@@ -142,7 +142,7 @@ def edit_profile(actor):
         form.matrixuserid.data = current_user.matrix_user_id
         form.password_field.data = ''
 
-    return render_template('user/edit_profile.html', title=_('Edit profile'), form=form, user=current_user,
+    return render_template('user/edit_profile2.html', title=_('Edit profile'), form=form, user=current_user,
                            markdown_editor=current_user.markdown_editor,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())
@@ -202,11 +202,10 @@ def change_settings():
         form.theme.data = current_user.theme
         form.markdown_editor.data = current_user.markdown_editor
 
-    return render_template('user/edit_settings.html', title=_('Edit profile'), form=form, user=current_user,
+    return render_template('user/edit_settings2.html', title=_('Edit profile'), form=form, user=current_user,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())
                            )
-
 
 @bp.route('/u/<actor>/ban', methods=['GET'])
 @login_required
@@ -615,11 +614,10 @@ def import_settings_task(user_id, filename):
 @login_required
 def user_settings_filters():
     filters = Filter.query.filter_by(user_id=current_user.id).order_by(Filter.title).all()
-    return render_template('user/filters.html', filters=filters, user=current_user,
+    return render_template('user/filters2.html', filters=filters, user=current_user,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())
                            )
-
 
 @bp.route('/user/settings/filters/add', methods=['GET', 'POST'])
 @login_required

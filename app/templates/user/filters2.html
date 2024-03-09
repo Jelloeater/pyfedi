@@ -1,0 +1,76 @@
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
+{% from 'bootstrap/form.html' import render_field %}
+{% set active_child = 'filters' %}
+
+{% block app_content %}
+    <div class="card" style="max-width:unset;">
+      <div class="card-header">
+            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+                <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
+                <li class="breadcrumb-item active"><a href="/user/settings">{{ _('Settings') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Filters') }}</li>
+              </ol>
+            </nav>
+            <ul class="nav nav-tabs card-header-tabs">
+              <li class="nav-item">
+                <a class="nav-link" href="/user/settings">Basic</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="/user/settings/filters">Blocks & Filters</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/u/{{ current_user.user_name }}/profile">Profile</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link disabled" href="#">Other</a>
+              </li>
+            </ul>
+    </div>
+    <div class="card-body">
+        <div class="rh_action_buttons">
+            <a class="btn btn-primary" href="{{ url_for('user.user_settings_filters_add') }}">{{ _('Add filter') }}</a>
+        </div>
+        <h1>{{ _('Filters') }}</h1>
+        <p class="card-text">{{ _('Filters can hide posts that contain keywords you specify, either by making them less noticeable or invisible.') }}</p>
+        {% if filters %}
+            <table class="table table-striped" role="table">
+                <tr>
+                    <th>{{ _('Name') }}</th>
+                    <th>{{ _('Keywords') }}</th>
+                    <th>{{ _('Action') }}</th>
+                    <th>{{ _('Expires') }}</th>
+                    <th> </th>
+                </tr>
+                {% for filter in filters %}
+                    <tr>
+                        <td>{{ filter.title }}</td>
+                        <td>{{ filter.keywords_string()|shorten(30) }}</td>
+                        <td>{{ _('Invisible') if filter.hide_type == 1 else _('Semi-transparent') }}</td>
+                        <td>{{ filter.expire_after if filter.expire_after }}</td>
+                        <td>
+                            <a href="{{ url_for('user.user_settings_filters_edit', filter_id=filter.id) }}">Edit</a> |
+                            <a href="{{ url_for('user.user_settings_filters_delete', filter_id=filter.id) }}" class="confirm_first">Delete</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>{{ _('No filters defined yet.') }}</p>
+        {% endif %}
+        <h1>Blocks</h5>
+        <p class="card-text">Manage what users, communities, domains or instances you want to block. Blocking them means you will no longer see any posts associated with them.</p>
+        <a class="btn btn-primary" href="">Manage User Blocks</a>
+        <a class="btn btn-primary" href="">Manage Communities Blocks</a>
+        <a class="btn btn-primary" href="">Manage Domain Blocks</a>
+        <a class="btn btn-primary" href="">Manage Instance Blocks</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
