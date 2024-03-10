@@ -16,18 +16,18 @@
                 <li class="breadcrumb-item active">{{ _('Edit profile') }}</li>
               </ol>
             </nav>
-            <ul class="nav nav-tabs card-header-tabs">
+            <ul class="nav nav-tabs flex-column flex-sm-row card-header-tabs">
               <li class="nav-item">
-                <a class="nav-link" href="/user/settings">Basic</a>
+                <a class="flex-sm-fill text-sm-center nav-link" href="/user/settings">Basic</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/user/settings/filters">Blocks & Filters</a>
+                <a class="flex-sm-fill text-sm-center nav-link" href="/user/settings/filters">Blocks & Filters</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link active" href="/u/{{ current_user.user_name }}/profile">Profile</a>
+                <a class="flex-sm-fill text-sm-center nav-link active" href="/u/{{ current_user.user_name }}/profile">Profile</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link disabled" href="#">Other</a>
+                <a class="flex-sm-fill text-sm-center nav-link disabled" href="#">Other</a>
               </li>
             </ul>
         </div>

@@ -1288,4 +1288,15 @@ fieldset legend {
   max-width: 100%;
 }
 
+@media (orientation: portrait) {
+  .flex-sm-fill.text-sm-center.nav-link.active{
+    border-bottom: var(--bs-nav-tabs-border-width) solid var(--bs-border-color);
+    border-bottom-right-radius: var(--bs-nav-tabs-border-radius);
+    border-bottom-left-radius: var(--bs-nav-tabs-border-radius);
+  }
+  .card-header-tabs {
+    margin-bottom:8px;
+  }
+}
+
 /*# sourceMappingURL=structure.css.map */
