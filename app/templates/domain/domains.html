@@ -20,11 +20,7 @@
           </li>
           {% if not current_user.is_anonymous %}
           <li class="nav-item">
-            {% if not ban_visibility_permission %}
-            <span title="{{ _('Your account is either too new or too low reputation to be able to see banned domains') }}">
-            <a class="flex-sm-fill text-sm-center nav-link disabled" href="/domains/banned">Banned Domains</a></span>{% else %}
             <a class="flex-sm-fill text-sm-center nav-link" href="/domains/banned">Banned Domains</a>
-            {% endif %}
           </li>
         {% endif %}
         </ul>
@@ -49,13 +45,13 @@
                 <tr>
                     <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
                     <td>{{ domain.post_count  }}</td>
+                    {% if not current_user.is_anonymous %}
+                    {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
                     <td>
-                        {% if not current_user.is_anonymous %}
-                        {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
-                                    <a class="confirm_first btn btn-primary" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
-                        {% endif %}
-                        {% endif %}
+                                <a class="confirm_first btn btn-primary" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
                     </td>
+                    {% endif %}
+                    {% endif %}
                 </tr>
             {% endfor %}
         </table>
