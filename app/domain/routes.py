@@ -56,17 +56,45 @@ def domains():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
 
-    domains = Domain.query#.filter_by(banned=False)
+    domains = Domain.query.filter_by(banned=False)
     if search != '':
         domains = domains.filter(Domain.name.ilike(f'%{search}%'))
     domains = domains.order_by(Domain.name)
     domains = domains.paginate(page=page, per_page=100, error_out=False)
 
+    ban_visibility_permission = False
+
+    if not current_user.is_anonymous:
+        if not current_user.created_recently() and current_user.reputation > 100 or current_user.is_admin():
+            ban_visibility_permission = True
+
     next_url = url_for('domain.domains', page=domains.next_num) if domains.has_next else None
     prev_url = url_for('domain.domains', page=domains.prev_num) if domains.has_prev and page != 1 else None
 
     return render_template('domain/domains.html', title='All known domains', domains=domains,
-                           next_url=next_url, prev_url=prev_url, search=search)
+                           next_url=next_url, prev_url=prev_url, search=search, ban_visibility_permission=ban_visibility_permission)
+
+@bp.route('/domains/banned', methods=['GET'])
+@login_required
+def blocked_domains():
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+
+    domains = Domain.query.filter_by(banned=True)
+    if search != '':
+        domains = domains.filter(Domain.name.ilike(f'%{search}%'))
+    domains = domains.order_by(Domain.name)
+    domains = domains.paginate(page=page, per_page=100, error_out=False)
+
+    ban_visibility_permission = False
+    if not current_user.created_recently() and current_user.reputation > 100 or current_user.is_admin():
+        ban_visibility_permission = True
+
+    next_url = url_for('domain.domains', page=domains.next_num) if domains.has_next else None
+    prev_url = url_for('domain.domains', page=domains.prev_num) if domains.has_prev and page != 1 else None
+
+    return render_template('domain/domains_banned.html', title='Domains banned on this instance', domains=domains,
+                           next_url=next_url, prev_url=prev_url, search=search, ban_visibility_permission=ban_visibility_permission)
 
 
 @bp.route('/d/<int:domain_id>/block')
