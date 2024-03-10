@@ -7,9 +7,9 @@
 {% set active_child = 'filters' %}
 
 {% block app_content %}
-    <div class="card" style="max-width:unset;">
+    <div class="card col-md-8" style="max-width:unset;">
       <div class="card-header">
-            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+            <nav class="mb-2" aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
                 <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
