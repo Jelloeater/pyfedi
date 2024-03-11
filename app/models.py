@@ -591,6 +591,13 @@ class User(UserMixin, db.Model):
                 return True
         return False
 
+    def trustworthy(self):
+        if self.is_admin():
+            return True
+        if self.created_recently() or self.reputation < 100:
+            return False
+        return True
+
     def link(self) -> str:
         if self.is_local():
             return self.user_name
@@ -1075,7 +1082,8 @@ class Filter(db.Model):
     def keywords_string(self):
         if self.keywords is None or self.keywords == '':
             return ''
-        return ', '.join(self.keywords.split('\n'))
+        split_keywords = [kw.strip() for kw in self.keywords.split('\n')]
+        return ', '.join(split_keywords)
 
 
 class Role(db.Model):

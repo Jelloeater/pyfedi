@@ -9,9 +9,9 @@
 <div class="row">
     <div class="col-12 col-md-8 position-relative main_pane">
         {% if search == '' %}
-            <h1>{{ _('Domains') }}</h1>
+            <h1>{{ _('Blocked domains') }}</h1>
         {% else %}
-            <h1>{{ _('Domains containing "%(search)s"', search=search) }}</h1>
+            <h1>{{ _('Blocked domains containing "%(search)s"', search=search) }}</h1>
         {% endif %}
         {% if not current_user.is_anonymous and current_user.trustworthy() %}
         <div class="row">
@@ -32,27 +32,27 @@
         {% endif %}
 
         <div class="table-responsive-sm pt-4">
-        <table class="table table-striped">
-            <tr>
-               <th>Domain</th>
-               <th><span title="{{ _('How many times has something on this domain been posted?') }}"># Posts</span></th>
-               {% if not current_user.is_anonymous %}{% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{%endif%}{%endif%}
-            </tr>
-            {% for domain in domains %}
+            <table class="table table-striped">
                 <tr>
-                    <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
-                    <td>{{ domain.post_count  }}</td>
-                    {% if not current_user.is_anonymous %}
-                    {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
-                    <td>
-                        <a class="confirm_first btn btn-primary" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
-                    </td>
-                    {% endif %}
-                    {% endif %}
+                   <th>Domain</th>
+                   {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{%endif%}
                 </tr>
-            {% endfor %}
-        </table>
-    </div>
+                {% for domain in domains %}
+                    <tr>
+                        <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
+                        <td>
+                            {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
+                                {% if domain.banned %}
+                                        <a class="btn btn-primary confirm_first" title="{{ _('Unbanning this domain allows future posts linking to that domain.') }}" href="/d/{{ domain.id }}/unban">{{ _('Unban') }}</a>
+                                {% else %}
+                                        <a class="btn btn-primary confirm_first" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
         <nav aria-label="Pagination" class="mt-4" role="navigation">
         {% if prev_url %}
             <a href="{{ prev_url }}" class="btn btn-primary" rel="nofollow">
@@ -67,8 +67,5 @@
         </nav>
     </div>
 </div>
-
-
-
 {% endblock %}
 

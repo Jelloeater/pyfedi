@@ -167,10 +167,8 @@
                                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/u/{{ current_user.user_name }}" aria-haspopup="true" aria-expanded="false">{{ _('Account') }}</a>
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'view_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}">{{ _('View profile') }}</a></li>
-                                  <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}/profile">{{ _('Edit profile') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}/settings">{{ _('Edit profile & settings') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'chats' %} active{% endif %}" href="/chat">{{ _('Chats') }}</a></li>
-                                  <li><a class="dropdown-item{% if active_child == 'settings' %} active{% endif %}" href="/user/settings">{{ _('Settings') }}</a></li>
-                                  <li><a class="dropdown-item{% if active_child == 'filters' %} active{% endif %}" href="/user/settings/filters">{{ _('Filters') }}</a></li>
                                 </ul>
                             </li>
                             <li class="nav-item"><a class="nav-link" href="/donate">{{ _('Donate') }}</a></li>

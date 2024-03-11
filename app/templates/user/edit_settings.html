@@ -7,32 +7,37 @@
 {% set active_child = 'settings' %}
 
 {% block app_content %}
-    <div class="row">
-        <div class="col main_pane">
-            <nav aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
-              <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
-                <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
-                <li class="breadcrumb-item active">{{ _('Change settings') }}</li>
-              </ol>
-            </nav>
-            <h1 class="mt-2">{{ _('Change settings') }}</h1>
-            <form method='post' enctype="multipart/form-data" role="form">
-                {{ form.csrf_token() }}
-                {{ render_field(form.newsletter) }}
-                {{ render_field(form.email_unread) }}
-                {{ render_field(form.ignore_bots) }}
-                {{ render_field(form.nsfw) }}
-                {{ render_field(form.nsfl) }}
-                {{ render_field(form.markdown_editor) }}
-                {{ render_field(form.searchable) }}
-                {{ render_field(form.indexable) }}
-                {{ render_field(form.default_sort) }}
-                {{ render_field(form.import_file) }}
-                {{ render_field(form.theme) }}
-                {{ render_field(form.submit) }}
-                &nbsp;&nbsp;<a href="{{ url_for('user.user_settings_filters') }}">{{ _('Manage content filters') }}</a>
-            </form>
-        </div>
-    </div>
+
+<div class="row">
+    <div class="col-12 col-md-8 position-relative main_pane">
+        <nav class="mb-2" aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+            <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
+            <li class="breadcrumb-item active">{{ _('Change settings') }}</li>
+          </ol>
+        </nav>
+        <h1>{{ _('Change settings') }}</h1>
+        {% include "user/_user_nav.html" %}
+        <form method='post' enctype="multipart/form-data" role="form">
+            {{ form.csrf_token() }}
+            <h5> Mail Settings </h5>
+            {{ render_field(form.newsletter) }}
+            {{ render_field(form.email_unread) }}
+            <h5> Visibility </h5>
+            {{ render_field(form.ignore_bots) }}
+            {{ render_field(form.nsfw) }}
+            {{ render_field(form.nsfl) }}
+            {{ render_field(form.searchable) }}
+            {{ render_field(form.indexable) }}
+            <h5> Preferences </h5>
+            {{ render_field(form.markdown_editor) }}
+            {{ render_field(form.default_sort) }}
+            {{ render_field(form.theme) }}
+            <h5>Import</h5>
+            {{ render_field(form.import_file) }}
+            {{ render_field(form.submit) }}
+        </form>
+  </div>
+</div>
 {% endblock %}

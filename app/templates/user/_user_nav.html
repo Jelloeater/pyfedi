@@ -1,0 +1,15 @@
+<div class="row mb-4">
+    <div class="col-auto">
+        <div class="btn-group">
+            <a href="/user/settings" class="btn {{ 'btn-primary' if request.path == '/user/settings' else 'btn-outline-secondary' }}">
+                {{ _('Settings') }}
+            </a>
+            <a href="/u/{{ current_user.user_name }}/profile" class="btn {{ 'btn-primary' if request.path.endswith('/profile') else 'btn-outline-secondary' }}">
+                {{ _('Profile') }}
+            </a>
+            <a href="/user/settings/filters" class="btn {{ 'btn-primary' if request.path == '/user/settings/filters' else 'btn-outline-secondary' }}">
+                {{ _('Blocks & Filters') }}
+            </a>
+        </div>
+    </div>
+</div>
