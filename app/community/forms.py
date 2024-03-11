@@ -127,6 +127,14 @@ class ReportCommunityForm(FlaskForm):
     report_remote = BooleanField('Also send report to originating instance')
     submit = SubmitField(_l('Report'))
 
+    def reasons_to_string(self, reason_data) -> str:
+        result = []
+        for reason_id in reason_data:
+            for choice in self.reason_choices:
+                if choice[0] == reason_id:
+                    result.append(str(choice[1]))
+        return ', '.join(result)
+
 
 class DeleteCommunityForm(FlaskForm):
     submit = SubmitField(_l('Delete community'))

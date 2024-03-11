@@ -1227,7 +1227,10 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
             post.url = request_json['object']['attachment'][0]['href']
             if is_image_url(post.url):
                 post.type = POST_TYPE_IMAGE
-                image = File(source_url=request_json['object']['image']['url'])
+                if 'image' in request_json['object'] and 'url' in request_json['object']['image']:
+                    image = File(source_url=request_json['object']['image']['url'])
+                else:
+                    image = File(source_url=post.url)
                 db.session.add(image)
                 post.image = image
             else:
