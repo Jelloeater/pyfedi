@@ -167,7 +167,7 @@
                                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="/u/{{ current_user.user_name }}" aria-haspopup="true" aria-expanded="false">{{ _('Account') }}</a>
                                 <ul class="dropdown-menu">
                                   <li><a class="dropdown-item{% if active_child == 'view_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}">{{ _('View profile') }}</a></li>
-                                  <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/u/{{ current_user.user_name }}/settings">{{ _('Edit profile & settings') }}</a></li>
+                                  <li><a class="dropdown-item{% if active_child == 'edit_profile' %} active{% endif %}" href="/user/settings">{{ _('Edit profile & settings') }}</a></li>
                                   <li><a class="dropdown-item{% if active_child == 'chats' %} active{% endif %}" href="/chat">{{ _('Chats') }}</a></li>
                                 </ul>
                             </li>
