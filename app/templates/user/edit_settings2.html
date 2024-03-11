@@ -1,0 +1,59 @@
+{% if theme() and file_exists('app/templates/themes/' + theme() + '/base.html') %}
+    {% extends 'themes/' + theme() + '/base.html' %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %} %}
+{% from 'bootstrap/form.html' import render_field %}
+{% set active_child = 'settings' %}
+
+{% block app_content %}
+
+<div class="card col-md-8" style="max-width:unset;">
+  <div class="card-header">
+          <nav class="mb-2" aria-label="breadcrumb" id="breadcrumb_nav" title="Navigation">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">{{ _('Home') }}</a></li>
+            <li class="breadcrumb-item"><a href="/u/{{ user.link() }}">{{ user.display_name() }}</a></li>
+            <li class="breadcrumb-item active">{{ _('Change settings') }}</li>
+          </ol>
+        </nav>
+    <ul class="nav nav-tabs flex-column flex-sm-row card-header-tabs">
+      <li class="nav-item">
+        <a class="flex-sm-fill text-sm-center nav-link active" href="/user/settings">Basic</a>
+      </li>
+      <li class="nav-item">
+        <a class="flex-sm-fill text-sm-center nav-link" href="/user/settings/filters">Blocks & Filters</a>
+      </li>
+      <li class="nav-item">
+        <a class="flex-sm-fill text-sm-center nav-link" href="/u/{{ current_user.user_name }}/profile">Profile</a>
+      </li>
+      <li class="nav-item">
+        <a class="flex-sm-fill text-sm-center nav-link disabled" href="#">Other</a>
+      </li>
+    </ul>
+  </div>
+  <div class="card-body">
+    <h1>{{ _('Change settings') }}</h1>
+    <p class="card-text">Change your basic settings and preferences </p>
+    <form method='post' enctype="multipart/form-data" role="form">
+            {{ form.csrf_token() }}
+            <h5> Mail Settings </h5>
+            {{ render_field(form.newsletter) }}
+            {{ render_field(form.email_unread) }}
+            <h5> Visibility </h5>
+            {{ render_field(form.ignore_bots) }}
+            {{ render_field(form.nsfw) }}
+            {{ render_field(form.nsfl) }}
+            {{ render_field(form.searchable) }}
+            {{ render_field(form.indexable) }}
+            <h5> Preferences </h5>
+            {{ render_field(form.markdown_editor) }}
+            {{ render_field(form.default_sort) }}
+            {{ render_field(form.theme) }}
+            <h5>Import</h5>
+            {{ render_field(form.import_file) }}
+            {{ render_field(form.submit) }}
+        </form>
+  </div>
+</div>
+{% endblock %}

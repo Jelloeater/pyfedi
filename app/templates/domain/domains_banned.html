@@ -16,21 +16,22 @@
         </nav>
         <ul class="nav nav-tabs flex-column flex-sm-row card-header-tabs">
           <li class="nav-item">
-            <a class="flex-sm-fill text-sm-center nav-link active" href="/domains">All Domains</a>
+            <a class="flex-sm-fill text-sm-center nav-link" href="/domains">All Domains</a>
           </li>
-          {% if not current_user.is_anonymous %}
           <li class="nav-item">
-            <a class="flex-sm-fill text-sm-center nav-link" href="/domains/banned">Banned Domains</a>
+            <a class="flex-sm-fill text-sm-center nav-link active" href="/domains/banned">Banned Domains</a>
           </li>
-        {% endif %}
         </ul>
     </div>
     <div class="card-body">
         <h1 class="">{{ _('Domains') }}</h1>
-        {% if search == '' %}
-        <p class="card-text">All domains this instance knows about</p>
+        {% if not ban_visibility_permission %}
+        <p class="card-text">Your account is either too new or too low reputation to be able to see banned domains on this instance.</p>
         {% else %}
-        <p class="card-text">Domains containing "{{ _('%(search)s', search=search) }}"</p>
+        {% if search == '' %}
+        <p class="card-text">All domains this instance banned</p>
+        {% else %}
+        <p class="card-text">Banned domains containing "{{ _('%(search)s', search=search) }}"</p>
         {% endif %}
         <form method="get"><input type="search" name="search" value="{{ search }}" placeholder="{{ _('Search') }}" autofocus></form>
 
@@ -38,20 +39,20 @@
         <table class="table table-striped">
             <tr>
                <th>Domain</th>
-               <th><span title="{{ _('How many times has something on this domain been posted?') }}"># Posts</span></th>
-               {% if not current_user.is_anonymous %}{% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{%endif%}{%endif%}
+               {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{%endif%}
             </tr>
             {% for domain in domains %}
                 <tr>
                     <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
-                    <td>{{ domain.post_count  }}</td>
-                    {% if not current_user.is_anonymous %}
-                    {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
                     <td>
-                                <a class="confirm_first btn btn-primary" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
+                        {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
+                            {% if domain.banned %}
+                                    <a class="btn btn-primary confirm_first" title="{{ _('Unbanning this domain allows future posts linking to that domain.') }}" href="/d/{{ domain.id }}/unban">{{ _('Unban') }}</a>
+                            {% else %}
+                                    <a class="btn btn-primary confirm_first" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
+                            {% endif %}
+                        {% endif %}
                     </td>
-                    {% endif %}
-                    {% endif %}
                 </tr>
             {% endfor %}
         </table>
@@ -69,6 +70,7 @@
         {% endif %}
         </nav>
       </div>
+      {% endif %}
     </div>
 </div>
 {% endblock %}
