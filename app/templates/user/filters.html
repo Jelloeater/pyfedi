@@ -50,10 +50,92 @@
         {% endif %}
         <h5>Blocks</h5>
         <p class="card-text">Manage what users, communities, domains or instances you want to block. Blocking them means you will no longer see any posts associated with them.</p>
-        <a class="btn btn-primary" href="">Manage User Blocks</a>
-        <a class="btn btn-primary" href="">Manage Communities Blocks</a>
-        <a class="btn btn-primary" href="">Manage Domain Blocks</a>
-        <a class="btn btn-primary" href="">Manage Instance Blocks</a>
+        <nav id="block_chooser">
+          <div class="nav nav-tabs nav-justified" id="typeTab" role="tablist">
+            <button class="nav-link active" id="discussion-tab" data-bs-toggle="tab" data-bs-target="#people-tab-pane"
+                    type="button" role="tab" aria-controls="discussion-tab-pane" aria-selected="true">{{ _('People') }}</button>
+            <button class="nav-link" id="link-tab" data-bs-toggle="tab" data-bs-target="#communities-tab-pane"
+                    type="button" role="tab" aria-controls="link-tab-pane" aria-selected="false">{{ _('Communities') }}</button>
+            <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#domains-tab-pane"
+                    type="button" role="tab" aria-controls="image-tab-pane" aria-selected="false">{{ _('Domains') }}</button>
+            <button class="nav-link" id="poll-tab" data-bs-toggle="tab" data-bs-target="#instances-tab-pane"
+                        type="button" role="tab" aria-controls="poll-tab-pane" aria-selected="false">{{ _('Instances') }}</button>
+          </div>
+        </nav>
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade show active" id="people-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+              {% if blocked_users %}
+                <table class="table table-responsive">
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Unblock') }}</th>
+                    </tr>
+                {% for user in blocked_users %}
+                    <tr>
+                        <td><a href="{{ url_for('activitypub.user_profile', actor=user.ap_id if user.ap_id is not none else user.user_name) }}">{{ user.display_name() }}</a></td>
+                        <td><a class="no-underline confirm_first" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow"><span class="fe fe-delete"> {{ _('Unblock') }}</span></a></td>
+                    </tr>
+                {% endfor %}
+                </table>
+              {% else %}
+                <p>{{ _('No blocked people') }}</p>
+              {% endif %}
+          </div>
+          <div class="tab-pane fade show" id="communities-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+              {% if blocked_communities %}
+                <table class="table table-responsive">
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Unblock') }}</th>
+                    </tr>
+                {% for community in blocked_communities %}
+                    <tr>
+                        <td><a href="{{ url_for('activitypub.community_profile', actor=community.ap_id if community.ap_id is not none else community.name) }}">{{ community.title }}</a></td>
+                        <td><a class="no-underline confirm_first" href="#" rel="nofollow"><span class="fe fe-delete"> {{ _('Unblock') }}</span></a></td>
+                    </tr>
+                {% endfor %}
+                </table>
+              {% else %}
+                <p>{{ _('No blocked communities') }}</p>
+              {% endif %}
+          </div>
+          <div class="tab-pane fade show" id="domains-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+              {% if blocked_domains %}
+                <table class="table table-responsive">
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Unblock') }}</th>
+                    </tr>
+                {% for domain in blocked_domains %}
+                    <tr>
+                        <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
+                        <td><a class="no-underline confirm_first" href="{{ url_for('domain.domain_unblock', domain_id=domain.id) }}" rel="nofollow"><span class="fe fe-delete"> {{ _('Unblock') }}</span></a></td>
+                    </tr>
+                {% endfor %}
+                </table>
+              {% else %}
+                <p>{{ _('No blocked domains') }}</p>
+              {% endif %}
+          </div>
+          <div class="tab-pane fade show" id="instances-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+              {% if blocked_instances %}
+                <table class="table table-responsive">
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Unblock') }}</th>
+                    </tr>
+                {% for instance in blocked_instances %}
+                    <tr>
+                        <td><a href="#">{{ instance.domain }}</a></td>
+                        <td><a class="no-underline confirm_first" href="#" rel="nofollow"><span class="fe fe-delete"> {{ _('Unblock') }}</span></a></td>
+                    </tr>
+                {% endfor %}
+                </table>
+              {% else %}
+                <p>{{ _('No blocked instances') }}</p>
+              {% endif %}
+          </div>
+        </div>
     </div>
 </div>
 {% endblock %}

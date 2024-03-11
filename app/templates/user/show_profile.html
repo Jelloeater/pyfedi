@@ -49,11 +49,11 @@
                     <a class="btn btn-primary" href="https://matrix.to/#/{{ user.matrix_user_id }}" rel="nofollow" aria-label="{{ _('Send message with matrix chat') }}">{{ _('Send message using Matrix') }}</a>
                 {% endif %}
                 {% if current_user.has_blocked_user(user.id) %}
-                    <a class="btn btn-primary" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow">{{ _('Unblock user') }}</a>
+                    <a class="btn btn-primary" href="{{ url_for('user.unblock_profile', actor=user.link()) }}" rel="nofollow">{{ _('Unblock') }}</a>
                 {% else %}
-                    <a class="btn btn-primary confirm_first" href="{{ url_for('user.block_profile', actor=user.link()) }}" rel="nofollow">{{ _('Block user') }}</a>
+                    <a class="btn btn-primary confirm_first" href="{{ url_for('user.block_profile', actor=user.link()) }}" rel="nofollow">{{ _('Block') }}</a>
                 {% endif %}
-                <a class="btn btn-primary" href="{{ url_for('user.report_profile', actor=user.link()) }}" rel="nofollow">{{ _('Report user') }}</a>
+                <a class="btn btn-primary" href="{{ url_for('user.report_profile', actor=user.link()) }}" rel="nofollow">{{ _('Report') }}</a>
             </div>
         {% endif %}
         <p class="small">{{ _('Joined') }}: {{ moment(user.created).fromNow(refresh=True) }}<br />
