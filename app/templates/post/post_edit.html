@@ -43,7 +43,6 @@
         <h1>{{ _('Edit post') }}</h1>
         <form method="post" enctype="multipart/form-data" role="form">
             {{ form.csrf_token() }}
-            {{ render_field(form.communities) }}
             <nav id="post_type_chooser">
               <div class="nav nav-tabs nav-justified" id="typeTab" role="tablist">
                 <button class="nav-link active" id="discussion-tab" data-bs-toggle="tab" data-bs-target="#discussion-tab-pane"
@@ -143,11 +142,20 @@
                  <h2>{{ post.community.title }}</h2>
             </div>
             <div class="card-body">
-                <p>{{ post.community.description|safe }}</p>
-                <p>{{ post.community.rules|safe }}</p>
+                <p>{{ post.community.description_html|safe if post.community.description_html else '' }}</p>
+                <p>{{ post.community.rules_html|safe if post.community.rules_html else '' }}</p>
+                {% if len(mods) > 0 and not post.community.private_mods %}
+                    <h3>Moderators</h3>
+                    <ul class="moderator_list">
+                        {% for mod in mods %}
+                            <li><a href="/u/{{ mod.link() }}">{{ mod.display_name() }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
         </div>
+            {% include "_inoculation_links.html" %}
     </aside>
-    {% include "_inoculation_links.html" %}
+
 </div>
 {% endblock %}

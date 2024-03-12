@@ -604,6 +604,7 @@ def post_reply_options(post_id: int, comment_id: int):
 def post_edit(post_id: int):
     post = Post.query.get_or_404(post_id)
     form = CreatePostForm()
+    del form.communities
     if post.user_id == current_user.id or post.community.is_moderator():
         if g.site.enable_nsfl is False:
             form.nsfl.render_kw = {'disabled': True}
@@ -614,7 +615,7 @@ def post_edit(post_id: int):
             form.nsfl.data = True
             form.nsfw.render_kw = {'disabled': True}
 
-        form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
+        #form.communities.choices = [(c.id, c.display_name()) for c in current_user.communities()]
 
         if form.validate_on_submit():
             save_post(form, post)
