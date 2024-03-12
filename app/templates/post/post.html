@@ -75,7 +75,7 @@
                 {% macro render_comment(comment) %}
                     <div id="comment_{{ comment['comment'].id }}" class="comment {% if comment['comment'].score <= -10 %}low_score{% endif %}
                         {% if comment['comment'].author.id == post.author.id %}original_poster{% endif %}" aria-level="{{ comment['comment'].depth + 1 }}" role="treeitem" aria-expanded="true" tabindex="0">
-                        <div class="limit_height">
+                        <div class="limit_height">{% if not comment['comment'].author.indexable %}<!--googleoff: all-->{% endif %}
                             <div class="comment_author">
                                 {% if comment['comment'].author.deleted %}
                                     [deleted]
@@ -107,7 +107,7 @@
                             </div>
                             <div class="comment_body hidable {% if comment['comment'].reports and current_user.is_authenticated and post.community.is_moderator(current_user) %}reported{% endif %}">
                                 {{ comment['comment'].body_html | safe }}
-                            </div>
+                            </div>{% if not comment['comment'].author.indexable %}<!--googleon: all-->{% endif %}
                         </div>
                         <div class="comment_actions hidable">
                             {% if post.comments_enabled %}

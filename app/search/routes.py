@@ -5,11 +5,10 @@ from sqlalchemy import or_
 
 from app.models import Post
 from app.search import bp
-from app.utils import moderating_communities, joined_communities, render_template, blocked_domains
+from app.utils import moderating_communities, joined_communities, render_template, blocked_domains, blocked_instances
 
 
 @bp.route('/search', methods=['GET', 'POST'])
-@login_required
 def run_search():
     if request.args.get('q') is not None:
         q = request.args.get('q')
@@ -17,16 +16,26 @@ def run_search():
         low_bandwidth = request.cookies.get('low_bandwidth', '0') == '1'
 
         posts = Post.query.search(q)
-        if current_user.ignore_bots:
+        if current_user.is_authenticated:
+            if current_user.ignore_bots:
+                posts = posts.filter(Post.from_bot == False)
+            if current_user.show_nsfl is False:
+                posts = posts.filter(Post.nsfl == False)
+            if current_user.show_nsfw is False:
+                posts = posts.filter(Post.nsfw == False)
+            domains_ids = blocked_domains(current_user.id)
+            if domains_ids:
+                posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+            instance_ids = blocked_instances(current_user.id)
+            if instance_ids:
+                posts = posts.filter(or_(Post.instance_id.not_in(instance_ids), Post.instance_id == None))
+        else:
             posts = posts.filter(Post.from_bot == False)
-        if current_user.show_nsfl is False:
             posts = posts.filter(Post.nsfl == False)
-        if current_user.show_nsfw is False:
             posts = posts.filter(Post.nsfw == False)
 
-        domains_ids = blocked_domains(current_user.id)
-        if domains_ids:
-            posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+        posts = posts.filter(Post.indexable == True)
+
         posts = posts.paginate(page=page, per_page=100 if current_user.is_authenticated and not low_bandwidth else 50,
                                error_out=False)
 

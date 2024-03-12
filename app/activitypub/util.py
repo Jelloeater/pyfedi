@@ -339,10 +339,19 @@ def refresh_user_profile_task(user_id):
         if actor_data.status_code == 200:
             activity_json = actor_data.json()
             actor_data.close()
+
+            # update indexible state on their posts, if necessary
+            new_indexable = activity_json['indexable'] if 'indexable' in activity_json else True
+            if new_indexable != user.indexable:
+                db.session.execute(text('UPDATE "post" set indexable = :indexable WHERE user_id = :user_id'),
+                                   {'user_id': user.id,
+                                    'indexable': new_indexable})
+
             user.user_name = activity_json['preferredUsername']
             user.about_html = parse_summary(activity_json)
             user.ap_fetched_at = utcnow()
-            user.public_key=activity_json['publicKey']['publicKeyPem']
+            user.public_key = activity_json['publicKey']['publicKeyPem']
+            user.indexable = new_indexable
 
             avatar_changed = cover_changed = False
             if 'icon' in activity_json:
@@ -594,6 +603,7 @@ def post_json_to_model(post_json, user, community) -> Post:
                     last_active=post_json['published'],
                     instance_id=user.instance_id
                     )
+        post.indexable = user.indexable
         if 'source' in post_json and \
                 post_json['source']['mediaType'] == 'text/markdown':
             post.body = post_json['source']['content']
@@ -1212,7 +1222,8 @@ def create_post(activity_log: ActivityPubLog, community: Community, request_json
                 type=constants.POST_TYPE_ARTICLE,
                 up_votes=1,
                 score=instance_weight(user.ap_domain),
-                instance_id=user.instance_id
+                instance_id=user.instance_id,
+                indexable=user.indexable
                 )
     # Get post content. Lemmy and Kbin put this in different places.
     if 'source' in request_json['object'] and isinstance(request_json['object']['source'], dict) and request_json['object']['source']['mediaType'] == 'text/markdown': # Lemmy

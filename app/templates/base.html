@@ -70,6 +70,9 @@
         {% if rss_feed %}
             <link rel="alternate" type="application/rss+xml" title="{{ rss_feed_name }}" href="{{ rss_feed }}" />
         {% endif %}
+        {% if noindex %}
+            <meta name="robots" content="noindex">
+        {% endif %}
         <script nonce="{{ session['nonce']}}">
             const getStoredTheme = () => localStorage.getItem('theme')
             const setStoredTheme = theme => localStorage.setItem('theme', theme)

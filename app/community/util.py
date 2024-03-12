@@ -164,6 +164,7 @@ def url_to_thumbnail_file(filename) -> File:
 
 
 def save_post(form, post: Post):
+    post.indexable = current_user.indexable
     post.nsfw = form.nsfw.data
     post.nsfl = form.nsfl.data
     post.notify_author = form.notify_author.data

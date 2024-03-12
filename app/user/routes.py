@@ -79,6 +79,7 @@ def show_profile(user):
                            description=description, subscribed=subscribed, upvoted=upvoted,
                            post_next_url=post_next_url, post_prev_url=post_prev_url,
                            replies_next_url=replies_next_url, replies_prev_url=replies_prev_url,
+                           noindex=not user.indexable,
                            moderating_communities=moderating_communities(current_user.get_id()),
                            joined_communities=joined_communities(current_user.get_id())
                            )
@@ -159,6 +160,7 @@ def change_settings():
     form = SettingsForm()
     form.theme.choices = theme_list()
     if form.validate_on_submit():
+        propagate_indexable = form.indexable.data != current_user.indexable
         current_user.newsletter = form.newsletter.data
         current_user.ignore_bots = form.ignore_bots.data
         current_user.show_nsfw = form.nsfw.data
@@ -170,6 +172,10 @@ def change_settings():
         current_user.email_unread = form.email_unread.data
         current_user.markdown_editor = form.markdown_editor.data
         import_file = request.files['import_file']
+        if propagate_indexable:
+            db.session.execute(text('UPDATE "post" set indexable = :indexable WHERE user_id = :user_id'),
+                               {'user_id': current_user.id,
+                                'indexable': current_user.indexable})
         if import_file and import_file.filename != '':
             file_ext = os.path.splitext(import_file.filename)[1]
             if file_ext.lower() != '.json':
