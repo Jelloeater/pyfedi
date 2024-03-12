@@ -16,7 +16,7 @@ from app.topic import bp
 from app import db, celery, cache
 from app.topic.forms import ChooseTopicsForm
 from app.utils import render_template, user_filters_posts, moderating_communities, joined_communities, \
-    community_membership, blocked_domains, validation_required, mimetype_from_url
+    community_membership, blocked_domains, validation_required, mimetype_from_url, blocked_instances
 
 
 @bp.route('/topic/<path:topic_path>', methods=['GET'])
@@ -65,6 +65,9 @@ def show_topic(topic_path):
             domains_ids = blocked_domains(current_user.id)
             if domains_ids:
                 posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+            instance_ids = blocked_instances(current_user.id)
+            if instance_ids:
+                posts = posts.filter(or_(Post.instance_id.not_in(instance_ids), Post.instance_id == None))
 
         # sorting
         if sort == '' or sort == 'hot':

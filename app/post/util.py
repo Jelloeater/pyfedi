@@ -1,14 +1,20 @@
 from typing import List
 
-from sqlalchemy import desc, text
+from flask_login import current_user
+from sqlalchemy import desc, text, or_
 
 from app import db
 from app.models import PostReply
+from app.utils import blocked_instances
 
 
 # replies to a post, in a tree, sorted by a variety of methods
 def post_replies(post_id: int, sort_by: str, show_first: int = 0) -> List[PostReply]:
     comments = PostReply.query.filter_by(post_id=post_id)
+    if current_user.is_authenticated:
+        instance_ids = blocked_instances(current_user.id)
+        if instance_ids:
+            comments = comments.filter(or_(PostReply.instance_id.not_in(instance_ids), PostReply.instance_id == None))
     if sort_by == 'hot':
         comments = comments.order_by(desc(PostReply.ranking))
     elif sort_by == 'top':
@@ -36,6 +42,10 @@ def get_comment_branch(post_id: int, comment_id: int, sort_by: str) -> List[Post
         return []
 
     comments = PostReply.query.filter(PostReply.post_id == post_id)
+    if current_user.is_authenticated:
+        instance_ids = blocked_instances(current_user.id)
+        if instance_ids:
+            comments = comments.filter(or_(PostReply.instance_id.not_in(instance_ids), PostReply.instance_id == None))
     if sort_by == 'hot':
         comments = comments.order_by(desc(PostReply.ranking))
     elif sort_by == 'top':

@@ -23,7 +23,7 @@ from app.community import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, gibberish, community_membership, ap_datetime, \
     request_etag_matches, return_304, instance_banned, can_create_post, can_upvote, can_downvote, user_filters_posts, \
-    joined_communities, moderating_communities, blocked_domains, mimetype_from_url
+    joined_communities, moderating_communities, blocked_domains, mimetype_from_url, blocked_instances
 from feedgen.feed import FeedGenerator
 from datetime import timezone, timedelta
 
@@ -152,9 +152,13 @@ def show_community(community: Community):
             posts = posts.filter(Post.nsfw == False)
         content_filters = user_filters_posts(current_user.id)
 
+        # filter domains and instances
         domains_ids = blocked_domains(current_user.id)
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+        instance_ids = blocked_instances(current_user.id)
+        if instance_ids:
+            posts = posts.filter(or_(Post.instance_id.not_in(instance_ids), Post.instance_id == None))
 
     if sort == '' or sort == 'hot':
         posts = posts.order_by(desc(Post.ranking)).order_by(desc(Post.posted_at))

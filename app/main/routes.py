@@ -23,7 +23,8 @@ from sqlalchemy import select, desc, text
 from sqlalchemy_searchable import search
 from app.utils import render_template, get_setting, gibberish, request_etag_matches, return_304, blocked_domains, \
     ap_datetime, ip_address, retrieve_block_list, shorten_string, markdown_to_text, user_filters_home, \
-    joined_communities, moderating_communities, parse_page, theme_list, get_request, markdown_to_html, allowlist_html
+    joined_communities, moderating_communities, parse_page, theme_list, get_request, markdown_to_html, allowlist_html, \
+    blocked_instances
 from app.models import Community, CommunityMember, Post, Site, User, utcnow, Domain, Topic, File, Instance, \
     InstanceRole, Notification
 from PIL import Image
@@ -103,6 +104,9 @@ def home_page(type, sort):
         domains_ids = blocked_domains(current_user.id)
         if domains_ids:
             posts = posts.filter(or_(Post.domain_id.not_in(domains_ids), Post.domain_id == None))
+        instance_ids = blocked_instances(current_user.id)
+        if instance_ids:
+            posts = posts.filter(or_(Post.instance_id.not_in(instance_ids), Post.instance_id == None))
         content_filters = user_filters_home(current_user.id)
 
     # Sorting

@@ -7,7 +7,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _
 from sqlalchemy import or_, desc
 
-from app import db, constants
+from app import db, constants, cache
 from app.activitypub.signature import HttpSignature, post_request
 from app.activitypub.util import default_context
 from app.community.util import save_post, send_to_remote_instance
@@ -22,7 +22,8 @@ from app.post import bp
 from app.utils import get_setting, render_template, allowlist_html, markdown_to_html, validation_required, \
     shorten_string, markdown_to_text, gibberish, ap_datetime, return_304, \
     request_etag_matches, ip_address, user_ip_banned, instance_banned, can_downvote, can_upvote, post_ranking, \
-    reply_already_exists, reply_is_just_link_to_gif_reaction, confidence, moderating_communities, joined_communities
+    reply_already_exists, reply_is_just_link_to_gif_reaction, confidence, moderating_communities, joined_communities, \
+    blocked_instances, blocked_domains
 
 
 def show_post(post_id: int):
@@ -848,6 +849,7 @@ def post_block_domain(post_id: int):
     if not existing:
         db.session.add(DomainBlock(user_id=current_user.id, domain_id=post.domain_id))
         db.session.commit()
+        cache.delete_memoized(blocked_domains, current_user.id)
     flash(_('Posts linking to %(name)s will be hidden.', name=post.domain.name))
     return redirect(post.community.local_url())
 
@@ -860,6 +862,7 @@ def post_block_instance(post_id: int):
     if not existing:
         db.session.add(InstanceBlock(user_id=current_user.id, instance_id=post.instance_id))
         db.session.commit()
+        cache.delete_memoized(blocked_instances, current_user.id)
     flash(_('Content from %(name)s will be hidden.', name=post.instance.domain))
     return redirect(post.community.local_url())
 

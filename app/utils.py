@@ -26,7 +26,7 @@ import re
 
 from app.email import send_welcome_email
 from app.models import Settings, Domain, Instance, BannedInstances, User, Community, DomainBlock, ActivityPubLog, IpBan, \
-    Site, Post, PostReply, utcnow, Filter, CommunityMember
+    Site, Post, PostReply, utcnow, Filter, CommunityMember, InstanceBlock
 
 
 # Flask's render_template function, with support for themes added
@@ -311,6 +311,12 @@ def community_membership(user: User, community: Community) -> int:
 def blocked_domains(user_id) -> List[int]:
     blocks = DomainBlock.query.filter_by(user_id=user_id)
     return [block.domain_id for block in blocks]
+
+
+@cache.memoize(timeout=86400)
+def blocked_instances(user_id) -> List[int]:
+    blocks = InstanceBlock.query.filter_by(user_id=user_id)
+    return [block.instance_id for block in blocks]
 
 
 def retrieve_block_list():
