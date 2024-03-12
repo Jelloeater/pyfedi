@@ -31,11 +31,10 @@ def show_domain(domain_id):
         else:
             posts = Post.query.join(Community).filter(Post.domain_id == domain.id, Community.banned == False).order_by(desc(Post.posted_at))
 
-        instance_ids = blocked_instances(current_user.id)
-        if instance_ids:
-            posts = posts.filter(or_(Post.instance_id.not_in(instance_ids), Post.instance_id == None))
-
         if current_user.is_authenticated:
+            instance_ids = blocked_instances(current_user.id)
+            if instance_ids:
+                posts = posts.filter(or_(Post.instance_id.not_in(instance_ids), Post.instance_id == None))
             content_filters = user_filters_posts(current_user.id)
         else:
             content_filters = {}
