@@ -35,20 +35,12 @@
         <table class="table table-striped">
             <tr>
                <th>Domain</th>
-               <th><span title="{{ _('How many times has something on this domain been posted?') }}"># Posts</span></th>
-               {% if not current_user.is_anonymous %}{% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{%endif%}{%endif%}
+               <th><span title="{{ _('How many times has something on this domain been posted') }}"># Posts</span></th>
             </tr>
             {% for domain in domains %}
                 <tr>
                     <td><a href="{{ url_for('domain.show_domain', domain_id=domain.id) }}">{{ domain.name }}</a></td>
                     <td>{{ domain.post_count  }}</td>
-                    {% if not current_user.is_anonymous %}
-                    {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}
-                    <td>
-                        <a class="confirm_first btn btn-primary" title="{{ _('Banning this domain will delete all posts linking to this domain and prevent future posts linking to that domain.') }}" href="/d/{{ domain.id }}/ban">{{ _('Ban') }}</a>
-                    </td>
-                    {% endif %}
-                    {% endif %}
                 </tr>
             {% endfor %}
         </table>

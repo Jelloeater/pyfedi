@@ -8,7 +8,7 @@ from app import db, constants, cache
 from app.inoculation import inoculation
 from app.models import Post, Domain, Community, DomainBlock
 from app.domain import bp
-from app.utils import get_setting, render_template, permission_required, joined_communities, moderating_communities, \
+from app.utils import render_template, permission_required, joined_communities, moderating_communities, \
     user_filters_posts, blocked_domains
 from sqlalchemy import desc
 
@@ -77,7 +77,7 @@ def domains():
 
 @bp.route('/domains/banned', methods=['GET'])
 @login_required
-def blocked_domains():
+def domains_blocked_list():
     if not current_user.trustworthy():
         abort(404)
 

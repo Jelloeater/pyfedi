@@ -35,7 +35,7 @@
             <table class="table table-striped">
                 <tr>
                    <th>Domain</th>
-                   {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{%endif%}
+                   {% if user_access('ban users', current_user.id) or user_access('manage users', current_user.id) %}<th>Actions</th>{% endif %}
                 </tr>
                 {% for domain in domains %}
                     <tr>
